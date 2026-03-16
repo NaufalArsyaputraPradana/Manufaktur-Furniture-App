@@ -1,0 +1,208 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Product;
+use Illuminate\Database\Seeder;
+
+class ProductSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $products = [
+            // Kursi (Category ID: 1)
+            [
+                'category_id' => 1,
+                'sku' => 'PRD-KRS-001',
+                'name' => 'Kursi Makan Minimalis',
+                'slug' => 'kursi-makan-minimalis',
+                'description' => 'Kursi makan dengan desain minimalis modern, cocok untuk ruang makan keluarga. Material kayu mahoni dengan finishing natural politur.',
+                'dimensions' => '45cm x 50cm x 95cm',
+                'wood_type' => 'Kayu Mahoni',
+                'finishing_type' => 'Natural Politur',
+                'estimated_production_days' => 5,
+                'base_price' => 750000,
+                'images' => ['products/kursi-makan-minimalis.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 1,
+                'sku' => 'PRD-KRS-002',
+                'name' => 'Kursi Tamu Scandinavian',
+                'slug' => 'kursi-tamu-scandinavian',
+                'description' => 'Kursi tamu dengan gaya Scandinavian dilengkapi bantalan empuk dan rangka kayu jati solid.',
+                'dimensions' => '60cm x 70cm x 85cm',
+                'wood_type' => 'Kayu Jati',
+                'finishing_type' => 'Natural Politur',
+                'estimated_production_days' => 7,
+                'base_price' => 1250000,
+                'images' => ['products/kursi-tamu-scandinavian.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 1,
+                'sku' => 'PRD-KRS-003',
+                'name' => 'Kursi Kantor Ergonomis',
+                'slug' => 'kursi-kantor-ergonomis',
+                'description' => 'Kursi kantor dengan desain ergonomis, adjustable height, dan sandaran punggung yang nyaman.',
+                'dimensions' => '60cm x 65cm x 110cm',
+                'wood_type' => null,
+                'finishing_type' => 'Powder Coating',
+                'estimated_production_days' => 3,
+                'base_price' => 1850000,
+                'images' => ['products/kursi-kantor-ergonomis.jpg'],
+                'is_customizable' => false,
+                'is_active' => true,
+            ],
+
+            // Meja (Category ID: 2)
+            [
+                'category_id' => 2,
+                'sku' => 'PRD-MJ-001',
+                'name' => 'Meja Makan 6 Orang',
+                'slug' => 'meja-makan-6-orang',
+                'description' => 'Meja makan solid untuk 6 orang dengan permukaan halus dan kaki kokoh. Material kayu jati grade A.',
+                'dimensions' => '150cm x 90cm x 75cm',
+                'wood_type' => 'Kayu Jati Grade A',
+                'finishing_type' => 'Natural Politur',
+                'estimated_production_days' => 10,
+                'base_price' => 3500000,
+                'images' => ['products/meja-makan-6-orang.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 2,
+                'sku' => 'PRD-MJ-002',
+                'name' => 'Meja Kerja L Shape',
+                'slug' => 'meja-kerja-l-shape',
+                'description' => 'Meja kerja bentuk L dengan storage drawer dan cable management. Finishing duco putih modern.',
+                'dimensions' => '150cm x 150cm x 75cm',
+                'wood_type' => 'Kayu Mahoni',
+                'finishing_type' => 'Duco Putih',
+                'estimated_production_days' => 12,
+                'base_price' => 2800000,
+                'images' => ['products/meja-kerja-l-shape.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 2,
+                'sku' => 'PRD-MJ-003',
+                'name' => 'Meja Kopi Kaca Modern',
+                'slug' => 'meja-kopi-kaca-modern',
+                'description' => 'Meja kopi dengan top kaca tempered dan rangka metal minimalis. Cocok untuk ruang tamu modern.',
+                'dimensions' => '120cm x 60cm x 45cm',
+                'wood_type' => null,
+                'finishing_type' => 'Powder Coating',
+                'estimated_production_days' => 5,
+                'base_price' => 1650000,
+                'images' => ['products/meja-kopi-kaca.jpg'],
+                'is_customizable' => false,
+                'is_active' => true,
+            ],
+
+            // Lemari (Category ID: 3)
+            [
+                'category_id' => 3,
+                'sku' => 'PRD-LMR-001',
+                'name' => 'Lemari Pakaian 3 Pintu',
+                'slug' => 'lemari-pakaian-3-pintu',
+                'description' => 'Lemari pakaian 3 pintu dengan cermin, laci, dan gantungan baju. Material solid dan tahan lama.',
+                'dimensions' => '150cm x 60cm x 200cm',
+                'wood_type' => 'Kayu Mahoni',
+                'finishing_type' => 'Melamine',
+                'estimated_production_days' => 14,
+                'base_price' => 4500000,
+                'images' => ['products/lemari-pakaian-3-pintu.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 3,
+                'sku' => 'PRD-LMR-002',
+                'name' => 'Lemari Buku Minimalis',
+                'slug' => 'lemari-buku-minimalis',
+                'description' => 'Lemari buku dengan 5 rak dan desain minimalis. Cocok untuk perpustakaan rumah atau kantor.',
+                'dimensions' => '100cm x 40cm x 180cm',
+                'wood_type' => 'Kayu Pinus',
+                'finishing_type' => 'Natural Varnish',
+                'estimated_production_days' => 8,
+                'base_price' => 2200000,
+                'images' => ['products/lemari-buku-minimalis.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+
+            // Tempat Tidur (Category ID: 4)
+            [
+                'category_id' => 4,
+                'sku' => 'PRD-TTD-001',
+                'name' => 'Tempat Tidur Queen Size Minimalis',
+                'slug' => 'tempat-tidur-queen-minimalis',
+                'description' => 'Tempat tidur queen size dengan desain minimalis. Termasuk headboard dan storage bawah.',
+                'dimensions' => '160cm x 200cm x 120cm',
+                'wood_type' => 'Kayu Jati',
+                'finishing_type' => 'Natural Politur',
+                'estimated_production_days' => 15,
+                'base_price' => 5500000,
+                'images' => ['products/tempat-tidur-queen.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 4,
+                'sku' => 'PRD-TTD-002',
+                'name' => 'Dipan Single Bed Anak',
+                'slug' => 'dipan-single-bed-anak',
+                'description' => 'Dipan single bed untuk anak dengan safety rail dan laci penyimpanan.',
+                'dimensions' => '100cm x 200cm x 100cm',
+                'wood_type' => 'Kayu Pinus',
+                'finishing_type' => 'Duco Warna',
+                'estimated_production_days' => 10,
+                'base_price' => 2800000,
+                'images' => ['products/dipan-single-anak.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+
+            // Rak (Category ID: 5)
+            [
+                'category_id' => 5,
+                'sku' => 'PRD-RAK-001',
+                'name' => 'Rak Display 5 Tingkat',
+                'slug' => 'rak-display-5-tingkat',
+                'description' => 'Rak display dengan 5 tingkat untuk pajangan dekorasi atau koleksi.',
+                'dimensions' => '80cm x 35cm x 150cm',
+                'wood_type' => 'Kayu Mahoni',
+                'finishing_type' => 'Natural Politur',
+                'estimated_production_days' => 6,
+                'base_price' => 1450000,
+                'images' => ['products/rak-display-5-tingkat.jpg'],
+                'is_customizable' => true,
+                'is_active' => true,
+            ],
+            [
+                'category_id' => 5,
+                'sku' => 'PRD-RAK-002',
+                'name' => 'Rak Dinding Industrial',
+                'slug' => 'rak-dinding-industrial',
+                'description' => 'Rak dinding dengan gaya industrial, kombinasi kayu dan metal. Set 3 pieces.',
+                'dimensions' => '60cm x 25cm x 15cm',
+                'wood_type' => 'Kayu Pinus',
+                'finishing_type' => 'Natural + Powder Coating',
+                'estimated_production_days' => 4,
+                'base_price' => 850000,
+                'images' => ['products/rak-dinding-industrial.jpg'],
+                'is_customizable' => false,
+                'is_active' => true,
+            ],
+        ];
+
+        foreach ($products as $productData) {
+            Product::create($productData);
+        }
+    }
+}
