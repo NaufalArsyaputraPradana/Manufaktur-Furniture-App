@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Order;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -29,6 +30,38 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             Log::error('Payment notification handling failed', ['error' => $e->getMessage()]);
             return response()->json(['status' => 'error', 'message' => 'Internal server error'], 500);
+        }
+    }
+
+    public function generateSnapToken(Request $request, Order $order): JsonResponse
+    {
+        try {
+            // Check if user is authenticated
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda harus login terlebih dahulu untuk melakukan pembayaran'
+                ], 401);
+            }
+
+            // Authorize: only owner or admin may request token
+            if ($user->role?->name === 'customer' && $order->user_id !== $user->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak berhak mengakses order ini'
+                ], 403);
+            }
+
+            $result = $this->paymentService->createMidtransTransaction($order);
+
+            return response()->json(['status' => 'success', 'data' => $result]);
+        } catch (\Exception $e) {
+            Log::error('Failed to generate snap token', ['error' => $e->getMessage()]);
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage() ?: 'Gagal membuat transaksi pembayaran'
+            ], 500);
         }
     }
 

@@ -55,13 +55,7 @@ Route::middleware('guest')->controller(AuthController::class)->group(function ()
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-/*
-|--------------------------------------------------------------------------
-| Payment Webhook
-|--------------------------------------------------------------------------
-*/
-Route::post('/payment/midtrans/notification', [CustomerPaymentController::class, 'handleNotification'])
-    ->name('payment.midtrans.notification');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -114,7 +108,6 @@ Route::middleware(['auth', 'role:customer,admin'])->prefix('customer/orders')->n
         Route::get('/', 'index')->name('index');
         Route::get('/{order}', 'show')->name('show');
         Route::patch('/{order}/cancel', 'cancel')->name('cancel');
-        Route::get('/{order}/track', 'track')->name('track');
         Route::get('/{order}/payment', 'showPayment')->name('payment');
         Route::post('/{order}/payment', 'processPayment')->name('payment.process');
     });
@@ -180,9 +173,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Admin Production Management (jika ada)
     Route::prefix('production')->name('production.')->controller(ProductionController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::get('/create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
-        Route::get('/{production}', 'show')->name('show');
         Route::post('/{production}/complete', 'complete')->name('complete');
     });
 });

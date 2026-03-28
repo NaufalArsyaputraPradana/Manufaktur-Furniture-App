@@ -10,6 +10,7 @@ use App\Models\OrderDetail;
 use App\Models\ProductionProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,8 +22,8 @@ class OrderTrackingController extends Controller
     public function index(): View
     {
         $orders = Order::with(['orderDetails.product', 'payment'])
-            ->when(auth()->user()?->role?->name === 'customer', function ($query) {
-                $query->where('user_id', auth()->id());
+            ->when(Auth::user()?->role?->name === 'customer', function ($query) {
+                $query->where('user_id', Auth::id());
             })
             ->latest()
             ->paginate(10);
@@ -49,34 +50,6 @@ class OrderTrackingController extends Controller
         ]);
 
         return view('customer.orders.show', compact('order'));
-    }
-
-    /**
-     * Melacak pesanan berdasarkan nomor order (Akses Publik).
-     */
-    public function track(Request $request): View|RedirectResponse
-    {
-        if ($request->isMethod('GET')) {
-            return view('customer.orders.track');
-        }
-
-        $validated = $request->validate([
-            'order_number' => 'required|string',
-            'email' => 'required|email',
-        ]);
-
-        $order = Order::with(['orderDetails.product', 'productionProcesses', 'user'])
-            ->where('order_number', $validated['order_number'])
-            ->whereHas('user', fn($q) => $q->where('email', $validated['email']))
-            ->first();
-
-        if (!$order) {
-            return back()
-                ->with('error', 'Pesanan tidak ditemukan. Pastikan nomor order dan alamat email Anda sudah benar.')
-                ->withInput();
-        }
-
-        return view('customer.orders.track-result', compact('order'));
     }
 
     /**
@@ -188,7 +161,7 @@ class OrderTrackingController extends Controller
 
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'status' => 'pending',
                 'subtotal' => $subtotal,
                 'total' => $subtotal,
@@ -315,7 +288,7 @@ class OrderTrackingController extends Controller
      */
     private function authorizeOrder(Order $order): void
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user && $user->role?->name === 'customer' && $order->user_id !== $user->id) {
             abort(403, 'Akses ditolak! Anda tidak memiliki izin untuk melihat pesanan ini.');

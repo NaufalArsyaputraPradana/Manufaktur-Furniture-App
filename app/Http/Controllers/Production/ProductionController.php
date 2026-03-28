@@ -9,6 +9,7 @@ use App\Models\ProductionProcess;
 use App\Models\ProductionSchedule;
 use App\Models\ProductionTodo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -20,7 +21,7 @@ class ProductionController extends Controller
      */
     private function userRole(): string
     {
-        $role = auth()->user()->role;
+        $role = Auth::user()?->role;
         return is_string($role) ? $role : ($role?->name ?? '');
     }
 
@@ -33,20 +34,11 @@ class ProductionController extends Controller
     }
 
     /**
-     * Cek apakah user adalah admin.
-     */
-    private function isAdmin(): bool
-    {
-        return $this->userRole() === 'admin';
-    }
-
-    /**
      * Menampilkan dashboard produksi.
      */
     public function index(): View
     {
-        $user   = auth()->user();
-        $userId = $user->id;
+        $userId = Auth::id() ?? 0;
 
         $baseQuery = ProductionProcess::with([
             'order:id,order_number',
@@ -115,7 +107,7 @@ class ProductionController extends Controller
      */
     public function updateStage(Request $request, ProductionProcess $process): RedirectResponse
     {
-        if ($this->isProductionStaff() && $process->assigned_to !== auth()->id()) {
+        if ($this->isProductionStaff() && $process->assigned_to !== Auth::id()) {
             abort(403, 'Anda tidak memiliki otoritas untuk mengubah proses ini.');
         }
 
@@ -145,7 +137,7 @@ class ProductionController extends Controller
 
             ProductionLog::create([
                 'production_process_id' => $process->id,
-                'user_id'               => auth()->id(),
+                'user_id'               => Auth::id(),
                 'stage'                 => $validated['stage'],
                 'action'                => $validated['action'],
                 'progress_percentage'   => $process->fresh()->progress_percentage,
@@ -163,7 +155,7 @@ class ProductionController extends Controller
      */
     public function startProduction(ProductionProcess $production): RedirectResponse
     {
-        if ($this->isProductionStaff() && $production->assigned_to !== auth()->id()) {
+        if ($this->isProductionStaff() && $production->assigned_to !== Auth::id()) {
             abort(403, 'Anda tidak diizinkan memulai proses ini.');
         }
 
@@ -181,7 +173,7 @@ class ProductionController extends Controller
 
             ProductionLog::create([
                 'production_process_id' => $production->id,
-                'user_id'               => auth()->id(),
+                'user_id'               => Auth::id(),
                 'stage'                 => $production->stage ?? 'cutting',
                 'action'                => 'started',
                 'progress_percentage'   => $production->progress_percentage,
@@ -197,7 +189,7 @@ class ProductionController extends Controller
      */
     public function complete(ProductionProcess $production): RedirectResponse
     {
-        if ($this->isProductionStaff() && $production->assigned_to !== auth()->id()) {
+        if ($this->isProductionStaff() && $production->assigned_to !== Auth::id()) {
             abort(403, 'Anda tidak diizinkan menyelesaikan proses ini.');
         }
 
@@ -210,7 +202,7 @@ class ProductionController extends Controller
 
             ProductionLog::create([
                 'production_process_id' => $production->id,
-                'user_id'               => auth()->id(),
+                'user_id'               => Auth::id(),
                 'stage'                 => 'completed',
                 'action'                => 'completed',
                 'progress_percentage'   => 100,
@@ -228,7 +220,7 @@ class ProductionController extends Controller
      */
     public function recordMaterialUsage(Request $request, ProductionProcess $production): RedirectResponse
     {
-        if ($this->isProductionStaff() && $production->assigned_to !== auth()->id()) {
+        if ($this->isProductionStaff() && $production->assigned_to !== Auth::id()) {
             abort(403, 'Otoritas ditolak.');
         }
 
@@ -241,7 +233,7 @@ class ProductionController extends Controller
 
         ProductionLog::create([
             'production_process_id' => $production->id,
-            'user_id'               => auth()->id(),
+            'user_id'               => Auth::id(),
             'stage'                 => $production->status,
             'action'                => 'in_progress',
             'progress_percentage'   => $production->progress_percentage,
@@ -251,23 +243,6 @@ class ProductionController extends Controller
 
         return redirect()->route('production.tracking.show', $production)
             ->with('success', 'Data pemakaian material telah tersimpan.');
-    }
-
-    /**
-     * Penugasan staff produksi (Admin only).
-     */
-    public function assign(Request $request, ProductionProcess $process): RedirectResponse
-    {
-        abort_unless($this->isAdmin(), 403, 'Akses terbatas untuk Administrator.');
-
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        $process->update(['assigned_to' => $validated['user_id']]);
-
-        return redirect()->route('production.tracking.show', $process)
-            ->with('success', 'Staff produksi berhasil ditugaskan.');
     }
 
     /**

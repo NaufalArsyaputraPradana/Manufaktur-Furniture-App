@@ -8,17 +8,22 @@ use App\Models\Product;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
     /**
-     * Menampilkan daftar produk.
+     * Display a listing of the resource.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
-        $query = Product::with('category');
+        $query = Product::with('category:id,name')
+            ->select('id', 'category_id', 'sku', 'name', 'base_price', 'is_active', 'created_at');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -37,7 +42,7 @@ class ProductController extends Controller
         }
 
         $products = $query->latest()->paginate(10)->withQueryString();
-        $categories = Category::orderBy('name')->get();
+        $categories = \Illuminate\Support\Facades\Cache::remember('admin.categories.active', 3600, fn() => Category::where('is_active', true)->orderBy('name')->get());
 
         return view('admin.products.index', compact('products', 'categories'));
     }
