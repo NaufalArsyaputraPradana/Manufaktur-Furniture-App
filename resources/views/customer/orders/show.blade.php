@@ -667,6 +667,10 @@
                                 </div>
 
                                 @if ($order->payment)
+                                    @php
+                                        $dpAmount = round($calculatedTotal * 50 / 100, 2);
+                                        $remainingAmount = $calculatedTotal - $dpAmount;
+                                    @endphp
                                     <div class="card border-0 bg-light mb-3">
                                         <div class="card-body p-4">
                                             <h6 class="text-muted mb-3 fw-bold">
@@ -696,17 +700,44 @@
                                                 <span class="text-muted">Tanggal</span>
                                                 <strong>{{ $order->payment->payment_date?->format('d M Y, H:i') ?? '-' }}</strong>
                                             </div>
-                                            <div class="payment-detail-row border-0 pb-0">
-                                                <span class="text-muted">Total Dibayar</span>
-                                                <h5 class="mb-0 text-success fw-bold">
-                                                    <span class="price-convert"
-                                                        data-price="{{ $order->payment->amount_paid ?? $order->payment->amount ?? $calculatedTotal }}"
-                                                        data-currency="IDR">
-                                                        Rp
-                                                        {{ number_format($order->payment->amount_paid ?? $order->payment->amount ?? $calculatedTotal, 0, ',', '.') }}
+                                            <div class="payment-detail-row border-bottom">
+                                                <span class="text-muted">Total Pesanan</span>
+                                                <strong class="text-dark">
+                                                    <span class="price-convert" data-price="{{ $calculatedTotal }}" data-currency="IDR">
+                                                        Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
                                                     </span>
-                                                </h5>
+                                                </strong>
                                             </div>
+                                            @if ($isPaid)
+                                                <div class="payment-detail-row pt-3">
+                                                    <span class="text-muted small">DP Dibayar (50%)</span>
+                                                    <strong class="text-success small">
+                                                        <span class="price-convert" data-price="{{ $dpAmount }}" data-currency="IDR">
+                                                            Rp {{ number_format($dpAmount, 0, ',', '.') }}
+                                                        </span>
+                                                    </strong>
+                                                </div>
+                                                <div class="payment-detail-row border-0 pb-0">
+                                                    <span class="text-muted small">Pelunasan Dibayar (50%)</span>
+                                                    <strong class="text-success small">
+                                                        <span class="price-convert" data-price="{{ $remainingAmount }}" data-currency="IDR">
+                                                            Rp {{ number_format($remainingAmount, 0, ',', '.') }}
+                                                        </span>
+                                                    </strong>
+                                                </div>
+                                            @else
+                                                <div class="payment-detail-row border-0 pb-0">
+                                                    <span class="text-muted">Total Dibayar</span>
+                                                    <h5 class="mb-0 text-success fw-bold">
+                                                        <span class="price-convert"
+                                                            data-price="{{ $order->payment->amount_paid ?? $order->payment->amount ?? $calculatedTotal }}"
+                                                            data-currency="IDR">
+                                                            Rp
+                                                            {{ number_format($order->payment->amount_paid ?? $order->payment->amount ?? $calculatedTotal, 0, ',', '.') }}
+                                                        </span>
+                                                    </h5>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 @endif
@@ -927,8 +958,11 @@
                                             <div class="payment-detail-row">
                                                 <span class="text-muted">DP yang Dibayar (50%)</span>
                                                 <strong class="text-success">
-                                                    <span class="price-convert" data-price="{{ $order->payment->amount_paid ?? 0 }}" data-currency="IDR">
-                                                        Rp {{ number_format($order->payment->amount_paid ?? 0, 0, ',', '.') }}
+                                                    @php
+                                                        $dpAmount = round($calculatedTotal * 50 / 100, 2);
+                                                    @endphp
+                                                    <span class="price-convert" data-price="{{ $dpAmount }}" data-currency="IDR">
+                                                        Rp {{ number_format($dpAmount, 0, ',', '.') }}
                                                     </span>
                                                 </strong>
                                             </div>
