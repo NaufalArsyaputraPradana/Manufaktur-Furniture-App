@@ -149,7 +149,7 @@
                                                         Penuh
                                                     </a>
 
-                                                    @if ($order->status === 'pending' && !$isPaid)
+                                                    @if ($order->status === 'pending' && optional($order->payment)->payment_status !== 'paid')
                                                         <a href="{{ route('customer.orders.payment', $order) }}"
                                                             class="btn btn-success fw-bold hover-lift shadow-sm">
                                                             <i class="bi bi-credit-card-fill me-2"
