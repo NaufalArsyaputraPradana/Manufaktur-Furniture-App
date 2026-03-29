@@ -146,7 +146,7 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <div class="form-check payment-choice border rounded-4 p-3 h-100">
-                                        <input class="form-check-input" type="radio" name="pay_mode" id="payMidtrans" value="midtrans" @if(!$isBalanceUi) checked @endif @if($isBalanceUi) disabled @endif>
+                                        <input class="form-check-input" type="radio" name="pay_mode" id="payMidtrans" value="midtrans" @if(!$isBalanceUi) checked @endif>
                                         <label class="form-check-label w-100 ms-2" for="payMidtrans">
                                             <strong>Bayar penuh (lunas) via Midtrans</strong>
                                             <small class="d-block text-muted">VA, e-wallet, kartu, QRIS — status <strong>paid</strong> dari gateway</small>
@@ -166,7 +166,7 @@
                                 @endif
                                 <div class="col-12">
                                     <div class="form-check payment-choice border rounded-4 p-3 h-100">
-                                        <input class="form-check-input" type="radio" name="pay_mode" id="payFullManual" value="manual_full" @if($isBalanceUi) checked @endif @if($isBalanceUi) disabled @endif>
+                                        <input class="form-check-input" type="radio" name="pay_mode" id="payFullManual" value="manual_full" @if($isBalanceUi) checked @endif>
                                         <label class="form-check-label w-100 ms-2" for="payFullManual">
                                             <strong>Transfer manual — Lunas sekaligus</strong>
                                             <small class="d-block text-muted">Bukti senilai total · verifikasi admin → <strong>paid</strong></small>
