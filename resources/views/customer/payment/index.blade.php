@@ -590,13 +590,19 @@
                 const manBtn = document.getElementById('manualSubmitBtn');
 
                 function sync() {
-                    if (isBalancePage) return;
                     const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
                     const manual = mode === 'manual_dp' || mode === 'manual_full';
+                    
+                    // Always sync visibility based on selected mode
                     if (bankBox) bankBox.classList.toggle('d-none', !manual);
                     if (manualFields) manualFields.classList.toggle('d-none', !manual);
-                    if (midBtn) midBtn.classList.toggle('d-none', manual);
-                    if (manBtn) manBtn.classList.toggle('d-none', !manual);
+                    
+                    // Only toggle button visibility if not on balance page
+                    if (!isBalancePage) {
+                        if (midBtn) midBtn.classList.toggle('d-none', manual);
+                        if (manBtn) manBtn.classList.toggle('d-none', !manual);
+                    }
+                    
                     if (channelField) {
                         if (mode === 'manual_dp') channelField.value = CHANNEL_MANUAL_DP;
                         else if (mode === 'manual_full') channelField.value = CHANNEL_MANUAL_FULL;
