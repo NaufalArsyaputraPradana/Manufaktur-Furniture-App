@@ -66,23 +66,32 @@ class PaymentController extends Controller
         }
     }
 
-    public function pendingVerification(): View
+    public function pendingVerification(Request $request): View
     {
-        // Pending payments - waiting for verification
-        $pendingPayments = Payment::with(['order.user', 'order.orderDetails.product'])
-            ->whereNotNull('payment_proof')
-            ->whereIn('payment_status', [Payment::STATUS_PENDING, Payment::STATUS_FULL_PENDING])
-            ->latest()
-            ->paginate(20);
+        $tab = $request->get('tab', 'pending');
+        $month = $request->get('month', now()->month);
+        $year = $request->get('year', now()->year);
 
-        // Completed payments - already verified (approved or rejected)
-        $completedPayments = Payment::with(['order.user', 'order.orderDetails.product'])
+        // Build base query with date filtering
+        $query = Payment::with(['order.user', 'order.orderDetails.product'])
             ->whereNotNull('payment_proof')
-            ->whereIn('payment_status', [Payment::STATUS_DP_PAID, Payment::STATUS_PAID, Payment::STATUS_FAILED])
-            ->latest()
-            ->paginate(20, ['*'], 'completed_page');
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month);
 
-        return view('admin.payments.pending', compact('pendingPayments', 'completedPayments'));
+        // Get payments based on tab
+        if ($tab === 'pending') {
+            // Menunggu Verifikasi - show only pending payments
+            $payments = $query->whereIn('payment_status', [Payment::STATUS_PENDING, Payment::STATUS_FULL_PENDING])
+                ->latest()
+                ->paginate(20);
+        } else {
+            // Riwayat Pembayaran - show all completed/verified payments
+            $payments = $query->whereIn('payment_status', [Payment::STATUS_DP_PAID, Payment::STATUS_PAID, Payment::STATUS_FAILED])
+                ->latest()
+                ->paginate(20);
+        }
+
+        return view('admin.payments.pending', compact('payments', 'tab', 'month', 'year'));
     }
 
     public function show(Payment $payment): View
