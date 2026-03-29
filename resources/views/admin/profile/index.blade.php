@@ -114,42 +114,44 @@
 
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label for="name" class="form-label fw-semibold">Nama Lengkap <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('name') is-invalid @enderror"
-                                        id="name" name="name" value="{{ old('name', $user->name) }}" required>
-                                    @error('name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="name" 
+                                        label="Nama Lengkap"
+                                        type="text"
+                                        :value="old('name', $user->name)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="email" class="form-label fw-semibold">Alamat Email <span
-                                            class="text-danger">*</span></label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                        id="email" name="email" value="{{ old('email', $user->email) }}" required>
-                                    @error('email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="email" 
+                                        label="Alamat Email"
+                                        type="email"
+                                        :value="old('email', $user->email)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="phone" class="form-label fw-semibold">No. Telepon / WA</label>
-                                    <input type="text" class="form-control @error('phone') is-invalid @enderror"
-                                        id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
-                                        placeholder="Contoh: 08123456789">
-                                    @error('phone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="phone" 
+                                        label="No. Telepon / WA"
+                                        type="tel"
+                                        placeholder="Contoh: 08123456789"
+                                        :value="old('phone', $user->phone)"
+                                        :errors="$errors" />
                                 </div>
 
                                 <div class="col-12">
-                                    <label for="address" class="form-label fw-semibold">Alamat Tinggal</label>
-                                    <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address" rows="3"
-                                        placeholder="Alamat lengkap...">{{ old('address', $user->address) }}</textarea>
-                                    @error('address')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="address" 
+                                        label="Alamat Tinggal"
+                                        type="textarea"
+                                        rows="3"
+                                        placeholder="Alamat lengkap..."
+                                        :value="old('address', $user->address)"
+                                        :errors="$errors" />
                                 </div>
                             </div>
 
@@ -174,53 +176,34 @@
                             @csrf
                             @method('PATCH')
 
-                            <div class="mb-3">
-                                <label for="current_password" class="form-label fw-semibold">Password Saat Ini <span
-                                        class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="password"
-                                        class="form-control @error('current_password') is-invalid @enderror"
-                                        id="current_password" name="current_password" required>
-                                    <button class="btn btn-outline-secondary" type="button"
-                                        onclick="togglePassword('current_password')">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    @error('current_password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
+                            <x-form-input 
+                                name="current_password" 
+                                label="Password Saat Ini"
+                                type="password"
+                                :value="old('current_password')"
+                                :errors="$errors"
+                                required />
 
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label for="password" class="form-label fw-semibold">Password Baru <span
-                                            class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <input type="password"
-                                            class="form-control @error('password') is-invalid @enderror" id="password"
-                                            name="password" required>
-                                        <button class="btn btn-outline-secondary" type="button"
-                                            onclick="togglePassword('password')">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        @error('password')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="form-text small"><i class="bi bi-info-circle me-1"></i>Minimal 8 karakter
-                                        unik.</div>
+                                    <x-form-input 
+                                        name="password" 
+                                        label="Password Baru"
+                                        type="password"
+                                        :value="old('password')"
+                                        :errors="$errors"
+                                        help="Minimal 8 karakter unik."
+                                        required />
                                 </div>
+
                                 <div class="col-md-6">
-                                    <label for="password_confirmation" class="form-label fw-semibold">Konfirmasi Password
-                                        Baru <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <input type="password" class="form-control" id="password_confirmation"
-                                            name="password_confirmation" required>
-                                        <button class="btn btn-outline-secondary" type="button"
-                                            onclick="togglePassword('password_confirmation')">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </div>
+                                    <x-form-input 
+                                        name="password_confirmation" 
+                                        label="Konfirmasi Password Baru"
+                                        type="password"
+                                        :value="old('password_confirmation')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                             </div>
 
@@ -353,11 +336,13 @@
                             <strong>Peringatan!</strong> Tindakan ini tidak dapat dibatalkan. Seluruh data transaksi dan
                             riwayat login Anda akan dihapus permanen dari sistem.
                         </div>
-                        <div class="mb-0">
-                            <label for="del_password" class="form-label fw-bold">Konfirmasi Password Anda</label>
-                            <input type="password" name="password" id="del_password"
-                                class="form-control form-control-lg" required placeholder="Masukkan password saat ini...">
-                        </div>
+                        <x-form-input
+                            type="password"
+                            name="password"
+                            label="Konfirmasi Password Anda"
+                            placeholder="Masukkan password saat ini..."
+                            required
+                        />
                     </div>
                     <div class="modal-footer border-0 bg-light">
                         <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batalkan</button>

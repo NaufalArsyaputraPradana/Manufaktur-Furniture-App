@@ -524,12 +524,15 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Alasan Penolakan <span class="text-danger">*</span></label>
-                            <textarea name="notes" class="form-control rounded-2" rows="4" required
-                                placeholder="Jelaskan alasan penolakan agar pelanggan dapat memperbaiki..."></textarea>
-                            <small class="text-muted">Contoh: Bukti tidak jelas, nominal tidak sesuai, nama rekening berbeda, bukti ganda</small>
-                        </div>
+                        <x-form-input
+                            type="textarea"
+                            name="notes"
+                            label="Alasan Penolakan"
+                            help="Jelaskan alasan penolakan agar pelanggan dapat memperbaiki. Contoh: Bukti tidak jelas, nominal tidak sesuai, nama rekening berbeda, bukti ganda"
+                            placeholder="Jelaskan alasan penolakan agar pelanggan dapat memperbaiki..."
+                            rows="4"
+                            required
+                        />
                     </div>
                     <div class="modal-footer bg-light border-top">
                         <button type="button" class="btn btn-secondary rounded-2" data-bs-dismiss="modal">Batal</button>

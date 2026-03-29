@@ -414,21 +414,31 @@
                             @csrf
                             @method('PATCH')
                             <div class="col-12">
-                                <label class="form-label small fw-bold text-muted text-uppercase">Status kirim</label>
-                                <select name="shipping_status" class="form-select">
-                                    <option value="">— Belum diatur —</option>
-                                    <option value="processing" {{ old('shipping_status', $order->shipping_status) === 'processing' ? 'selected' : '' }}>Diproses</option>
-                                    <option value="shipped" {{ old('shipping_status', $order->shipping_status) === 'shipped' ? 'selected' : '' }}>Dikirim</option>
-                                    <option value="delivered" {{ old('shipping_status', $order->shipping_status) === 'delivered' ? 'selected' : '' }}>Sampai</option>
-                                </select>
+                                <x-form-input
+                                    name="shipping_status"
+                                    type="select"
+                                    label="Status kirim"
+                                    :options="['processing' => 'Diproses', 'shipped' => 'Dikirim', 'delivered' => 'Sampai']"
+                                    :value="old('shipping_status', $order->shipping_status)"
+                                />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted text-uppercase">Ekspedisi</label>
-                                <input type="text" name="courier" class="form-control" value="{{ old('courier', $order->courier) }}" placeholder="JNE, SiCepat, dll.">
+                                <x-form-input
+                                    name="courier"
+                                    type="text"
+                                    label="Ekspedisi"
+                                    placeholder="JNE, SiCepat, dll."
+                                    :value="old('courier', $order->courier)"
+                                />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted text-uppercase">No. resi</label>
-                                <input type="text" name="tracking_number" class="form-control" value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="Nomor resi">
+                                <x-form-input
+                                    name="tracking_number"
+                                    type="text"
+                                    label="No. resi"
+                                    placeholder="Nomor resi"
+                                    :value="old('tracking_number', $order->tracking_number)"
+                                />
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary btn-sm shadow-sm">
@@ -492,19 +502,28 @@
                     </div>
                     <div class="modal-body p-4">
                         <div class="mb-3">
-                            <label for="statusSelect" class="form-label fw-bold">Status Baru</label>
-                            <select name="status" id="statusSelect" class="form-select">
-                                <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Pending (Menunggu)</option>
-                                <option value="confirmed" {{ $order->status == 'confirmed' ? 'selected' : '' }}>Confirmed (Dikonfirmasi)</option>
-                                <option value="in_production" {{ $order->status == 'in_production' ? 'selected' : '' }}>In Production (Produksi)</option>
-                                <option value="completed" {{ $order->status == 'completed' ? 'selected' : '' }}>Completed (Selesai)</option>
-                                <option value="on_hold" {{ $order->status == 'on_hold' ? 'selected' : '' }}>On Hold (Ditahan)</option>
-                            </select>
+                            <x-form-input
+                                name="status"
+                                label="Status Baru"
+                                type="select"
+                                :options="[
+                                    'pending' => 'Pending (Menunggu)',
+                                    'confirmed' => 'Confirmed (Dikonfirmasi)',
+                                    'in_production' => 'In Production (Produksi)',
+                                    'completed' => 'Completed (Selesai)',
+                                    'on_hold' => 'On Hold (Ditahan)'
+                                ]"
+                                :value="$order->status"
+                            />
                         </div>
-                        <div class="mb-0">
-                            <label for="notesTextarea" class="form-label fw-bold">Catatan Perubahan <small class="text-muted fw-normal">(Opsional)</small></label>
-                            <textarea name="notes" id="notesTextarea" class="form-control" rows="3" placeholder="Masukkan alasan atau detail perubahan status..."></textarea>
-                        </div>
+                        <x-form-input
+                            type="textarea"
+                            name="notes"
+                            label="Catatan Perubahan"
+                            help="Opsional - Masukkan alasan atau detail perubahan status"
+                            rows="3"
+                            placeholder="Masukkan alasan atau detail perubahan status..."
+                        />
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Batal</button>
