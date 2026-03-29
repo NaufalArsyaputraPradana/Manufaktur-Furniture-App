@@ -175,7 +175,7 @@
                                 </div>
                                 @if($isBalanceUi)
                                     <div class="col-12">
-                                        <div class="alert alert-info border-0 rounded-4 mb-0 small">
+                                        <div class="info-box info-box-blue border-0 rounded-4 mb-0 small">
                                             Selesaikan <strong>pelunasan</strong> dengan mengunggah bukti transfer di bawah.
                                         </div>
                                     </div>
@@ -190,11 +190,11 @@
                         <div class="card-body p-4">
                             @if($isFullPendingUi)
                                 {{-- FULL PENDING: Show message, don't allow upload --}}
-                                <div class="alert alert-warning border-0 rounded-4 mb-0">
+                                <div class="info-box info-box-warning border-0 rounded-4 mb-0">
                                     <div class="d-flex align-items-start">
                                         <i class="bi bi-hourglass-split text-warning me-3 mt-1" style="font-size:1.5rem;" aria-hidden="true"></i>
                                         <div>
-                                            <h5 class="alert-heading fw-bold mb-2">Menunggu Konfirmasi Pelunasan</h5>
+                                            <h5 class="fw-bold mb-2">Menunggu Konfirmasi Pelunasan</h5>
                                             <p class="mb-2">Bukti pelunasan Anda telah diterima dan sedang menunggu verifikasi admin. Proses verifikasi biasanya memakan waktu 1-2 hari kerja.</p>
                                             <p class="mb-0 small text-muted"><i class="bi bi-info-circle me-1"></i> <strong>Jangan unggah bukti lagi.</strong> Tim kami sedang memproses pembayaran Anda.</p>
                                         </div>
@@ -267,7 +267,7 @@
                         </div>
                     </div>
 
-                    <div class="alert alert-warning rounded-4 border-0 mt-4" role="alert">
+                    <div class="info-box info-box-warning rounded-4 border-0 mt-4">
                         <div class="d-flex align-items-start">
                             <i class="bi bi-exclamation-triangle-fill me-2 mt-1 shrink-0" aria-hidden="true"></i>
                             <div>
@@ -529,6 +529,34 @@
         }
 
         /* ============================================
+           INFO BOX - CUSTOM ALERT-LIKE STYLING
+           (NOT USING .alert CLASS TO AVOID AUTO-CLOSE)
+           ============================================ */
+        .info-box {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            padding: 1rem !important;
+            margin-bottom: 1rem;
+        }
+
+        .info-box-blue {
+            background-color: #d1ecf1 !important;
+            color: #0c5460 !important;
+            border: 1px solid #bee5eb !important;
+        }
+
+        .info-box-warning {
+            background-color: #fff3cd !important;
+            color: #856404 !important;
+            border: 1px solid #ffeeba !important;
+        }
+
+        .info-box .fw-bold {
+            font-weight: 600;
+        }
+
+                /* ============================================
            PAYMENT PROOF PREVIEW
            ============================================ */
         .payment-proof-preview {
