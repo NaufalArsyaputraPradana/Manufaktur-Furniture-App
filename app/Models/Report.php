@@ -12,34 +12,32 @@ class Report extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name',
-        'type',
-        'description',
-        'user_id',
-        'filters',
-        'data',
+        'report_type',
+        'title',
+        'start_date',
+        'end_date',
         'status',
-        'generated_at',
-        'export_format',
-        'is_scheduled',
-        'schedule_frequency',
+        'data',
+        'filters',
+        'generated_by',
     ];
 
     protected $casts = [
         'filters' => 'array',
         'data' => 'array',
-        'is_scheduled' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
         'generated_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
+    public function generatedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'generated_by');
     }
 
     public function scopeByType($query, string $type)
     {
-        return $query->where('type', $type);
+        return $query->where('report_type', $type);
     }
 
     public function scopeByStatus($query, string $status)

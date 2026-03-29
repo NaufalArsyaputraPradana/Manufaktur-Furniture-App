@@ -13,6 +13,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
@@ -510,31 +511,27 @@ class ReportController extends Controller
     }
 
     /**
-     * Export report as PDF (placeholder)
+     * Export report as PDF using dompdf
      */
-    private function exportPDF(Report $report): StreamedResponse
+    private function exportPDF(Report $report)
     {
-        // Placeholder - implement with dompdf or similar
-        return new StreamedResponse(function () use ($report) {
-            echo "PDF Export for: " . $report->title;
-        }, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="report-' . $report->id . '.pdf"',
-        ]);
+        $filename = "report-{$report->report_type}-" . now()->format('YmdHis') . ".pdf";
+        
+        $html = view('admin.reports.exports.pdf', [
+            'report' => $report,
+        ])->render();
+
+        return \PDF::loadHTML($html)->download($filename);
     }
 
     /**
-     * Export report as Excel (placeholder)
+     * Export report as Excel (placeholder for future library integration)
      */
     private function exportExcel(Report $report): StreamedResponse
     {
-        // Placeholder - implement with maatwebsite/excel or similar
-        return new StreamedResponse(function () use ($report) {
-            echo "Excel Export for: " . $report->title;
-        }, 200, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="report-' . $report->id . '.xlsx"',
-        ]);
+        // TODO: Implement with maatwebsite/excel library
+        // For now, return CSV as alternative
+        return $this->exportCSV($report);
     }
 
     /**
