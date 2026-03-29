@@ -41,6 +41,9 @@
 
 <body>
 
+    {{-- Page Loader --}}
+    @include('components.page-loader')
+
     <x-layouts.customer-navbar />
 
     <main id="main-content">
@@ -58,6 +61,9 @@
     <!-- JS Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {{-- Loader Utilities --}}
+    @include('components.loader-utilities')
 
     <!-- Google Translate Initialization -->
     <script type="text/javascript">

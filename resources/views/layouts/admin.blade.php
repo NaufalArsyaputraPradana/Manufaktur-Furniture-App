@@ -24,6 +24,9 @@
 </head>
 
 <body>
+    {{-- Page Loader --}}
+    @include('components.page-loader')
+
     <!-- Sidebar Partial -->
     <div id="sidebar" class="sidebar">
         <x-layouts.admin-sidebar />
@@ -68,6 +71,9 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {{-- Loader Utilities --}}
+    @include('components.loader-utilities')
 
     <script>
         @include('layouts.admin.partials.layout-scripts')
