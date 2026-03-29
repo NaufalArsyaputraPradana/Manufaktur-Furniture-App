@@ -38,6 +38,7 @@
                                 <tr>
                                     <th class="ps-4 py-3">Order</th>
                                     <th>Pelanggan</th>
+                                    <th>Tipe Pembayaran</th>
                                     <th>Metode</th>
                                     <th>Nominal</th>
                                     <th class="text-end pe-4">Aksi</th>
@@ -45,6 +46,12 @@
                             </thead>
                             <tbody>
                                 @foreach ($payments as $payment)
+                                    @php
+                                        $isDP = in_array($payment->payment_channel, [\App\Models\Payment::CHANNEL_MANUAL_DP, \App\Models\Payment::CHANNEL_MIDTRANS]);
+                                        $totalOrder = $payment->order->orderDetails->sum(fn($d) => $d->unit_price * $d->quantity);
+                                        $dpAmount = round($totalOrder * 50 / 100, 2);
+                                        $displayAmount = $isDP ? $dpAmount : $totalOrder - $dpAmount;
+                                    @endphp
                                     <tr>
                                         <td class="ps-4">
                                             <a href="{{ route('admin.orders.show', $payment->order) }}" class="fw-bold text-primary text-decoration-none">
@@ -52,8 +59,19 @@
                                             </a>
                                         </td>
                                         <td>{{ $payment->order->user->name ?? '-' }}</td>
+                                        <td>
+                                            @if ($isDP)
+                                                <span class="badge bg-info rounded-pill">
+                                                    <i class="bi bi-hourglass-split me-1"></i>DP (50%)
+                                                </span>
+                                            @else
+                                                <span class="badge bg-warning rounded-pill text-dark">
+                                                    <i class="bi bi-check-circle me-1"></i>Pelunasan (50%)
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td>{{ $payment->payment_method_name ?? ucfirst($payment->payment_method ?? '-') }}</td>
-                                        <td class="fw-bold text-success">Rp {{ number_format($payment->amount ?? 0, 0, ',', '.') }}</td>
+                                        <td class="fw-bold text-success">Rp {{ number_format($displayAmount, 0, ',', '.') }}</td>
                                         <td class="text-end pe-4">
                                             <a href="{{ route('admin.payments.show', $payment) }}" class="btn btn-sm btn-primary">
                                                 <i class="bi bi-eye me-1"></i>Verifikasi
