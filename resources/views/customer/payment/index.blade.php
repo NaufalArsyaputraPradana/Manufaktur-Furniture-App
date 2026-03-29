@@ -182,7 +182,8 @@
                                 @endif
                             </div>
 
-                            <div id="manualBankBox" class="alert alert-light border rounded-4 mt-4 small {{ $isBalanceUi ? '' : 'd-none' }}">
+                            {{-- Bank details (shown when manual transfer is selected) --}}
+                            <div id="manualBankBox" class="alert alert-light border rounded-4 mt-4 small d-none">
                                 <div class="fw-bold text-uppercase text-muted mb-2">Rekening tujuan</div>
                                 <div><strong>{{ ($bank ?? [])['name'] ?? '-' }}</strong> — a/n {{ ($bank ?? [])['holder'] ?? '-' }}</div>
                                 <div class="font-monospace fs-5 fw-bold">{{ ($bank ?? [])['account'] ?? '-' }}</div>
