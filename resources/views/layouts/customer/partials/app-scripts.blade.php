@@ -125,7 +125,9 @@ const CurrencyConverter = {
 document.addEventListener('DOMContentLoaded', () => {
     CurrencyConverter.init();
 
-    document.querySelectorAll('.alert').forEach(alert => {
+    // Auto-close session alerts ONLY (success/error), NOT structural elements
+    // Use .alert-dismissible to indicate alerts that should auto-close
+    document.querySelectorAll('.alert.alert-dismissible').forEach(alert => {
         setTimeout(() => {
             const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
             if (bsAlert) bsAlert.close();

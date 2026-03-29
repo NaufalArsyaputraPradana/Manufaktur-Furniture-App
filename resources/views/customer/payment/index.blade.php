@@ -213,7 +213,7 @@
 
                                 {{-- BANK DETAILS SECTION - ALWAYS VISIBLE ON BALANCE PAGE, INDEPENDENT FROM MANUAL FIELDS --}}
                                 @if($isBalanceUi)
-                                <div id="bankDetailsCard" class="alert alert-light border rounded-4 mb-4 small" style="display: block !important; visibility: visible !important;">
+                                <div id="bankDetailsCard" class="bank-details-card border rounded-4 mb-4 small" style="display: block !important; visibility: visible !important;">
                                     <div class="fw-bold text-uppercase text-muted mb-2">
                                         <i class="bi bi-bank me-2" aria-hidden="true"></i>Rekening tujuan transfer
                                     </div>
@@ -512,6 +512,20 @@
                 transform: scale(1);
                 opacity: 1;
             }
+        }
+
+        /* ============================================
+           BANK DETAILS CARD - CUSTOM STYLING
+           (NOT USING .alert CLASS TO AVOID AUTO-CLOSE)
+           ============================================ */
+        .bank-details-card {
+            background-color: #f8f9fa !important;
+            padding: 1rem !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            border-color: #dee2e6 !important;
+            border-width: 1px !important;
         }
 
         /* ============================================
