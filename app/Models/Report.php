@@ -5,31 +5,45 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Report extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'report_type',
-        'title',
-        'start_date',
-        'end_date',
+        'name',
+        'type',
+        'description',
+        'user_id',
+        'filters',
         'data',
-        'generated_by',
+        'status',
+        'generated_at',
+        'export_format',
+        'is_scheduled',
+        'schedule_frequency',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'filters' => 'array',
+        'data' => 'array',
+        'is_scheduled' => 'boolean',
+        'generated_at' => 'datetime',
+    ];
+
+    public function user(): BelongsTo
     {
-        return [
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'data' => 'array',
-        ];
+        return $this->belongsTo(User::class);
     }
 
-    public function generatedBy(): BelongsTo
+    public function scopeByType($query, string $type)
     {
-        return $this->belongsTo(User::class, 'generated_by');
+        return $query->where('type', $type);
+    }
+
+    public function scopeByStatus($query, string $status)
+    {
+        return $query->where('status', $status);
     }
 }
