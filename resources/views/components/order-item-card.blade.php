@@ -7,32 +7,37 @@
     // Get product reference
     $prod = $product ?? $detail->product;
     
-    // Determine thumbnail source
-    $thumbSrc = null;
+    // Image handling - same pattern as customer/orders/show.blade.php
+    $customImagePath = null;
+    $productImagePath = null;
 
     // 1. Check custom design image
-    if ($detail->is_custom && !empty($detail->custom_specifications)) {
-        $specs = is_string($detail->custom_specifications)
+    if ($detail->is_custom && $detail->custom_specifications) {
+        $detailSpecs = is_string($detail->custom_specifications)
             ? json_decode($detail->custom_specifications, true)
             : $detail->custom_specifications;
-
-        if (!empty($specs['design_image']) && 
-            \Illuminate\Support\Facades\Storage::disk('public')->exists($specs['design_image'])) {
-            $thumbSrc = asset('storage/' . $specs['design_image']);
-        }
+        $customImagePath = $detailSpecs['design_image'] ?? null;
     }
 
     // 2. Fallback to product image
-    if (!$thumbSrc && $prod) {
-        if (!empty($prod->images) && is_array($prod->images)) {
-            $thumbSrc = asset('storage/' . $prod->images[0]);
-        } elseif (!empty($prod->image)) {
-            $thumbSrc = asset('storage/' . $prod->image);
+    if (!$customImagePath && $prod?->images) {
+        $imgs = is_string($prod->images)
+            ? json_decode($prod->images, true) ?? []
+            : $prod->images;
+        $first = is_array($imgs) ? $imgs[0] ?? null : $imgs->first();
+        if ($first) {
+            $productImagePath = is_object($first)
+                ? $first->image_path ?? null
+                : (is_array($first)
+                    ? $first['image_path'] ?? null
+                    : (is_string($first)
+                        ? $first
+                        : null));
         }
     }
 
     // Format unit price
-    $unitPrice = $detail->unit_price ?? $prod->base_price ?? $prod->price ?? 0;
+    $unitPrice = $detail->unit_price ?? $prod?->base_price ?? $prod?->price ?? 0;
     $subtotal = $detail->subtotal ?? ($unitPrice * $detail->quantity);
     $formattedUnitPrice = 'Rp ' . number_format($unitPrice, 0, ',', '.');
     $formattedSubtotal = 'Rp ' . number_format($subtotal, 0, ',', '.');
@@ -42,23 +47,44 @@
     <div class="card-body p-3">
         <div class="row g-3 align-items-start">
             
-            {{-- Thumbnail --}}
+            {{-- Product Image --}}
             <div class="col-auto">
-                @if ($thumbSrc)
-                    <img src="{{ $thumbSrc }}"
-                        alt="{{ $prod->name ?? 'Produk' }}"
-                        class="rounded-2"
-                        loading="lazy"
-                        style="width: 80px; height: 80px; object-fit: cover;"
-                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="d-none rounded-2 align-items-center justify-content-center text-white"
-                        style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <i class="bi bi-image" aria-hidden="true"></i>
+                @if ($customImagePath)
+                    <div class="product-image-container" style="width: 90px; height: 90px; border-radius: .75rem;">
+                        <img src="{{ asset('storage/' . $customImagePath) }}"
+                            alt="Custom Design - {{ $detail->product_name }}"
+                            class="product-thumbnail"
+                            loading="lazy"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: .75rem;"
+                            onerror="this.parentElement.classList.add('img-error')">
+                        <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2"
+                            style="font-size:.7rem; z-index:2;">
+                            <i class="bi bi-pencil-square me-1"></i>Custom
+                        </span>
+                        <div class="product-image-overlay"
+                            style="position: absolute; inset: 0; background: rgba(102, 126, 234, .85); border-radius: .75rem; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .3s ease; flex-direction: column;">
+                            <i class="bi bi-zoom-in fs-5 text-white mb-2" aria-hidden="true"></i>
+                            <p class="text-white small mb-0 fw-bold">Perbesar</p>
+                        </div>
+                    </div>
+                @elseif ($productImagePath)
+                    <div class="product-image-container" style="width: 90px; height: 90px; border-radius: .75rem; cursor: pointer;">
+                        <img src="{{ asset('storage/' . $productImagePath) }}"
+                            alt="{{ $prod?->name ?? 'Produk' }}"
+                            class="product-thumbnail"
+                            loading="lazy"
+                            style="width: 100%; height: 100%; object-fit: cover; border-radius: .75rem;"
+                            onerror="this.parentElement.classList.add('img-error')">
+                        <div class="product-image-overlay"
+                            style="position: absolute; inset: 0; background: rgba(102, 126, 234, .85); border-radius: .75rem; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .3s ease; flex-direction: column;">
+                            <i class="bi bi-zoom-in fs-5 text-white mb-2" aria-hidden="true"></i>
+                            <p class="text-white small mb-0 fw-bold">Perbesar</p>
+                        </div>
                     </div>
                 @else
-                    <div class="rounded-2 d-flex align-items-center justify-content-center text-white"
-                        style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <i class="bi bi-image" aria-hidden="true"></i>
+                    <div class="product-image-placeholder" style="width: 90px; height: 90px; border-radius: .75rem; background: #f8f9fa; border: 2px dashed #dee2e6; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <i class="bi bi-image text-muted" style="font-size: 1.5rem;" aria-hidden="true"></i>
+                        <small class="text-muted mt-1">No Image</small>
                     </div>
                 @endif
             </div>
