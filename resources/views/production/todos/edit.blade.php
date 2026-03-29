@@ -34,48 +34,38 @@
                     <form action="{{ route('staff.production.todos.update', $todo) }}" method="POST" id="todoEditForm">
                         @csrf
                         @method('PUT')
-                        <div class="mb-3">
-                            <label for="title" class="form-label fw-bold">Judul Tugas <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('title') is-invalid @enderror" id="title"
-                                name="title" value="{{ old('title', $todo->title) }}" required>
-                            @error('title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input 
+                            name="title" 
+                            label="Judul Tugas"
+                            :value="old('title', $todo->title)"
+                            :errors="$errors"
+                            required />
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label fw-bold">Deskripsi</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                rows="4">{{ old('description', $todo->description) }}</textarea>
-                            @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input 
+                            name="description" 
+                            label="Deskripsi"
+                            type="textarea"
+                            :value="old('description', $todo->description)"
+                            rows="4"
+                            :errors="$errors" />
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="deadline" class="form-label fw-bold">Deadline</label>
-                                <input type="datetime-local" class="form-control @error('deadline') is-invalid @enderror"
-                                    id="deadline" name="deadline"
-                                    value="{{ old('deadline', optional($todo->deadline)->format('Y-m-d\TH:i')) }}">
-                                @error('deadline')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="deadline" 
+                                    label="Deadline"
+                                    type="datetime-local"
+                                    :value="old('deadline', optional($todo->deadline)->format('Y-m-d\TH:i'))"
+                                    :errors="$errors" />
                             </div>
                             <div class="col-md-6">
-                                <label for="status" class="form-label fw-bold">Status</label>
-                                <select name="status" id="status"
-                                    class="form-select @error('status') is-invalid @enderror">
-                                    @foreach ($statusOptions as $status)
-                                        <option value="{{ $status }}"
-                                            {{ old('status', $todo->status) == $status ? 'selected' : '' }}>
-                                            {{ ucfirst(str_replace('_', ' ', $status)) }}</option>
-                                    @endforeach
-                                </select>
-                                @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="status" 
+                                    label="Status"
+                                    type="select"
+                                    :options="collect($statusOptions)->mapWithKeys(function($status) { return [$status => ucfirst(str_replace('_', ' ', $status))]; })"
+                                    :value="old('status', $todo->status)"
+                                    :errors="$errors" />
                             </div>
                         </div>
 

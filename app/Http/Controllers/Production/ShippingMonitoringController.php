@@ -62,19 +62,31 @@ class ShippingMonitoringController extends Controller
         }
 
         $data = $request->validated();
-        $path = null;
+        $documentationPaths = [];
 
+        // Handle multiple documentation files
         if ($request->hasFile('documentation')) {
-            $path = $request->file('documentation')->store('shipping-docs', 'public');
+            $files = $request->file('documentation');
+            // Ensure it's an array
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+
+            foreach ($files as $file) {
+                $path = $file->store('shipping-docs', 'public');
+                if ($path) {
+                    $documentationPaths[] = $path;
+                }
+            }
         }
 
-        DB::transaction(function () use ($order, $data, $path, $request) {
+        DB::transaction(function () use ($order, $data, $documentationPaths, $request) {
             OrderShippingLog::create([
                 'order_id' => $order->id,
                 'stage' => $data['stage'],
                 'status' => 'completed',
                 'notes' => $data['notes'] ?? null,
-                'documentation' => $path,
+                'documentation' => count($documentationPaths) > 0 ? json_encode($documentationPaths) : null,
                 'courier_note' => $data['courier_note'] ?? null,
                 'tracking_note' => $data['tracking_note'] ?? null,
                 'recorded_by' => $request->user()->id,

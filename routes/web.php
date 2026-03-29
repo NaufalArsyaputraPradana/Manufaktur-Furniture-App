@@ -10,7 +10,7 @@ use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
 use App\Http\Controllers\Customer\OrderTrackingController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
-use App\Http\Controllers\Customer\PaymentController as CustomerPaymentController;
+use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
@@ -162,7 +162,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('bank-accounts', BankAccountController::class);
 
     // Payment Verification
-    Route::prefix('payments')->name('payments.')->controller(CustomerPaymentController::class)->group(function () {
+    Route::prefix('payments')->name('payments.')->controller(AdminPaymentController::class)->group(function () {
         Route::get('/pending', 'pendingVerification')->name('pending');
         Route::get('/{payment}', 'show')->name('show');
         Route::post('/{payment}/verify', 'verify')->name('verify');

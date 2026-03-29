@@ -48,64 +48,51 @@
                         <div class="card-body p-4">
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
-                                    <label for="user_id" class="form-label fw-bold">Pelanggan <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select @error('user_id') is-invalid @enderror" id="user_id"
-                                        name="user_id" required>
-                                        @foreach ($customers as $customer)
-                                            <option value="{{ $customer->id }}"
-                                                {{ old('user_id', $order->user_id) == $customer->id ? 'selected' : '' }}>
-                                                {{ $customer->name }} ({{ $customer->email }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('user_id')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="user_id" 
+                                        label="Pelanggan"
+                                        type="select"
+                                        :options="$customers->pluck('name', 'id')"
+                                        :value="old('user_id', $order->user_id)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="order_date" class="form-label fw-bold">Tanggal Order <span
-                                            class="text-danger">*</span></label>
-                                    <input type="date" class="form-control @error('order_date') is-invalid @enderror"
-                                        id="order_date" name="order_date"
-                                        value="{{ old('order_date', $order->order_date ? $order->order_date->format('Y-m-d') : '') }}"
-                                        required>
-                                    @error('order_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="order_date" 
+                                        label="Tanggal Order"
+                                        type="date"
+                                        :value="old('order_date', $order->order_date ? $order->order_date->format('Y-m-d') : '')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="estimated_delivery_date" class="form-label fw-bold">Estimasi Selesai</label>
-                                <input type="date"
-                                    class="form-control @error('estimated_delivery_date') is-invalid @enderror"
-                                    id="estimated_delivery_date" name="estimated_delivery_date"
-                                    value="{{ old('estimated_delivery_date', $order->expected_completion_date ? $order->expected_completion_date->format('Y-m-d') : '') }}">
-                                <div class="form-text">Tanggal perkiraan pesanan siap kirim.</div>
-                                @error('estimated_delivery_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="estimated_delivery_date" 
+                                label="Estimasi Selesai"
+                                type="date"
+                                :value="old('estimated_delivery_date', $order->expected_completion_date ? $order->expected_completion_date->format('Y-m-d') : '')"
+                                :errors="$errors"
+                                help="Tanggal perkiraan pesanan siap kirim." />
 
-                            <div class="mb-3">
-                                <label for="shipping_address" class="form-label fw-bold">Alamat Pengiriman <span
-                                        class="text-danger">*</span></label>
-                                <textarea class="form-control @error('shipping_address') is-invalid @enderror" id="shipping_address"
-                                    name="shipping_address" rows="3" required>{{ old('shipping_address', $order->shipping_address) }}</textarea>
-                                @error('shipping_address')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="shipping_address" 
+                                label="Alamat Pengiriman"
+                                type="textarea"
+                                :value="old('shipping_address', $order->shipping_address)"
+                                :errors="$errors"
+                                rows="3"
+                                required />
 
-                            <div class="mb-4">
-                                <label for="notes" class="form-label fw-bold">Catatan Pelanggan</label>
-                                <textarea class="form-control @error('customer_notes') is-invalid @enderror" id="notes" name="notes"
-                                    rows="3" placeholder="Informasi tambahan dari pelanggan...">{{ old('notes', $order->customer_notes) }}</textarea>
-                                @error('customer_notes')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="notes" 
+                                label="Catatan Pelanggan"
+                                type="textarea"
+                                :value="old('notes', $order->customer_notes)"
+                                :errors="$errors"
+                                placeholder="Informasi tambahan dari pelanggan..."
+                                rows="3" />
 
                             <div class="d-flex justify-content-end gap-2 border-top pt-4">
                                 <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-light px-4">Batal</a>

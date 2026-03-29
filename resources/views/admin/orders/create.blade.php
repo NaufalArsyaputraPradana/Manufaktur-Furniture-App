@@ -42,58 +42,48 @@
                             </h6>
                         </div>
                         <div class="card-body p-4">
-                            <div class="mb-3">
-                                <label for="user_id" class="form-label fw-bold">Pelanggan <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select select2 @error('user_id') is-invalid @enderror" id="user_id"
-                                    name="user_id" required>
-                                    <option value="">-- Pilih Pelanggan --</option>
-                                    @foreach ($customers as $customer)
-                                        <option value="{{ $customer->id }}"
-                                            {{ old('user_id') == $customer->id ? 'selected' : '' }}>
-                                            {{ $customer->name }} ({{ $customer->email }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('user_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="mb-3">
-                                <label for="order_date" class="form-label fw-bold">Tanggal Order <span
-                                        class="text-danger">*</span></label>
-                                <input type="date" class="form-control @error('order_date') is-invalid @enderror"
-                                    id="order_date" name="order_date" value="{{ old('order_date', date('Y-m-d')) }}"
-                                    required>
-                                @error('order_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="mb-3">
-                                <label for="estimated_delivery_date" class="form-label fw-bold">Estimasi Selesai</label>
-                                <input type="date"
-                                    class="form-control @error('estimated_delivery_date') is-invalid @enderror"
-                                    id="estimated_delivery_date" name="estimated_delivery_date"
-                                    value="{{ old('estimated_delivery_date') }}">
-                                @error('estimated_delivery_date')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="mb-3">
-                                <label for="shipping_address" class="form-label fw-bold">Alamat Pengiriman <span
-                                        class="text-danger">*</span></label>
-                                <textarea class="form-control @error('shipping_address') is-invalid @enderror" id="shipping_address"
-                                    name="shipping_address" rows="3" required placeholder="Alamat lengkap...">{{ old('shipping_address') }}</textarea>
-                                @error('shipping_address')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="mb-0">
-                                <label for="notes" class="form-label fw-bold">Catatan Internal <small
-                                        class="text-muted fw-normal">(Opsional)</small></label>
-                                <textarea class="form-control" id="notes" name="notes" rows="2"
-                                    placeholder="Catatan tambahan untuk pesanan ini...">{{ old('notes') }}</textarea>
-                            </div>
+                            <x-form-input 
+                                name="user_id" 
+                                label="Pelanggan"
+                                type="select"
+                                :options="collect(['', '-- Pilih Pelanggan --'])->union($customers->pluck('name', 'id'))"
+                                :value="old('user_id')"
+                                :errors="$errors"
+                                required />
+
+                            <x-form-input 
+                                name="order_date" 
+                                label="Tanggal Order"
+                                type="date"
+                                :value="old('order_date', date('Y-m-d'))"
+                                :errors="$errors"
+                                required />
+
+                            <x-form-input 
+                                name="estimated_delivery_date" 
+                                label="Estimasi Selesai"
+                                type="date"
+                                :value="old('estimated_delivery_date')"
+                                :errors="$errors" />
+
+                            <x-form-input 
+                                name="shipping_address" 
+                                label="Alamat Pengiriman"
+                                type="textarea"
+                                :value="old('shipping_address')"
+                                :errors="$errors"
+                                placeholder="Alamat lengkap..."
+                                rows="3"
+                                required />
+
+                            <x-form-input 
+                                name="notes" 
+                                label="Catatan Internal"
+                                type="textarea"
+                                :value="old('notes')"
+                                :errors="$errors"
+                                placeholder="Catatan tambahan untuk pesanan ini..."
+                                rows="2" />
                         </div>
                     </div>
 

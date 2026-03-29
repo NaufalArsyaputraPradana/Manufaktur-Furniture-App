@@ -36,10 +36,10 @@ class ProductionProcessController extends Controller
 
     public function index(Order $order): View
     {
-        $order->load('user');
+        $order->load(['user:id,name,email', 'payment:id,order_id,payment_status', 'orderDetails:id,order_id,product_name,quantity']);
 
         $processes = ProductionProcess::where('order_id', $order->id)
-            ->with(['assignedTo'])
+            ->with(['assignedTo:id,name', 'logs:id,production_process_id,status,created_at,created_by'])
             ->orderBy('created_at')
             ->get();
 
@@ -91,14 +91,14 @@ class ProductionProcessController extends Controller
 
     public function show(ProductionProcess $process): View
     {
-        $process->load(['order.user', 'orderDetail.product', 'assignedTo', 'logs.user']);
+        $process->load(['order.user:id,name,email', 'orderDetails.product:id,name,sku', 'assignedTo:id,name', 'logs.user:id,name']);
 
         return view('production.process.show', compact('process'));
     }
 
     public function edit(ProductionProcess $process): View
     {
-        $process->load('order.user');
+        $process->load(['order.user:id,name', 'orderDetails:id,order_id,product_name']);
 
         return view('production.process.edit', compact('process'));
     }
@@ -135,7 +135,7 @@ class ProductionProcessController extends Controller
 
     public function showOrder(Order $order)
     {
-        $order->load(['user', 'orderDetails.product', 'payment']);
+        $order->load(['user:id,name,email', 'orderDetails.product:id,name,sku', 'payment:id,order_id,payment_status', 'productionProcesses:id,order_id,stage,status']);
         return view('production.orders.show', compact('order'));
     }
 

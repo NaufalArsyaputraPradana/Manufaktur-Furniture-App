@@ -20,25 +20,26 @@
                 <div class="card-body">
                     <form method="GET" class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Cari Judul</label>
-                            <input type="text" name="search" class="form-control" value="{{ $search }}"
-                                placeholder="Cari tugas...">
+                            <x-form-input
+                                name="search"
+                                label="Cari Judul"
+                                type="text"
+                                :value="$search"
+                                placeholder="Cari tugas..."
+                            />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Filter Status</label>
-                            <select name="status" class="form-select">
-                                <option value="">Semua Status</option>
-                                @foreach ($statusOptions as $status)
-                                    <option value="{{ $status }}" {{ $currentStatus == $status ? 'selected' : '' }}>
-                                        {{ ucfirst(str_replace('_', ' ', $status)) }}</option>
-                                @endforeach
-                            </select>
+                            <x-form-input
+                                name="status"
+                                label="Filter Status"
+                                type="select"
+                                :options="collect(['' => 'Semua Status'])->union(collect($statusOptions)->flip()->flip()->mapWithKeys(fn($status) => [$status => ucfirst(str_replace('_', ' ', $status))]))"
+                                :value="$currentStatus"
+                            />
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100 me-2"><i
-                                    class="bi bi-funnel me-1"></i>Terapkan</button>
-                            <a href="{{ route('staff.production.todos.index') }}"
-                                class="btn btn-outline-secondary w-100">Reset</a>
+                        <div class="col-md-4 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i>Terapkan</button>
+                            <a href="{{ route('staff.production.todos.index') }}" class="btn btn-outline-secondary flex-grow-1">Reset</a>
                         </div>
                     </form>
                 </div>

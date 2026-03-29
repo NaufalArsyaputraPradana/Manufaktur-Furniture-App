@@ -50,47 +50,48 @@
                         <div class="card-body p-4">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Nama Aplikasi <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" name="site_name"
-                                        class="form-control @error('site_name') is-invalid @enderror"
-                                        value="{{ old('site_name', $settings['site_name']) }}" required>
-                                    @error('site_name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="site_name" 
+                                        label="Nama Aplikasi"
+                                        type="text"
+                                        :value="old('site_name', $settings['site_name'])"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Email Admin <span class="text-danger">*</span></label>
-                                    <input type="email" name="site_email"
-                                        class="form-control @error('site_email') is-invalid @enderror"
-                                        value="{{ old('site_email', $settings['site_email']) }}" required>
-                                    @error('site_email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="site_email" 
+                                        label="Email Admin"
+                                        type="email"
+                                        :value="old('site_email', $settings['site_email'])"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">No. Telepon</label>
-                                    <input type="text" name="site_phone"
-                                        class="form-control @error('site_phone') is-invalid @enderror"
-                                        value="{{ old('site_phone', $settings['site_phone']) }}">
-                                    @error('site_phone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="site_phone" 
+                                        label="No. Telepon"
+                                        type="tel"
+                                        :value="old('site_phone', $settings['site_phone'])"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Mata Uang</label>
-                                    <select name="currency" class="form-select @error('currency') is-invalid @enderror">
-                                        <option value="IDR"
-                                            {{ old('currency', $settings['currency']) == 'IDR' ? 'selected' : '' }}>IDR
-                                            (Rupiah)</option>
-                                        <option value="USD"
-                                            {{ old('currency', $settings['currency']) == 'USD' ? 'selected' : '' }}>USD
-                                            (Dollar)</option>
-                                    </select>
+                                    <x-form-input 
+                                        name="currency" 
+                                        label="Mata Uang"
+                                        type="select"
+                                        :options="['IDR' => 'IDR (Rupiah)', 'USD' => 'USD (Dollar)']"
+                                        :value="old('currency', $settings['currency'])"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-bold">Alamat Perusahaan</label>
-                                    <textarea name="site_address" rows="3" class="form-control @error('site_address') is-invalid @enderror">{{ old('site_address', $settings['site_address']) }}</textarea>
+                                    <x-form-input 
+                                        name="site_address" 
+                                        label="Alamat Perusahaan"
+                                        type="textarea"
+                                        rows="3"
+                                        :value="old('site_address', $settings['site_address'])"
+                                        :errors="$errors" />
                                 </div>
                             </div>
                         </div>
@@ -104,25 +105,21 @@
                         <div class="card-body p-4">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Zona Waktu</label>
-                                    <select name="timezone" class="form-select @error('timezone') is-invalid @enderror">
-                                        <option value="Asia/Jakarta"
-                                            {{ old('timezone', $settings['timezone']) == 'Asia/Jakarta' ? 'selected' : '' }}>
-                                            Asia/Jakarta (WIB)</option>
-                                        <option value="Asia/Makassar"
-                                            {{ old('timezone', $settings['timezone']) == 'Asia/Makassar' ? 'selected' : '' }}>
-                                            Asia/Makassar (WITA)</option>
-                                        <option value="Asia/Jayapura"
-                                            {{ old('timezone', $settings['timezone']) == 'Asia/Jayapura' ? 'selected' : '' }}>
-                                            Asia/Jayapura (WIT)</option>
-                                    </select>
+                                    <x-form-input 
+                                        name="timezone" 
+                                        label="Zona Waktu"
+                                        type="select"
+                                        :options="['Asia/Jakarta' => 'Asia/Jakarta (WIB)', 'Asia/Makassar' => 'Asia/Makassar (WITA)', 'Asia/Jayapura' => 'Asia/Jayapura (WIT)']"
+                                        :value="old('timezone', $settings['timezone'])"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Data Per Halaman (Pagination)</label>
-                                    <input type="number" name="items_per_page"
-                                        class="form-control @error('items_per_page') is-invalid @enderror"
-                                        value="{{ old('items_per_page', $settings['items_per_page']) }}" min="5"
-                                        max="100">
+                                    <x-form-input 
+                                        name="items_per_page" 
+                                        label="Data Per Halaman (Pagination)"
+                                        type="number"
+                                        :value="old('items_per_page', $settings['items_per_page'])"
+                                        :errors="$errors" />
                                 </div>
                             </div>
                         </div>

@@ -155,74 +155,49 @@
                                         @csrf
                                         <div class="row g-4">
                                             <div class="col-md-6">
-                                                <label for="name"
-                                                    class="form-label fw-bold small text-muted text-uppercase">Nama Lengkap
-                                                    <span class="text-danger" aria-label="wajib diisi">*</span></label>
-                                                <div class="input-group has-validation">
-                                                    <span class="input-group-text bg-light border-end-0"><i
-                                                            class="bi bi-person text-muted" aria-hidden="true"></i></span>
-                                                    <input type="text"
-                                                        class="form-control form-control-lg border-start-0 ps-0 @error('name') is-invalid @enderror"
-                                                        id="name" name="name" value="{{ old('name') }}"
-                                                        required aria-required="true" placeholder="Contoh: Budi Santoso">
-                                                    @error('name')
-                                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
+                                                <x-form-input 
+                                                    name="name" 
+                                                    label="Nama Lengkap"
+                                                    type="text"
+                                                    placeholder="Contoh: Budi Santoso"
+                                                    :value="old('name')"
+                                                    :errors="$errors"
+                                                    required />
                                             </div>
 
                                             <div class="col-md-6">
-                                                <label for="email"
-                                                    class="form-label fw-bold small text-muted text-uppercase">Email <span
-                                                        class="text-danger" aria-label="wajib diisi">*</span></label>
-                                                <div class="input-group has-validation">
-                                                    <span class="input-group-text bg-light border-end-0"><i
-                                                            class="bi bi-envelope text-muted"
-                                                            aria-hidden="true"></i></span>
-                                                    <input type="email"
-                                                        class="form-control form-control-lg border-start-0 ps-0 @error('email') is-invalid @enderror"
-                                                        id="email" name="email" value="{{ old('email') }}"
-                                                        required aria-required="true" placeholder="nama@email.com">
-                                                    @error('email')
-                                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
+                                                <x-form-input 
+                                                    name="email" 
+                                                    label="Email"
+                                                    type="email"
+                                                    placeholder="nama@email.com"
+                                                    :value="old('email')"
+                                                    :errors="$errors"
+                                                    required />
                                             </div>
 
                                             <div class="col-12">
-                                                <label for="subject"
-                                                    class="form-label fw-bold small text-muted text-uppercase">Subjek <span
-                                                        class="text-danger" aria-label="wajib diisi">*</span></label>
-                                                <div class="input-group has-validation">
-                                                    <span class="input-group-text bg-light border-end-0"><i
-                                                            class="bi bi-tag text-muted" aria-hidden="true"></i></span>
-                                                    <input type="text"
-                                                        class="form-control form-control-lg border-start-0 ps-0 @error('subject') is-invalid @enderror"
-                                                        id="subject" name="subject" value="{{ old('subject') }}"
-                                                        required aria-required="true"
-                                                        placeholder="Contoh: Tanya Custom Lemari">
-                                                    @error('subject')
-                                                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
+                                                <x-form-input 
+                                                    name="subject" 
+                                                    label="Subjek"
+                                                    type="text"
+                                                    placeholder="Contoh: Tanya Custom Lemari"
+                                                    :value="old('subject')"
+                                                    :errors="$errors"
+                                                    required />
                                             </div>
 
                                             <div class="col-12">
-                                                <label for="message"
-                                                    class="form-label fw-bold small text-muted text-uppercase">Detail Pesan
-                                                    <span class="text-danger" aria-label="wajib diisi">*</span></label>
-                                                <textarea class="form-control @error('message') is-invalid @enderror" id="message" name="message" rows="5"
-                                                    required aria-required="true" placeholder="Jelaskan kebutuhan atau pertanyaan Anda di sini..." maxlength="2000">{{ old('message') }}</textarea>
-                                                <div class="d-flex justify-content-between mt-1">
-                                                    @error('message')
-                                                        <small class="invalid-feedback d-block m-0">{{ $message }}</small>
-                                                    @else
-                                                        <small class="text-muted"><i class="bi bi-info-circle me-1"
-                                                                aria-hidden="true"></i>Akan dikirim ke WhatsApp.</small>
-                                                    @enderror
-                                                    <small class="text-muted"><span id="charCount">0</span> / 2000
-                                                        karakter</small>
-                                                </div>
+                                                <x-form-input 
+                                                    name="message" 
+                                                    label="Detail Pesan"
+                                                    type="textarea"
+                                                    placeholder="Jelaskan kebutuhan atau pertanyaan Anda di sini..."
+                                                    :value="old('message')"
+                                                    :errors="$errors"
+                                                    rows="5"
+                                                    required />
+                                                <small class="text-muted d-block mt-2"><i class="bi bi-info-circle me-1" aria-hidden="true"></i>Akan dikirim ke WhatsApp.</small>
                                             </div>
 
                                             <div class="col-12 mt-4 pt-2">

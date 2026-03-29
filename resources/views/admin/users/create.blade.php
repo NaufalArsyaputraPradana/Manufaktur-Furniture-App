@@ -46,56 +46,76 @@
                             <div class="row g-3">
                                 <!-- Nama & Email -->
                                 <div class="col-md-6">
-                                    <label for="name" class="form-label fw-bold">Nama Lengkap <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" name="name" id="name" class="form-control"
-                                        value="{{ old('name') }}" placeholder="Contoh: John Doe" required autofocus>
+                                    <x-form-input 
+                                        name="name" 
+                                        label="Nama Lengkap"
+                                        placeholder="Contoh: John Doe"
+                                        :value="old('name')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="email" class="form-label fw-bold">Alamat Email <span
-                                            class="text-danger">*</span></label>
-                                    <input type="email" name="email" id="email" class="form-control"
-                                        value="{{ old('email') }}" placeholder="email@example.com" required>
+                                    <x-form-input 
+                                        name="email" 
+                                        label="Alamat Email"
+                                        type="email"
+                                        placeholder="email@example.com"
+                                        :value="old('email')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <!-- Password -->
                                 <div class="col-md-6">
-                                    <label for="password" class="form-label fw-bold">Password <span
-                                            class="text-danger">*</span></label>
-                                    <input type="password" name="password" id="password" class="form-control" required
-                                        placeholder="Minimal 8 karakter">
+                                    <x-form-input 
+                                        name="password" 
+                                        label="Password"
+                                        type="password"
+                                        placeholder="Minimal 8 karakter"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="password_confirmation" class="form-label fw-bold">Konfirmasi Password <span
-                                            class="text-danger">*</span></label>
-                                    <input type="password" name="password_confirmation" id="password_confirmation"
-                                        class="form-control" required placeholder="Ulangi password">
+                                    <x-form-input 
+                                        name="password_confirmation" 
+                                        label="Konfirmasi Password"
+                                        type="password"
+                                        placeholder="Ulangi password"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <!-- Kontak & Role -->
                                 <div class="col-md-6">
-                                    <label for="phone" class="form-label fw-bold">No. Telepon</label>
-                                    <input type="text" name="phone" id="phone" class="form-control"
-                                        value="{{ old('phone') }}" placeholder="0812...">
+                                    <x-form-input 
+                                        name="phone" 
+                                        label="No. Telepon"
+                                        type="tel"
+                                        placeholder="0812..."
+                                        :value="old('phone')"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="role_id" class="form-label fw-bold">Role <span
-                                            class="text-danger">*</span></label>
-                                    <select name="role_id" id="role_id" class="form-select" required>
-                                        <option value="">-- Pilih Role --</option>
-                                        @foreach ($roles as $role)
-                                            <option value="{{ $role->id }}"
-                                                {{ old('role_id') == $role->id ? 'selected' : '' }}>
-                                                {{ ucfirst($role->name) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-form-input 
+                                        name="role_id" 
+                                        label="Role"
+                                        type="select"
+                                        :options="$roles->pluck('name', 'id')"
+                                        :value="old('role_id')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <!-- Alamat -->
                                 <div class="col-12">
-                                    <label for="address" class="form-label fw-bold">Alamat Lengkap</label>
-                                    <textarea name="address" id="address" class="form-control" rows="3" placeholder="Alamat tempat tinggal...">{{ old('address') }}</textarea>
+                                    <x-form-input 
+                                        name="address" 
+                                        label="Alamat Lengkap"
+                                        type="textarea"
+                                        placeholder="Alamat tempat tinggal..."
+                                        :value="old('address')"
+                                        :errors="$errors"
+                                        rows="3" />
                                 </div>
 
                                 <!-- Status Switch -->

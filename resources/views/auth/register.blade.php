@@ -32,52 +32,53 @@
                             <div class="row">
                                 <!-- Nama Lengkap -->
                                 <div class="col-12 mb-3">
-                                    <label for="name" class="form-label fw-bold small text-muted text-uppercase">Nama
-                                        Lengkap <span class="text-danger">*</span></label>
-                                    <input type="text"
-                                        class="form-control form-control-lg @error('name') is-invalid @enderror"
-                                        id="name" name="name" value="{{ old('name') }}"
-                                        placeholder="Nama Lengkap Anda" required autofocus>
-                                    @error('name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="name" 
+                                        label="Nama Lengkap"
+                                        type="text"
+                                        placeholder="Nama Lengkap Anda"
+                                        :value="old('name')"
+                                        :errors="$errors"
+                                        required
+                                        autofocus />
                                 </div>
 
                                 <!-- Email -->
                                 <div class="col-md-6 mb-3">
-                                    <label for="email" class="form-label fw-bold small text-muted text-uppercase">Alamat
-                                        Email <span class="text-danger">*</span></label>
-                                    <input type="email"
-                                        class="form-control form-control-lg @error('email') is-invalid @enderror"
-                                        id="email" name="email" value="{{ old('email') }}"
-                                        placeholder="email@contoh.com" required>
-                                    @error('email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="email" 
+                                        label="Alamat Email"
+                                        type="email"
+                                        placeholder="email@contoh.com"
+                                        :value="old('email')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <!-- No Telepon -->
                                 <div class="col-md-6 mb-3">
-                                    <label for="phone" class="form-label fw-bold small text-muted text-uppercase">No.
-                                        Telepon / WhatsApp <span class="text-danger">*</span></label>
-                                    <input type="text"
-                                        class="form-control form-control-lg @error('phone') is-invalid @enderror"
-                                        id="phone" name="phone" value="{{ old('phone') }}" placeholder="0812xxxx"
-                                        required>
-                                    @error('phone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="phone" 
+                                        label="No. Telepon / WhatsApp"
+                                        type="tel"
+                                        placeholder="0812xxxx"
+                                        :value="old('phone')"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                             </div>
 
                             <!-- Alamat -->
                             <div class="mb-3">
-                                <label for="address" class="form-label fw-bold small text-muted text-uppercase">Alamat
-                                    Lengkap (Opsional)</label>
-                                <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address" rows="2"
-                                    placeholder="Jl. Raya, Kota, Provinsi, Kode Pos">{{ old('address') }}</textarea>
-                                @error('address')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                <x-form-input 
+                                    name="address" 
+                                    label="Alamat Lengkap (Opsional)"
+                                    type="textarea"
+                                    rows="2"
+                                    placeholder="Jl. Raya, Kota, Provinsi, Kode Pos"
+                                    :value="old('address')"
+                                    :errors="$errors" />
+                            </div>
                                 @enderror
                             </div>
 

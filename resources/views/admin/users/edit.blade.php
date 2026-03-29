@@ -44,16 +44,21 @@
                         <div class="card-body p-4">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label for="name" class="form-label fw-bold">Nama Lengkap <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" name="name" id="name" class="form-control"
-                                        value="{{ old('name', $user->name) }}" required>
+                                    <x-form-input 
+                                        name="name" 
+                                        label="Nama Lengkap"
+                                        :value="old('name', $user->name)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="email" class="form-label fw-bold">Alamat Email <span
-                                            class="text-danger">*</span></label>
-                                    <input type="email" name="email" id="email" class="form-control"
-                                        value="{{ old('email', $user->email) }}" required>
+                                    <x-form-input 
+                                        name="email" 
+                                        label="Alamat Email"
+                                        type="email"
+                                        :value="old('email', $user->email)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <div class="col-md-12">
@@ -64,38 +69,49 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="password" class="form-label fw-bold">Password Baru</label>
-                                    <input type="password" name="password" id="password" class="form-control"
-                                        placeholder="Biarkan kosong jika tetap">
+                                    <x-form-input 
+                                        name="password" 
+                                        label="Password Baru"
+                                        type="password"
+                                        placeholder="Biarkan kosong jika tetap"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="password_confirmation" class="form-label fw-bold">Konfirmasi
-                                        Password</label>
-                                    <input type="password" name="password_confirmation" id="password_confirmation"
-                                        class="form-control" placeholder="Ulangi password baru">
+                                    <x-form-input 
+                                        name="password_confirmation" 
+                                        label="Konfirmasi Password"
+                                        type="password"
+                                        placeholder="Ulangi password baru"
+                                        :errors="$errors" />
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="phone" class="form-label fw-bold">No. Telepon</label>
-                                    <input type="text" name="phone" id="phone" class="form-control"
-                                        value="{{ old('phone', $user->phone) }}">
+                                    <x-form-input 
+                                        name="phone" 
+                                        label="No. Telepon"
+                                        type="tel"
+                                        :value="old('phone', $user->phone)"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="role_id" class="form-label fw-bold">Role <span
-                                            class="text-danger">*</span></label>
-                                    <select name="role_id" id="role_id" class="form-select" required>
-                                        @foreach ($roles as $role)
-                                            <option value="{{ $role->id }}"
-                                                {{ old('role_id', $user->role_id) == $role->id ? 'selected' : '' }}>
-                                                {{ ucfirst($role->name) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-form-input 
+                                        name="role_id" 
+                                        label="Role"
+                                        type="select"
+                                        :options="$roles->pluck('name', 'id')"
+                                        :value="old('role_id', $user->role_id)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
 
                                 <div class="col-12">
-                                    <label for="address" class="form-label fw-bold">Alamat Lengkap</label>
-                                    <textarea name="address" id="address" class="form-control" rows="3">{{ old('address', $user->address) }}</textarea>
+                                    <x-form-input 
+                                        name="address" 
+                                        label="Alamat Lengkap"
+                                        type="textarea"
+                                        :value="old('address', $user->address)"
+                                        :errors="$errors"
+                                        rows="3" />
                                 </div>
 
                                 <div class="col-12">

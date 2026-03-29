@@ -112,23 +112,29 @@
         <div class="card shadow-sm border-0 mb-4 rounded-3">
             <div class="card-body py-3">
                 <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-funnel me-1"></i>Filter Periode Penjualan</h6>
-                <form method="GET" action="{{ route('admin.reports.sales') }}">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Dari Tanggal</label>
-                            <input type="date" name="start_date" class="form-control border-primary-subtle"
-                                value="{{ $startDate }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Sampai Tanggal</label>
-                            <input type="date" name="end_date" class="form-control border-primary-subtle"
-                                value="{{ $endDate }}">
-                        </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                                <i class="bi bi-search me-1"></i> Tampilkan Data
-                            </button>
-                        </div>
+                <form method="GET" action="{{ route('admin.reports.sales') }}" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <x-form-input
+                            name="start_date"
+                            label="Dari Tanggal"
+                            type="date"
+                            :value="$startDate"
+                            class="border-primary-subtle"
+                        />
+                    </div>
+                    <div class="col-md-4">
+                        <x-form-input
+                            name="end_date"
+                            label="Sampai Tanggal"
+                            type="date"
+                            :value="$endDate"
+                            class="border-primary-subtle"
+                        />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            <i class="bi bi-search me-1"></i> Tampilkan Data
+                        </button>
                     </div>
                 </form>
             </div>

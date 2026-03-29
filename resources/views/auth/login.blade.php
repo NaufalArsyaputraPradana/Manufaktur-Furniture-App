@@ -43,34 +43,23 @@
                         <form action="{{ route('login.submit') }}" method="POST" id="loginForm">
                             @csrf
 
-                            <div class="mb-3">
-                                <label for="email" class="form-label fw-bold small text-muted text-uppercase">Alamat
-                                    Email</label>
-                                <input type="email"
-                                    class="form-control form-control-lg @error('email') is-invalid @enderror" id="email"
-                                    name="email" value="{{ old('email') }}" placeholder="contoh@email.com" required
-                                    autofocus>
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="email" 
+                                label="Alamat Email"
+                                type="email"
+                                placeholder="contoh@email.com"
+                                :value="old('email')"
+                                :errors="$errors"
+                                required
+                                autofocus />
 
-                            <div class="mb-3">
-                                <label for="password"
-                                    class="form-label fw-bold small text-muted text-uppercase">Password</label>
-                                <div class="input-group has-validation">
-                                    <input type="password"
-                                        class="form-control form-control-lg @error('password') is-invalid @enderror"
-                                        id="password" name="password" placeholder="Masukkan password" required>
-                                    <button class="btn btn-outline-secondary border-start-0" type="button"
-                                        id="togglePassword" aria-label="Tampilkan Password">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    @error('password')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
+                            <x-form-input 
+                                name="password" 
+                                label="Password"
+                                type="password"
+                                placeholder="Masukkan password"
+                                :errors="$errors"
+                                required />
 
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div class="form-check">

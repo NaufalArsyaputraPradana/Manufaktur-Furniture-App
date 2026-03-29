@@ -77,17 +77,13 @@
                                             value="{{ auth()->user()->email }}" readonly aria-label="Alamat email">
                                     </div>
                                     <div class="col-md-12">
-                                        <label for="phone" class="form-label fw-semibold">
-                                            <i class="bi bi-telephone me-1 text-primary" aria-hidden="true"></i>Nomor Telepon
-                                        </label>
-                                        <input type="tel" class="form-control form-control-lg @error('phone') is-invalid @enderror" 
-                                            id="phone" name="phone"
-                                            value="{{ old('phone', auth()->user()->phone ?? '') }}" 
+                                        <x-form-input 
+                                            name="phone" 
+                                            type="tel"
+                                            label="Nomor Telepon"
                                             placeholder="Contoh: 082123456789"
-                                            aria-label="Nomor telepon">
-                                        @error('phone')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                            :value="old('phone', auth()->user()->phone ?? '')"
+                                        />
                                     </div>
                                 </div>
                                 <div class="alert alert-info bg-opacity-10 border-info mt-3 mb-0" role="alert">

@@ -33,49 +33,41 @@
                 <div class="card-body p-4">
                     <form action="{{ route('staff.production.todos.store') }}" method="POST" id="todoCreateForm">
                         @csrf
-                        <div class="mb-3">
-                            <label for="title" class="form-label fw-bold">Judul Tugas <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('title') is-invalid @enderror" id="title"
-                                name="title" value="{{ old('title') }}" placeholder="Contoh: Cek kualitas batch #123"
-                                required>
-                            @error('title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input 
+                            name="title" 
+                            label="Judul Tugas"
+                            :value="old('title')"
+                            placeholder="Contoh: Cek kualitas batch #123"
+                            :errors="$errors"
+                            required />
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label fw-bold">Deskripsi</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                rows="4" placeholder="Detailkan langkah-langkah atau catatan penting...">{{ old('description') }}</textarea>
-                            @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input 
+                            name="description" 
+                            label="Deskripsi"
+                            type="textarea"
+                            :value="old('description')"
+                            placeholder="Detailkan langkah-langkah atau catatan penting..."
+                            rows="4"
+                            :errors="$errors" />
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="deadline" class="form-label fw-bold">Deadline</label>
-                                <input type="datetime-local" class="form-control @error('deadline') is-invalid @enderror"
-                                    id="deadline" name="deadline" value="{{ old('deadline') }}">
-                                <div class="form-text">Kosongkan jika tidak ada batas waktu.</div>
-                                @error('deadline')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="deadline" 
+                                    label="Deadline"
+                                    type="datetime-local"
+                                    :value="old('deadline')"
+                                    :errors="$errors"
+                                    help="Kosongkan jika tidak ada batas waktu." />
                             </div>
                             <div class="col-md-6">
-                                <label for="status" class="form-label fw-bold">Status Awal</label>
-                                <select name="status" id="status"
-                                    class="form-select @error('status') is-invalid @enderror">
-                                    @foreach ($statusOptions as $status)
-                                        <option value="{{ $status }}"
-                                            {{ old('status', 'pending') == $status ? 'selected' : '' }}>
-                                            {{ ucfirst(str_replace('_', ' ', $status)) }}</option>
-                                    @endforeach
-                                </select>
-                                @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="status" 
+                                    label="Status Awal"
+                                    type="select"
+                                    :options="collect($statusOptions)->mapWithKeys(function($status) { return [$status => ucfirst(str_replace('_', ' ', $status))]; })"
+                                    :value="old('status', 'pending')"
+                                    :errors="$errors" />
                             </div>
                         </div>
 

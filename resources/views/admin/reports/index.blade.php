@@ -96,32 +96,41 @@
         <!-- Filter Form -->
         <div class="card shadow-sm border-0 mb-4 rounded-3">
             <div class="card-body py-3">
-                <form method="GET" action="{{ route('admin.reports.index') }}">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Periode Bulan</label>
-                            <select name="month" class="form-select border-primary-subtle">
-                                @for ($m = 1; $m <= 12; $m++)
-                                    <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }}>
-                                        {{ DateTime::createFromFormat('!m', $m)->format('F') }}
-                                    </option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Tahun</label>
-                            <select name="year" class="form-select border-primary-subtle">
-                                @for ($y = date('Y'); $y >= 2020; $y--)
-                                    <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>
-                                        {{ $y }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                                <i class="bi bi-filter me-1"></i>Terapkan Filter
-                            </button>
-                        </div>
+                @php
+                    $monthOptions = [];
+                    for ($m = 1; $m <= 12; $m++) {
+                        $monthOptions[$m] = DateTime::createFromFormat('!m', $m)->format('F');
+                    }
+                    $yearOptions = [];
+                    for ($y = date('Y'); $y >= 2020; $y--) {
+                        $yearOptions[$y] = (string) $y;
+                    }
+                @endphp
+                <form method="GET" action="{{ route('admin.reports.index') }}" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <x-form-input
+                            name="month"
+                            type="select"
+                            label="Periode Bulan"
+                            :options="$monthOptions"
+                            :value="$month"
+                            class="border-primary-subtle"
+                        />
+                    </div>
+                    <div class="col-md-4">
+                        <x-form-input
+                            name="year"
+                            type="select"
+                            label="Tahun"
+                            :options="$yearOptions"
+                            :value="$year"
+                            class="border-primary-subtle"
+                        />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100 shadow-sm">
+                            <i class="bi bi-filter me-1"></i>Terapkan Filter
+                        </button>
                     </div>
                 </form>
             </div>

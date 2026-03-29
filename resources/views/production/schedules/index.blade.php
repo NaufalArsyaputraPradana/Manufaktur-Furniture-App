@@ -20,13 +20,16 @@
                 <div class="card-body">
                     <form method="GET" class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label fw-bold">Cari Judul</label>
-                            <input type="text" name="search" class="form-control" value="{{ $search }}"
-                                placeholder="Cari jadwal...">
+                            <x-form-input
+                                name="search"
+                                label="Cari Judul"
+                                type="text"
+                                :value="$search"
+                                placeholder="Cari jadwal..."
+                            />
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100"><i
-                                    class="bi bi-search me-1"></i>Cari</button>
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Cari</button>
                         </div>
                     </form>
                 </div>

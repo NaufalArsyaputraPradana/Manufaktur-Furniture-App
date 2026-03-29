@@ -35,61 +35,50 @@
                         id="scheduleEditForm">
                         @csrf
                         @method('PUT')
-                        <div class="mb-3">
-                            <label for="title" class="form-label fw-bold">Judul Jadwal <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('title') is-invalid @enderror" id="title"
-                                name="title" value="{{ old('title', $schedule->title) }}" required>
-                            @error('title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input
+                            name="title"
+                            label="Judul Jadwal"
+                            type="text"
+                            :value="old('title', $schedule->title)"
+                            required
+                        />
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label fw-bold">Deskripsi</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                rows="4">{{ old('description', $schedule->description) }}</textarea>
-                            @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input
+                            name="description"
+                            label="Deskripsi"
+                            type="textarea"
+                            rows="4"
+                            :value="old('description', $schedule->description)"
+                        />
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="start_datetime" class="form-label fw-bold">Waktu Mulai <span
-                                        class="text-danger">*</span></label>
-                                <input type="datetime-local"
-                                    class="form-control @error('start_datetime') is-invalid @enderror" id="start_datetime"
+                                <x-form-input
                                     name="start_datetime"
-                                    value="{{ old('start_datetime', optional($schedule->start_datetime)->format('Y-m-d\TH:i')) }}"
-                                    required>
-                                @error('start_datetime')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                    label="Waktu Mulai"
+                                    type="datetime-local"
+                                    :value="old('start_datetime', optional($schedule->start_datetime)->format('Y-m-d\TH:i'))"
+                                    required
+                                />
                             </div>
                             <div class="col-md-6">
-                                <label for="end_datetime" class="form-label fw-bold">Waktu Selesai <span
-                                        class="text-danger">*</span></label>
-                                <input type="datetime-local"
-                                    class="form-control @error('end_datetime') is-invalid @enderror" id="end_datetime"
+                                <x-form-input
                                     name="end_datetime"
-                                    value="{{ old('end_datetime', optional($schedule->end_datetime)->format('Y-m-d\TH:i')) }}"
-                                    required>
-                                @error('end_datetime')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                    label="Waktu Selesai"
+                                    type="datetime-local"
+                                    :value="old('end_datetime', optional($schedule->end_datetime)->format('Y-m-d\TH:i'))"
+                                    required
+                                />
                             </div>
                         </div>
 
-                        <div class="mt-3">
-                            <label for="location" class="form-label fw-bold">Lokasi</label>
-                            <input type="text" class="form-control @error('location') is-invalid @enderror"
-                                id="location" name="location" value="{{ old('location', $schedule->location) }}"
-                                placeholder="Contoh: Workshop 1">
-                            @error('location')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        <x-form-input
+                            name="location"
+                            label="Lokasi"
+                            type="text"
+                            :value="old('location', $schedule->location)"
+                            placeholder="Contoh: Workshop 1"
+                        />
 
                         <hr class="my-4">
 

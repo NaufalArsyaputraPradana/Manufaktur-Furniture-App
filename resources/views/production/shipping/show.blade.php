@@ -94,16 +94,22 @@
                     <form action="{{ route('production.shipping.courier.update', $order) }}" method="POST" class="small">
                         @csrf
                         @method('PATCH')
-                        <div class="mb-2">
-                            <label class="form-label text-muted mb-0">Ekspedisi / kurir</label>
-                            <input type="text" name="courier" class="form-control form-control-sm"
-                                value="{{ old('courier', $order->courier) }}" placeholder="Contoh: JNE, SiCepat">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted mb-0">No. resi</label>
-                            <input type="text" name="tracking_number" class="form-control form-control-sm"
-                                value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="Nomor pelacakan">
-                        </div>
+                        <x-form-input 
+                            name="courier" 
+                            label="Ekspedisi / kurir"
+                            :value="old('courier', $order->courier)"
+                            placeholder="Contoh: JNE, SiCepat"
+                            :errors="$errors"
+                            class="form-control-sm" />
+
+                        <x-form-input 
+                            name="tracking_number" 
+                            label="No. resi"
+                            :value="old('tracking_number', $order->tracking_number)"
+                            placeholder="Nomor pelacakan"
+                            :errors="$errors"
+                            class="form-control-sm" />
+
                         <button type="submit" class="btn btn-primary btn-sm w-100">Simpan kurir &amp; resi</button>
                     </form>
                 </div>
@@ -121,37 +127,50 @@
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Tahapan <span class="text-danger">*</span></label>
-                                <select name="stage" class="form-select @error('stage') is-invalid @enderror" required>
-                                    <option value="">— Pilih —</option>
-                                    @foreach ($stageLabels as $key => $label)
-                                        <option value="{{ $key }}" @selected(old('stage') === $key)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                @error('stage')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <x-form-input 
+                                    name="stage" 
+                                    label="Tahapan"
+                                    type="select"
+                                    :options="collect([''])->union(collect($stageLabels)->mapWithKeys(function($label, $key) { return [$key => $label]; }))"
+                                    :value="old('stage')"
+                                    :errors="$errors"
+                                    required />
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Foto / dokumen</label>
-                                <input type="file" name="documentation" accept="image/*,.pdf"
-                                    class="form-control @error('documentation') is-invalid @enderror">
-                                <div class="form-text">JPG, PNG, WebP, atau PDF (maks. 5 MB)</div>
+                                <input type="file" name="documentation[]" accept="image/*" multiple
+                                    class="form-control @error('documentation') is-invalid @enderror"
+                                    id="docInput">
+                                <div class="form-text">JPG, PNG, WebP, GIF (maks. 5 MB per file)</div>
+                                <div id="fileCount" class="small text-muted mt-1"></div>
                                 @error('documentation')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                @error('documentation.*')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-semibold">Catatan</label>
-                                <textarea name="notes" rows="3" class="form-control @error('notes') is-invalid @enderror"
-                                    placeholder="Contoh: Muat 3 paket ke armada, dicek kelengkapan…">{{ old('notes') }}</textarea>
-                                @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <x-form-input 
+                                    name="notes" 
+                                    label="Catatan"
+                                    type="textarea"
+                                    :value="old('notes')"
+                                    placeholder="Contoh: Muat 3 paket ke armada, dicek kelengkapan…"
+                                    rows="3"
+                                    :errors="$errors" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Nama kurir (opsional, sinkron ke order)</label>
-                                <input type="text" name="courier_note" class="form-control form-control-sm"
-                                    value="{{ old('courier_note') }}" placeholder="Isi jika ingin memperbarui sekalian">
+                                <x-form-input 
+                                    name="courier_note" 
+                                    label="Nama kurir (opsional, sinkron ke order)"
+                                    :value="old('courier_note')"
+                                    placeholder="Isi jika ingin memperbarui sekalian"
+                                    :errors="$errors" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">No. resi (opsional)</label>
-                                <input type="text" name="tracking_note" class="form-control form-control-sm"
-                                    value="{{ old('tracking_note') }}" placeholder="Isi jika ada resi baru">
+                                <x-form-input 
+                                    name="tracking_note" 
+                                    label="No. resi (opsional)"
+                                    :value="old('tracking_note')"
+                                    placeholder="Isi jika ada resi baru"
+                                    :errors="$errors" />
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-success px-4">
@@ -209,16 +228,43 @@
                                                 </div>
                                             @endif
                                             @if ($log->documentation)
-                                                @php $url = asset('storage/' . $log->documentation); $isPdf = str_ends_with(strtolower($log->documentation), '.pdf'); @endphp
-                                                @if ($isPdf)
-                                                    <a href="{{ $url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
-                                                        <i class="bi bi-file-earmark-pdf me-1"></i>Buka PDF
-                                                    </a>
-                                                @else
-                                                    <a href="{{ $url }}" target="_blank" rel="noopener" class="d-inline-block">
-                                                        <img src="{{ $url }}" alt="Bukti" class="ship-doc-thumb border bg-white">
-                                                    </a>
-                                                @endif
+                                                @php 
+                                                    // Handle both old single string and new JSON array format
+                                                    $docs = [];
+                                                    $isJsonArray = false;
+                                                    
+                                                    try {
+                                                        $decoded = json_decode($log->documentation, true);
+                                                        if (is_array($decoded) && count($decoded) > 0) {
+                                                            $docs = $decoded;
+                                                            $isJsonArray = true;
+                                                        }
+                                                    } catch (\Exception $e) {
+                                                        // Not JSON, treat as single file
+                                                    }
+                                                    
+                                                    if (!$isJsonArray) {
+                                                        $docs = [$log->documentation];
+                                                    }
+                                                @endphp
+                                                
+                                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                                    @foreach ($docs as $doc)
+                                                        @php
+                                                            $url = asset('storage/' . $doc);
+                                                            $isPdf = str_ends_with(strtolower($doc), '.pdf');
+                                                        @endphp
+                                                        @if ($isPdf)
+                                                            <a href="{{ $url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                                                            </a>
+                                                        @else
+                                                            <a href="{{ $url }}" target="_blank" rel="noopener" class="d-inline-block">
+                                                                <img src="{{ $url }}" alt="Bukti" class="ship-doc-thumb border bg-white">
+                                                            </a>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
                                             @endif
                                         </div>
                                     </div>
@@ -231,4 +277,25 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const docInput = document.getElementById('docInput');
+        const fileCount = document.getElementById('fileCount');
+        
+        if (docInput) {
+            docInput.addEventListener('change', function() {
+                const count = this.files.length;
+                if (count > 0) {
+                    fileCount.textContent = '✓ ' + count + ' file dipilih';
+                    fileCount.className = 'small text-success mt-1';
+                } else {
+                    fileCount.textContent = '';
+                }
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

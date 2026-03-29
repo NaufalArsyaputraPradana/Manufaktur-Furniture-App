@@ -78,31 +78,49 @@
         {{-- Filter Form --}}
         <div class="card shadow-sm border-0 mb-4 rounded-3">
             <div class="card-body py-3">
+                @php
+                    // Build month options (1 => January, etc.)
+                    $monthOptions = [];
+                    for ($m = 1; $m <= 12; $m++) {
+                        $monthOptions[$m] = DateTime::createFromFormat('!m', $m)->format('F');
+                    }
+                    $currentMonth = request('month', now()->month);
+
+                    // Build year options (current year down to 2020)
+                    $yearOptions = [];
+                    for ($y = date('Y'); $y >= 2020; $y--) {
+                        $yearOptions[$y] = (string) $y;
+                    }
+                    $currentYear = request('year', now()->year);
+                @endphp
+
                 <form method="GET" action="{{ route('admin.payments.pending') }}" class="d-flex align-items-end gap-3">
                     @if(request('tab'))
                         <input type="hidden" name="tab" value="{{ request('tab') }}">
                     @endif
+
                     <div class="flex-grow-1">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Periode Bulan</label>
-                        <select name="month" class="form-select border-primary-subtle">
-                            @php $currentMonth = request('month', now()->month); @endphp
-                            @for ($m = 1; $m <= 12; $m++)
-                                <option value="{{ $m }}" {{ $m == $currentMonth ? 'selected' : '' }}>
-                                    {{ DateTime::createFromFormat('!m', $m)->format('F') }}
-                                </option>
-                            @endfor
-                        </select>
+                        <x-form-input
+                            name="month"
+                            type="select"
+                            label="Periode Bulan"
+                            :options="$monthOptions"
+                            :value="request('month', now()->month)"
+                            class="border-primary-subtle"
+                        />
                     </div>
+
                     <div class="flex-grow-1">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Tahun</label>
-                        <select name="year" class="form-select border-primary-subtle">
-                            @php $currentYear = request('year', now()->year); @endphp
-                            @for ($y = date('Y'); $y >= 2020; $y--)
-                                <option value="{{ $y }}" {{ $y == $currentYear ? 'selected' : '' }}>
-                                    {{ $y }}</option>
-                            @endfor
-                        </select>
+                        <x-form-input
+                            name="year"
+                            type="select"
+                            label="Tahun"
+                            :options="$yearOptions"
+                            :value="request('year', now()->year)"
+                            class="border-primary-subtle"
+                        />
                     </div>
+
                     <button type="submit" class="btn btn-primary shadow-sm">
                         <i class="bi bi-filter me-1"></i>Terapkan Filter
                     </button>

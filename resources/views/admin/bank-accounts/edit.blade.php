@@ -108,56 +108,32 @@
                             @csrf
                             @method('PUT')
 
-                            {{-- Bank Name --}}
-                            <div class="mb-4">
-                                <label for="bank_name" class="form-label">
-                                    Nama Bank
-                                    <span class="required-mark">*</span>
-                                </label>
-                                <input type="text" class="form-control @error('bank_name') is-invalid @enderror"
-                                    id="bank_name" name="bank_name" placeholder="Contoh: BCA, Mandiri, BNI"
-                                    value="{{ old('bank_name', $bankAccount->bank_name) }}" required>
-                                @error('bank_name')
-                                    <div class="invalid-feedback d-block mt-2">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="bank_name" 
+                                label="Nama Bank"
+                                :value="old('bank_name', $bankAccount->bank_name)"
+                                placeholder="Contoh: BCA, Mandiri, BNI"
+                                :errors="$errors"
+                                required />
 
-                            {{-- Account Holder --}}
-                            <div class="mb-4">
-                                <label for="account_holder" class="form-label">
-                                    Nama Pemilik Rekening
-                                    <span class="required-mark">*</span>
-                                </label>
-                                <input type="text" class="form-control @error('account_holder') is-invalid @enderror"
-                                    id="account_holder" name="account_holder"
-                                    placeholder="Contoh: PT. Manufaktur Furniture"
-                                    value="{{ old('account_holder', $bankAccount->account_holder) }}" required>
-                                @error('account_holder')
-                                    <div class="invalid-feedback d-block mt-2">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="account_holder" 
+                                label="Nama Pemilik Rekening"
+                                :value="old('account_holder', $bankAccount->account_holder)"
+                                placeholder="Contoh: PT. Manufaktur Furniture"
+                                :errors="$errors"
+                                required />
 
-                            {{-- Account Number --}}
-                            <div class="mb-4">
-                                <label for="account_number" class="form-label">
-                                    Nomor Rekening
-                                    <span class="required-mark">*</span>
-                                </label>
-                                <input type="text" class="form-control @error('account_number') is-invalid @enderror"
-                                    id="account_number" name="account_number" placeholder="Contoh: 1234567890"
-                                    value="{{ old('account_number', $bankAccount->account_number) }}" required
-                                    pattern="[0-9]+" title="Nomor rekening hanya boleh berisi angka">
-                                <small class="form-text">Masukkan nomor rekening dalam format angka saja</small>
-                                @error('account_number')
-                                    <div class="invalid-feedback d-block mt-2">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="account_number" 
+                                label="Nomor Rekening"
+                                :value="old('account_number', $bankAccount->account_number)"
+                                placeholder="Contoh: 1234567890"
+                                :errors="$errors"
+                                pattern="[0-9]+"
+                                title="Nomor rekening hanya boleh berisi angka"
+                                help="Masukkan nomor rekening dalam format angka saja"
+                                required />
 
                             {{-- Is Active --}}
                             <div class="mb-4">
@@ -172,24 +148,15 @@
                                 </div>
                             </div>
 
-                            {{-- Notes --}}
-                            <div class="mb-4">
-                                <label for="notes" class="form-label">
-                                    Catatan (Opsional)
-                                </label>
-                                <textarea class="form-control @error('notes') is-invalid @enderror"
-                                    id="notes" name="notes" rows="3"
-                                    placeholder="Contoh: Gunakan untuk pembayaran dP, atau catatan penting lainnya"
-                                    maxlength="500">{{ old('notes', $bankAccount->notes) }}</textarea>
-                                <small class="form-text d-block mt-2">
-                                    <span id="notes-count">{{ strlen($bankAccount->notes ?? '') }}</span>/500 karakter
-                                </small>
-                                @error('notes')
-                                    <div class="invalid-feedback d-block mt-2">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="notes" 
+                                label="Catatan (Opsional)"
+                                type="textarea"
+                                :value="old('notes', $bankAccount->notes)"
+                                placeholder="Contoh: Gunakan untuk pembayaran dP, atau catatan penting lainnya"
+                                rows="3"
+                                :errors="$errors"
+                                maxlength="500" />
 
                             {{-- Updated Info --}}
                             <div class="alert alert-light border-2 border-secondary rounded-3 mb-4">

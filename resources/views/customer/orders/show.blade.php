@@ -2178,6 +2178,434 @@
             @endif{{-- /production --}}
 
             {{-- ════════════════════════════════════════
+             SHIPPING MONITORING CARD
+        ═════════════════════════════════════════════ --}}
+            @if (in_array($order->status, ['in_production', 'completed']) || $order->shippingLogs()->exists())
+                @php
+                    $shippingLogs = $order->shippingLogs()->orderBy('created_at', 'desc')->get();
+                    $hasShipping = $shippingLogs->count() > 0;
+                    $currentStage = $shippingLogs->first();
+                    $shippingProgress = match (true) {
+                        $hasShipping && $currentStage->stage === 'delivered' => 100,
+                        $hasShipping && $currentStage->stage === 'out_for_delivery' => 80,
+                        $hasShipping && $currentStage->stage === 'in_transit' => 60,
+                        $hasShipping && $currentStage->stage === 'handover' => 40,
+                        $hasShipping && $currentStage->stage === 'loading' => 20,
+                        $hasShipping && $currentStage->stage === 'issue' => 50,
+                        default => 0,
+                    };
+                @endphp
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4 prod-card">
+                    {{-- Header with gradient --}}
+                    <div class="prod-card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);">
+                        <div class="d-flex align-items-center gap-3 flex-grow-1" style="position: relative; z-index: 2;">
+                            <div class="prod-header-icon" style="background: rgba(255, 255, 255, .2); border-color: rgba(255, 255, 255, .3);">
+                                <i class="bi bi-truck fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-white fw-bold mb-0">Monitoring Pengiriman</h5>
+                                <small class="text-white-50">Pantau perjalanan pesanan Anda hingga tiba</small>
+                            </div>
+                        </div>
+
+                        @if ($hasShipping)
+                            <div class="prod-overall-progress" style="position: relative; z-index: 2;">
+                                <div class="prod-progress-bar" style="width: {{ $shippingProgress }}%;"></div>
+                                <div class="prod-progress-label">
+                                    <span>{{ $shippingProgress }}%</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="card-body p-4">
+                        @if ($hasShipping)
+                            {{-- Shipping Stages Timeline --}}
+                            <div class="mb-5">
+                                <h6 class="fw-bold mb-4 text-muted">
+                                    <i class="bi bi-diagram-3 me-2"></i>Tahapan Pengiriman
+                                </h6>
+
+                                <div class="stage-stepper" style="overflow-x: auto; padding-bottom: 8px;">
+                                    <div class="stage-stepper-preview d-flex gap-3">
+                                        @php
+                                            $stages = [
+                                                'loading' => ['label' => 'Persiapan', 'icon' => 'bi-box-seam', 'color' => '#f59e0b'],
+                                                'handover' => ['label' => 'Diserah ke Kurir', 'icon' => 'bi-truck', 'color' => '#3b82f6'],
+                                                'in_transit' => ['label' => 'Dalam Perjalanan', 'icon' => 'bi-geo-alt', 'color' => '#8b5cf6'],
+                                                'out_for_delivery' => ['label' => 'Tiba Area Tujuan', 'icon' => 'bi-signpost-2', 'color' => '#ec4899'],
+                                                'delivered' => ['label' => 'Diterima', 'icon' => 'bi-house-check', 'color' => '#10b981'],
+                                            ];
+                                            $completedStages = [];
+                                            $currentIdx = 0;
+
+                                            foreach ($stages as $stage => $info) {
+                                                $log = $shippingLogs->firstWhere('stage', $stage);
+                                                if ($log) {
+                                                    $completedStages[] = $stage;
+                                                    $currentIdx = array_key_last($completedStages);
+                                                }
+                                            }
+                                        @endphp
+
+                                        @foreach ($stages as $stage => $info)
+                                            @php
+                                                $isCompleted = in_array($stage, $completedStages);
+                                                $isActive = $currentStage->stage === $stage;
+                                                $isPending = !$isCompleted && !$isActive;
+                                            @endphp
+
+                                            <div class="step-item {{ $isCompleted ? 'step-done' : ($isActive ? 'step-active' : 'step-pending') }}">
+                                                <div class="step-circle {{ $isCompleted ? 'step-done' : ($isActive ? 'step-active' : 'step-pending') }}" 
+                                                    style="border-color: {{ $info['color'] }}; {{ $isCompleted || $isActive ? 'background: ' . $info['color'] . '; color: white;' : '' }}">
+                                                    <i class="bi {{ $info['icon'] }}"></i>
+                                                </div>
+                                                <div class="step-label">{{ $info['label'] }}</div>
+                                                @if ($isCompleted || $isActive)
+                                                    @php
+                                                        $log = $shippingLogs->firstWhere('stage', $stage);
+                                                    @endphp
+                                                    <div class="step-pct text-muted small">{{ $log->created_at->format('d M') }}</div>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Current Status Card --}}
+                            @if ($currentStage)
+                                <div class="card border-start-4 rounded-3 mb-4" style="border-color: {{ match ($currentStage->stage) {
+                                    'loading' => '#f59e0b',
+                                    'handover' => '#3b82f6',
+                                    'in_transit' => '#8b5cf6',
+                                    'out_for_delivery' => '#ec4899',
+                                    'delivered' => '#10b981',
+                                    'issue' => '#ef4444',
+                                    default => '#6b7280',
+                                } }};">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-auto">
+                                                <div class="rounded-3 p-3" style="background: {{ match ($currentStage->stage) {
+                                                    'loading' => '#fef3c7',
+                                                    'handover' => '#dbeafe',
+                                                    'in_transit' => '#ede9fe',
+                                                    'out_for_delivery' => '#fce7f3',
+                                                    'delivered' => '#d1fae5',
+                                                    'issue' => '#fee2e2',
+                                                    default => '#f3f4f6',
+                                                } }};">
+                                                    <i class="bi {{ match ($currentStage->stage) {
+                                                        'loading' => 'bi-box-seam',
+                                                        'handover' => 'bi-truck',
+                                                        'in_transit' => 'bi-geo-alt',
+                                                        'out_for_delivery' => 'bi-signpost-2',
+                                                        'delivered' => 'bi-house-check',
+                                                        'issue' => 'bi-exclamation-triangle',
+                                                        default => 'bi-circle',
+                                                    } }} fs-4" style="color: {{ match ($currentStage->stage) {
+                                                        'loading' => '#f59e0b',
+                                                        'handover' => '#3b82f6',
+                                                        'in_transit' => '#8b5cf6',
+                                                        'out_for_delivery' => '#ec4899',
+                                                        'delivered' => '#10b981',
+                                                        'issue' => '#ef4444',
+                                                        default => '#6b7280',
+                                                    } }};"></i>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <h6 class="fw-bold mb-1">{{ $currentStage->stage_label }}</h6>
+                                                <div class="text-muted small">
+                                                    <i class="bi bi-clock-history me-1"></i>
+                                                    {{ $currentStage->created_at->diffForHumans() }}
+                                                    <br>
+                                                    <span class="text-dark fw-600">{{ $currentStage->created_at->format('d M Y, H:i') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if ($currentStage->notes)
+                                            <div class="mt-3 pt-3 border-top">
+                                                <p class="mb-0 small">
+                                                    <strong class="text-dark">Catatan:</strong><br>
+                                                    {{ $currentStage->notes }}
+                                                </p>
+                                            </div>
+                                        @endif
+
+                                        @if ($currentStage->courier_note)
+                                            <div class="mt-3 alert alert-info mb-0 py-2">
+                                                <small class="mb-0">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    <strong>Update Kurir:</strong> {{ $currentStage->courier_note }}
+                                                </small>
+                                            </div>
+                                        @endif
+
+                                        @if ($currentStage->tracking_note)
+                                            <div class="mt-3 alert alert-warning mb-0 py-2">
+                                                <small class="mb-0">
+                                                    <i class="bi bi-geo me-1"></i>
+                                                    <strong>Tracking:</strong> {{ $currentStage->tracking_note }}
+                                                </small>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Shipping Timeline --}}
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-muted">
+                                    <i class="bi bi-clock-history me-2"></i>Riwayat Pengiriman
+                                </h6>
+
+                                <div class="tl-list">
+                                    @forelse ($shippingLogs as $i => $log)
+                                        <div class="d-flex gap-0">
+                                            {{-- Timeline Dot --}}
+                                            <div class="tl-dot-col">
+                                                <div class="tl-dot" style="background: {{ match ($log->stage) {
+                                                    'loading' => '#f59e0b',
+                                                    'handover' => '#3b82f6',
+                                                    'in_transit' => '#8b5cf6',
+                                                    'out_for_delivery' => '#ec4899',
+                                                    'delivered' => '#10b981',
+                                                    'issue' => '#ef4444',
+                                                    default => '#6b7280',
+                                                } }};"></div>
+                                                @if (!$loop->last)
+                                                    <div class="tl-connector"></div>
+                                                @endif
+                                            </div>
+
+                                            {{-- Timeline Card --}}
+                                            <div class="tl-log-card">
+                                                <div class="d-flex flex-wrap gap-2 align-items-start justify-content-between mb-2">
+                                                    <div>
+                                                        <div class="tl-log-title">{{ $log->stage_label }}</div>
+                                                        <div class="tl-time-ago">{{ $log->created_at->diffForHumans() }}</div>
+                                                    </div>
+                                                    <span class="badge" style="background: {{ match ($log->stage) {
+                                                        'loading' => '#f59e0b',
+                                                        'handover' => '#3b82f6',
+                                                        'in_transit' => '#8b5cf6',
+                                                        'out_for_delivery' => '#ec4899',
+                                                        'delivered' => '#10b981',
+                                                        'issue' => '#ef4444',
+                                                        default => '#6b7280',
+                                                    } }};">{{ ucfirst(str_replace('_', ' ', $log->stage)) }}</span>
+                                                </div>
+
+                                                <div class="tl-time-abs text-muted small">
+                                                    <i class="bi bi-calendar-event me-1"></i>
+                                                    {{ $log->created_at->format('d M Y, H:i') }}
+                                                </div>
+
+                                                @if ($log->notes)
+                                                    <div class="tl-notes mt-2">
+                                                        <i class="tl-notes-icon bi bi-chat-left-text me-1"></i>
+                                                        {{ $log->notes }}
+                                                    </div>
+                                                @endif
+
+                                                @if ($log->courier_note)
+                                                    <div class="alert alert-info small mb-0 mt-2 py-2">
+                                                        <i class="bi bi-info-circle me-1"></i>
+                                                        <strong>Kurir:</strong> {{ $log->courier_note }}
+                                                    </div>
+                                                @endif
+
+                                                @if ($log->tracking_note)
+                                                    <div class="alert alert-warning small mb-0 mt-2 py-2">
+                                                        <i class="bi bi-geo me-1"></i>
+                                                        <strong>Tracking:</strong> {{ $log->tracking_note }}
+                                                    </div>
+                                                @endif
+
+                                                @if ($log->recordedBy)
+                                                    <div class="tl-author mt-2">
+                                                        <i class="tl-author-icon bi bi-person-circle me-1"></i>
+                                                        <span class="tl-author-text">
+                                                            Dicatat oleh <strong>{{ $log->recordedBy->name }}</strong>
+                                                        </span>
+                                                    </div>
+                                                @endif
+
+                                                {{-- Documentation Images --}}
+                                                @if ($log->documentation)
+                                                    @php
+                                                        // Handle both old single string and new JSON array format
+                                                        $docs = [];
+                                                        $isJsonArray = false;
+                                                        
+                                                        try {
+                                                            $decoded = json_decode($log->documentation, true);
+                                                            if (is_array($decoded) && count($decoded) > 0) {
+                                                                $docs = $decoded;
+                                                                $isJsonArray = true;
+                                                            }
+                                                        } catch (\Exception $e) {
+                                                            // Not JSON, treat as single file
+                                                        }
+                                                        
+                                                        if (!$isJsonArray) {
+                                                            $docs = [$log->documentation];
+                                                        }
+                                                    @endphp
+                                                    
+                                                    @if (count($docs) > 0)
+                                                        <div class="tl-docs mt-3">
+                                                            <div class="tl-docs-header">
+                                                                <i class="bi bi-images me-1"></i>
+                                                                Dokumentasi
+                                                                <span class="tl-docs-count">{{ count($docs) }}</span>
+                                                            </div>
+                                                            <div class="doc-img-grid">
+                                                                @foreach ($docs as $idx => $doc)
+                                                                    @php
+                                                                        // Build proper URL for documentation file
+                                                                        if (filter_var($doc, FILTER_VALIDATE_URL)) {
+                                                                            $docUrl = $doc;
+                                                                            $docExists = true;
+                                                                        } else {
+                                                                            $docUrl = asset('storage/' . $doc);
+                                                                            $docExists = file_exists(public_path('storage/' . $doc));
+                                                                        }
+                                                                        $shippingDocModalId = 'shippingDocModal_' . $log->id . '_' . $idx;
+                                                                    @endphp
+                                                                    <div class="doc-img-item">
+                                                                        <div class="doc-img-wrapper {{ !$docExists ? 'doc-img-error' : '' }}">
+                                                                            @if ($docExists)
+                                                                                <img src="{{ $docUrl }}" 
+                                                                                    alt="Documentation {{ $idx + 1 }}" 
+                                                                                    data-bs-toggle="modal" 
+                                                                                    data-bs-target="#{{ $shippingDocModalId }}"
+                                                                                    style="cursor: pointer;"
+                                                                                    loading="lazy">
+                                                                            @endif
+                                                                            <div class="doc-img-overlay">
+                                                                                <div class="doc-img-actions">
+                                                                                    @if ($docExists)
+                                                                                        <button type="button" class="btn btn-sm btn-white rounded-pill d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#{{ $shippingDocModalId }}">
+                                                                                            <i class="bi bi-zoom-in me-1"></i>Lihat
+                                                                                        </button>
+                                                                                    @endif
+                                                                                </div>
+                                                                            </div>
+                                                                            <span class="doc-img-badge">Foto {{ $idx + 1 }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-4">
+                                            <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+                                            <p class="text-muted mt-2 mb-0">Belum ada update pengiriman saat ini.</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        @else
+                            <div class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="bi bi-truck fs-1 text-muted opacity-25"></i>
+                                </div>
+                                <h6 class="text-muted fw-bold mb-1">Belum Ada Proses Pengiriman</h6>
+                                <p class="text-muted small mb-0">
+                                    Pengiriman akan dimulai setelah produksi pesanan Anda selesai. Anda akan menerima notifikasi ketika tahapan pengiriman dimulai.
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            {{-- Shipping Documentation Modals --}}
+            @if (in_array($order->status, ['in_production', 'completed']) || $order->shippingLogs()->exists())
+                @php
+                    $shippingLogs = $order->shippingLogs()->orderBy('created_at', 'desc')->get();
+                @endphp
+                @foreach ($shippingLogs as $log)
+                    @if ($log->documentation)
+                        @php
+                            $docs = [];
+                            $isJsonArray = false;
+                            
+                            try {
+                                $decoded = json_decode($log->documentation, true);
+                                if (is_array($decoded) && count($decoded) > 0) {
+                                    $docs = $decoded;
+                                    $isJsonArray = true;
+                                }
+                            } catch (\Exception $e) {}
+                            
+                            if (!$isJsonArray) {
+                                $docs = [$log->documentation];
+                            }
+                        @endphp
+                        @foreach ($docs as $imgIdx => $image)
+                            @php
+                                $imgPath = is_string($image) ? $image : $image['path'] ?? '';
+                                $imgUrl = asset('storage/' . $imgPath);
+                                $shippingDocModalId = 'shippingDocModal_' . $log->id . '_' . $imgIdx;
+                            @endphp
+                            <div class="modal fade" id="{{ $shippingDocModalId }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-xl">
+                                    <div class="modal-content rounded-4 overflow-hidden">
+                                        <div class="modal-header border-0 text-white"
+                                            style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);">
+                                            <h5 class="modal-title text-white">
+                                                <i class="bi bi-camera-fill me-2" aria-hidden="true"></i>
+                                                {{ $log->stage_label }}
+                                                <span class="opacity-75 ms-2 small fw-normal">Foto {{ $imgIdx + 1 }}</span>
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal" aria-label="Tutup"></button>
+                                        </div>
+                                        <div class="modal-body p-0 bg-dark">
+                                            <img src="{{ $imgUrl }}"
+                                                alt="{{ $log->stage_label }} Foto {{ $imgIdx + 1 }}"
+                                                class="img-fluid w-100" style="max-height:80vh;object-fit:contain;">
+                                        </div>
+                                        <div class="modal-footer bg-light d-flex justify-content-between">
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar-event me-1"
+                                                    aria-hidden="true"></i>{{ $log->created_at->format('d M Y, H:i') }}
+                                                @if ($log->recordedBy)
+                                                    &nbsp;·&nbsp;<i class="bi bi-person me-1"
+                                                        aria-hidden="true"></i>{{ $log->recordedBy->name }}
+                                                @endif
+                                            </small>
+                                            <div>
+                                                <a href="{{ $imgUrl }}"
+                                                    download="Pengiriman_{{ $order->order_number }}_{{ $imgIdx + 1 }}.jpg"
+                                                    class="btn btn-sm btn-success me-2">
+                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-secondary"
+                                                    data-bs-dismiss="modal">
+                                                    <i class="bi bi-x-lg me-1" aria-hidden="true"></i>Tutup
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                @endforeach
+            @endif
+
+            {{-- ════════════════════════════════════════
              CANCEL ORDER
         ═════════════════════════════════════════════ --}}
             @if ($order->status === 'pending')

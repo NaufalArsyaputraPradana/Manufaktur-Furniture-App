@@ -17,7 +17,7 @@ class InvoiceController extends Controller
         $this->authorizeCustomerOrder($order);
         $this->ensureInvoiceAllowed($order);
 
-        $order->load(['user', 'orderDetails.product', 'payment']);
+        $order->load(['user:id,name,email,phone,address', 'orderDetails:id,order_id,product_id,product_name,quantity,unit_price,subtotal', 'payment:id,order_id,payment_status,amount_paid,payment_channel']);
 
         return view('customer.invoices.show', compact('order'));
     }
@@ -27,7 +27,7 @@ class InvoiceController extends Controller
         $this->authorizeCustomerOrder($order);
         $this->ensureInvoiceAllowed($order);
 
-        $order->load(['user', 'orderDetails.product', 'payment']);
+        $order->load(['user:id,name,email,phone,address', 'orderDetails:id,order_id,product_id,product_name,quantity,unit_price,subtotal', 'payment:id,order_id,payment_status,amount_paid,payment_channel']);
 
         $pdf = Pdf::loadView('customer.invoices.pdf', compact('order'));
 

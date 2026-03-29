@@ -50,19 +50,7 @@
             @if ($orders->isNotEmpty())
                 <div class="row g-4">
                     @foreach ($orders as $order)
-                        @php
-                            $isPaid = $order->payment?->payment_status === \App\Models\Payment::STATUS_PAID;
-                            $isDpPaid = $order->payment?->payment_status === \App\Models\Payment::STATUS_DP_PAID;
-                            $badgeClass = match (true) {
-                                $order->status === 'pending' && $isPaid => 'bg-info',
-                                $order->status === 'pending' => 'bg-warning text-dark',
-                                $order->status === 'confirmed' => 'bg-info text-dark',
-                                $order->status === 'in_production' => 'bg-primary',
-                                $order->status === 'completed' => 'bg-success',
-                                $order->status === 'cancelled' => 'bg-danger',
-                                default => 'bg-secondary',
-                            };
-                        @endphp
+
                         <div class="col-12">
                             <div class="card border-0 shadow-sm rounded-4 order-card animate-on-scroll">
 
@@ -79,26 +67,7 @@
                                             {{ $order->created_at->format('d M Y, H:i') }} WIB
                                         </small>
                                     </div>
-                                    <span class="badge {{ $badgeClass }} fs-6 px-3 py-2 rounded-pill shadow-sm">
-                                        @if ($order->status === 'pending' && $isPaid)
-                                            <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Menunggu Verifikasi
-                                            Pembayaran
-                                        @elseif ($order->status === 'pending' && $isDpPaid)
-                                            <i class="bi bi-piggy-bank me-1" aria-hidden="true"></i>DP terverifikasi
-                                        @elseif ($order->status === 'pending')
-                                            <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Menunggu Pembayaran
-                                        @elseif ($order->status === 'confirmed')
-                                            <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Dikonfirmasi
-                                        @elseif ($order->status === 'in_production')
-                                            <i class="bi bi-gear-fill me-1" aria-hidden="true"></i>Dalam Produksi
-                                        @elseif ($order->status === 'completed')
-                                            <i class="bi bi-check-all me-1" aria-hidden="true"></i>Selesai
-                                        @elseif ($order->status === 'cancelled')
-                                            <i class="bi bi-x-circle-fill me-1" aria-hidden="true"></i>Dibatalkan
-                                        @else
-                                            {{ ucfirst($order->status) }}
-                                        @endif
-                                    </span>
+                                    <x-order-status-badge :status="$order->status" :payment="$order->payment" size="lg" />
                                 </div>
 
                                 {{-- Body --}}
@@ -112,157 +81,7 @@
                                             </h6>
 
                                             @forelse ($order->orderDetails as $detail)
-                                                <div
-                                                    class="card border border-light rounded-3 mb-3 order-item-card bg-light bg-opacity-50">
-                                                    <div class="card-body p-3">
-                                                        <div class="row g-3 align-items-start">
-                                                            {{-- Thumbnail --}}
-                                                            <div class="col-auto">
-                                                                @php
-                                                                    $thumbSrc = null;
-
-                                                                    // 1. Cek Gambar Custom
-                                                                    if (
-                                                                        $detail->is_custom &&
-                                                                        !empty($detail->custom_specifications)
-                                                                    ) {
-                                                                        $specs = is_string(
-                                                                            $detail->custom_specifications,
-                                                                        )
-                                                                            ? json_decode(
-                                                                                $detail->custom_specifications,
-                                                                                true,
-                                                                            )
-                                                                            : $detail->custom_specifications;
-
-                                                                        if (
-                                                                            !empty($specs['design_image']) &&
-                                                                            \Illuminate\Support\Facades\Storage::disk(
-                                                                                'public',
-                                                                            )->exists($specs['design_image'])
-                                                                        ) {
-                                                                            $thumbSrc = asset(
-                                                                                'storage/' . $specs['design_image'],
-                                                                            );
-                                                                        }
-                                                                    }
-
-                                                                    // 2. Fallback Gambar Produk Standar
-                                                                    if (!$thumbSrc && $detail->product) {
-                                                                        $path =
-                                                                            $detail->product->primaryImage?->image_path;
-
-                                                                        if (
-                                                                            !$path &&
-                                                                            $detail->product->relationLoaded(
-                                                                                'images',
-                                                                            ) &&
-                                                                            $detail->product->images->isNotEmpty()
-                                                                        ) {
-                                                                            $path = $detail->product->images->first()
-                                                                                ->image_path;
-                                                                        } elseif (
-                                                                            !$path &&
-                                                                            is_array($detail->product->images) &&
-                                                                            !empty($detail->product->images) &&
-                                                                            is_string($detail->product->images[0])
-                                                                        ) {
-                                                                            $path = $detail->product->images[0];
-                                                                        }
-
-                                                                        if (
-                                                                            $path &&
-                                                                            \Illuminate\Support\Facades\Storage::disk(
-                                                                                'public',
-                                                                            )->exists($path)
-                                                                        ) {
-                                                                            $thumbSrc = asset('storage/' . $path);
-                                                                        }
-                                                                    }
-                                                                @endphp
-
-                                                                <div class="position-relative shadow-sm rounded-3 overflow-hidden bg-white"
-                                                                    style="width:90px;height:90px;">
-                                                                    @if ($thumbSrc)
-                                                                        <img src="{{ $thumbSrc }}"
-                                                                            alt="{{ $detail->product_name }}"
-                                                                            class="w-100 h-100" style="object-fit:cover;"
-                                                                            loading="lazy"
-                                                                            onerror="this.parentElement.innerHTML='<div class=\'bg-light d-flex align-items-center justify-content-center w-100 h-100\'><i class=\'bi bi-image fs-3 text-muted\'></i></div>'">
-                                                                    @else
-                                                                        <div
-                                                                            class="bg-light d-flex align-items-center justify-content-center w-100 h-100">
-                                                                            <i class="bi bi-image fs-3 text-muted"
-                                                                                aria-hidden="true"></i>
-                                                                        </div>
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-
-                                                            {{-- Detail Item --}}
-                                                            <div class="col min-w-0">
-                                                                <h6 class="mb-1 fw-bold text-dark text-truncate"
-                                                                    title="{{ $detail->product?->name ?? $detail->product_name }}">
-                                                                    {{ $detail->product?->name ?? $detail->product_name }}
-                                                                </h6>
-
-                                                                <div class="mb-2 d-flex flex-wrap align-items-center gap-2">
-                                                                    <span class="badge bg-white text-dark border shadow-sm">
-                                                                        <i class="bi bi-box me-1"
-                                                                            aria-hidden="true"></i>{{ $detail->quantity }}
-                                                                        Unit
-                                                                    </span>
-                                                                    <span class="text-muted small">
-                                                                        @ <span class="price-convert"
-                                                                            data-price="{{ $detail->unit_price }}"
-                                                                            data-currency="IDR">
-                                                                            Rp
-                                                                            {{ number_format($detail->unit_price, 0, ',', '.') }}
-                                                                        </span>
-                                                                    </span>
-                                                                </div>
-
-                                                                @if ($detail->is_custom && !empty($specs))
-                                                                    <div class="alert alert-warning py-2 px-3 mb-2 small border-0 shadow-sm"
-                                                                        role="alert">
-                                                                        <div class="fw-bold mb-1 text-dark"><i
-                                                                                class="bi bi-pencil-square me-1"
-                                                                                aria-hidden="true"></i>Spesifikasi Custom:
-                                                                        </div>
-                                                                        <ul class="mb-0 ps-3 text-muted">
-                                                                            @if (!empty($specs['dimensions']))
-                                                                                <li><strong>Dimensi:</strong>
-                                                                                    {{ $specs['dimensions'] }}</li>
-                                                                            @endif
-                                                                            @if (!empty($specs['material_type']))
-                                                                                <li><strong>Material:</strong>
-                                                                                    {{ $specs['material_type'] }}</li>
-                                                                            @endif
-                                                                            @if (!empty($specs['color_finishing']))
-                                                                                <li><strong>Finishing:</strong>
-                                                                                    {{ $specs['color_finishing'] }}</li>
-                                                                            @endif
-                                                                            @if (!empty($specs['description']))
-                                                                                <li><strong>Catatan:</strong>
-                                                                                    {{ Str::limit($specs['description'], 50) }}
-                                                                                </li>
-                                                                            @endif
-                                                                        </ul>
-                                                                    </div>
-                                                                @endif
-
-                                                                <strong class="text-primary fs-6 d-block mt-2">
-                                                                    <span class="price-convert"
-                                                                        data-price="{{ $detail->subtotal }}"
-                                                                        data-currency="IDR">
-                                                                        Rp
-                                                                        {{ number_format($detail->subtotal, 0, ',', '.') }}
-                                                                    </span>
-                                                                </strong>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <x-order-item-card :detail="$detail" />
                                             @empty
                                                 <div class="alert alert-warning rounded-3 border-0" role="alert">
                                                     <i class="bi bi-exclamation-triangle-fill me-2"

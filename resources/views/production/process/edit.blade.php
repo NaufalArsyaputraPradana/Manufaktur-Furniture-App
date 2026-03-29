@@ -43,45 +43,36 @@
 
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <label for="stage" class="form-label fw-bold">Tahap Produksi <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select @error('stage') is-invalid @enderror" id="stage"
-                                    name="stage" required>
-                                    <option value="">-- Pilih Tahap --</option>
-                                    @foreach (\App\Models\ProductionProcess::STAGE_LABELS as $val => $label)
-                                        <option value="{{ $val }}"
-                                            {{ old('stage', $process->stage) == $val ? 'selected' : '' }}>
-                                            {{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                @error('stage')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="stage" 
+                                    label="Tahap Produksi"
+                                    type="select"
+                                    :options="collect(['', '-- Pilih Tahap --'])->union(collect(\App\Models\ProductionProcess::STAGE_LABELS)->mapWithKeys(function($label, $val) { return [$val => $label]; }))"
+                                    :value="old('stage', $process->stage)"
+                                    :errors="$errors"
+                                    required />
                             </div>
 
                             <div class="col-md-6">
-                                <label for="status" class="form-label fw-bold">Status <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select @error('status') is-invalid @enderror" id="status"
-                                    name="status" required>
-                                    @foreach (['pending' => 'Pending', 'in_progress' => 'In Progress', 'completed' => 'Selesai', 'paused' => 'Dijeda', 'issue' => 'Ada Masalah'] as $val => $label)
-                                        <option value="{{ $val }}"
-                                            {{ old('status', $process->status) == $val ? 'selected' : '' }}>
-                                            {{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                @error('status')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="status" 
+                                    label="Status"
+                                    type="select"
+                                    :options="['pending' => 'Pending', 'in_progress' => 'In Progress', 'completed' => 'Selesai', 'paused' => 'Dijeda', 'issue' => 'Ada Masalah']"
+                                    :value="old('status', $process->status)"
+                                    :errors="$errors"
+                                    required />
                             </div>
 
                             <div class="col-12">
-                                <label for="notes" class="form-label fw-bold">Catatan Lapangan</label>
-                                <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="3"
-                                    placeholder="Instruksi atau catatan khusus (opsional)">{{ old('notes', $process->notes) }}</textarea>
-                                @error('notes')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <x-form-input 
+                                    name="notes" 
+                                    label="Catatan Lapangan"
+                                    type="textarea"
+                                    :value="old('notes', $process->notes)"
+                                    placeholder="Instruksi atau catatan khusus (opsional)"
+                                    rows="3"
+                                    :errors="$errors" />
                             </div>
 
                             <div class="col-12">

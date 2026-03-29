@@ -21,7 +21,7 @@ class OrderTrackingController extends Controller
 {
     public function index(): View
     {
-        $orders = Order::with(['orderDetails.product', 'payment'])
+        $orders = Order::with(['user:id,name,email', 'orderDetails:id,order_id,product_id,product_name,quantity', 'payment:id,order_id,payment_status,amount_paid'])
             ->when(Auth::user()?->role?->name === 'customer', function ($query) {
                 $query->where('user_id', Auth::id());
             })
@@ -36,13 +36,14 @@ class OrderTrackingController extends Controller
         $this->authorizeOrder($order);
 
         $order->load([
-            'user',
-            'orderDetails.product.category',
-            'payment',
+            'user:id,name,email,phone',
+            'orderDetails.product.category:id,name',
+            'payment:id,order_id,payment_status,amount_paid,payment_channel',
+            'shippingLogs:id,order_id,stage,status,notes,created_at',
             'productionProcesses' => fn ($q) => $q->with([
-                'orderDetail.product',
-                'assignedTo',
-                'logs' => fn ($q) => $q->with(['user.role'])->orderByDesc('created_at'),
+                'orderDetails:id,order_id,product_id,product_name',
+                'assignedTo:id,name',
+                'logs' => fn ($q) => $q->with(['user:id,name'])->orderByDesc('created_at'),
             ])->orderBy('created_at'),
         ]);
 

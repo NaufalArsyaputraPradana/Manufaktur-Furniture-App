@@ -25,15 +25,19 @@ class DashboardController extends Controller
         $lastMonth = $now->copy()->subMonth();
 
         $stats = Cache::remember('dashboard.stats.main', 300, function () use ($currentMonth, $currentYear, $lastMonth) {
-            $revenueCurrentMonth = Order::where('status', 'completed')
-                ->whereMonth('created_at', $currentMonth)
-                ->whereYear('created_at', $currentYear)
-                ->sum('total');
+            // Consolidate multiple count and sum queries into single database query
+            $orderStats = Order::select(
+                DB::raw('COUNT(*) as total_orders'),
+                DB::raw('SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending_orders'),
+                DB::raw('SUM(CASE WHEN status IN ("confirmed", "in_production") THEN 1 ELSE 0 END) as process_orders'),
+                DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed_orders'),
+                DB::raw('SUM(CASE WHEN status = "completed" THEN total ELSE 0 END) as total_revenue'),
+                DB::raw('SUM(CASE WHEN status = "completed" AND MONTH(created_at) = ' . $currentMonth . ' AND YEAR(created_at) = ' . $currentYear . ' THEN total ELSE 0 END) as revenue_current_month'),
+                DB::raw('SUM(CASE WHEN status = "completed" AND MONTH(created_at) = ' . $lastMonth->month . ' AND YEAR(created_at) = ' . $lastMonth->year . ' THEN total ELSE 0 END) as revenue_last_month')
+            )->first();
 
-            $revenueLastMonth = Order::where('status', 'completed')
-                ->whereMonth('created_at', $lastMonth->month)
-                ->whereYear('created_at', $lastMonth->year)
-                ->sum('total');
+            $revenueCurrentMonth = $orderStats->revenue_current_month ?? 0;
+            $revenueLastMonth = $orderStats->revenue_last_month ?? 0;
 
             $growthPercentage = 0;
             if ($revenueLastMonth > 0) {
@@ -43,13 +47,13 @@ class DashboardController extends Controller
             }
 
             return [
-                'total_orders'    => Order::count(),
-                'pending_orders'  => Order::where('status', 'pending')->count(),
-                'process_orders'  => Order::whereIn('status', ['confirmed', 'in_production'])->count(),
-                'completed_orders' => Order::where('status', 'completed')->count(),
+                'total_orders'    => $orderStats->total_orders ?? 0,
+                'pending_orders'  => $orderStats->pending_orders ?? 0,
+                'process_orders'  => $orderStats->process_orders ?? 0,
+                'completed_orders' => $orderStats->completed_orders ?? 0,
                 'total_products'  => Product::count(),
                 'total_categories' => Category::count(),
-                'total_revenue'   => Order::where('status', 'completed')->sum('total'),
+                'total_revenue'   => $orderStats->total_revenue ?? 0,
                 'revenue_month'   => $revenueCurrentMonth,
                 'revenue_growth'  => round($growthPercentage, 1),
                 'total_customers' => User::whereHas('role', fn($q) => $q->where('name', 'customer'))->count(),
@@ -79,7 +83,7 @@ class DashboardController extends Controller
             return ['labels' => $labels, 'data' => $data];
         });
 
-        $recentOrders = Order::with(['user', 'orderDetails.product'])
+        $recentOrders = Order::with(['user:id,name,email', 'orderDetails:id,order_id,product_name,quantity', 'payment:id,order_id,payment_status'])
             ->latest()
             ->limit(5)
             ->get();

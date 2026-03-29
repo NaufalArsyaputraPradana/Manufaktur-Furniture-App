@@ -19,7 +19,11 @@ return new class extends Migration {
                 'cancelled',
                 'on_hold'
             ])->default('pending');
+            $table->string('shipping_status', 40)->nullable()->comment('processing, shipped, delivered');
+            $table->string('courier', 100)->nullable()->comment('Shipping courier name');
+            $table->string('tracking_number', 120)->nullable()->comment('Tracking number from courier');
             $table->text('shipping_address')->nullable();
+            $table->string('phone', 20)->nullable()->comment('Shipping contact phone');
             $table->decimal('subtotal', 15, 2)->default(0);
             $table->decimal('total', 15, 2)->default(0);
             $table->text('customer_notes')->nullable();
@@ -27,6 +31,8 @@ return new class extends Migration {
             $table->date('order_date')->useCurrent();
             $table->date('expected_completion_date')->nullable();
             $table->date('actual_completion_date')->nullable();
+            $table->timestamp('shipped_at')->nullable()->comment('When order was shipped');
+            $table->timestamp('delivered_at')->nullable()->comment('When order was delivered');
             $table->timestamps();
         });
     }

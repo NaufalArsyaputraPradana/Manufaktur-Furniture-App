@@ -22,7 +22,8 @@ class StoreOrderShippingLogRequest extends FormRequest
                 Rule::in(array_keys(OrderShippingLog::stageLabels())),
             ],
             'notes' => 'nullable|string|max:2000',
-            'documentation' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            'documentation' => 'nullable|array',
+            'documentation.*' => 'file|mimes:jpg,jpeg,png,webp,gif|max:5120',
             'courier_note' => 'nullable|string|max:120',
             'tracking_note' => 'nullable|string|max:120',
         ];

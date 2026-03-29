@@ -74,65 +74,43 @@
 
                                 <div class="row g-4">
                                     <div class="col-md-6">
-                                        <label for="name" class="form-label fw-bold small text-muted text-uppercase">
-                                            Nama Lengkap <span class="text-danger" aria-hidden="true">*</span>
-                                        </label>
-                                        <div class="input-group has-validation">
-                                            <span class="input-group-text bg-light border-end-0"><i
-                                                    class="bi bi-person text-primary" aria-hidden="true"></i></span>
-                                            <input type="text"
-                                                class="form-control form-control-lg border-start-0 ps-0 @error('name') is-invalid @enderror"
-                                                id="name" name="name" value="{{ old('name', $user->name) }}"
-                                                required>
-                                            @error('name')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
+                                        <x-form-input 
+                                            name="name" 
+                                            label="Nama Lengkap"
+                                            :value="old('name', $user->name)"
+                                            :errors="$errors"
+                                            required />
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label for="email" class="form-label fw-bold small text-muted text-uppercase">
-                                            Alamat Email <span class="text-danger" aria-hidden="true">*</span>
-                                        </label>
-                                        <div class="input-group has-validation">
-                                            <span class="input-group-text bg-light border-end-0"><i
-                                                    class="bi bi-envelope text-primary" aria-hidden="true"></i></span>
-                                            <input type="email"
-                                                class="form-control form-control-lg border-start-0 ps-0 @error('email') is-invalid @enderror"
-                                                id="email" name="email" value="{{ old('email', $user->email) }}"
-                                                required>
-                                            @error('email')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
+                                        <x-form-input 
+                                            name="email" 
+                                            label="Alamat Email"
+                                            type="email"
+                                            :value="old('email', $user->email)"
+                                            :errors="$errors"
+                                            required />
                                     </div>
 
                                     <div class="col-md-12">
-                                        <label for="phone" class="form-label fw-bold small text-muted text-uppercase">
-                                            No. Telepon / WhatsApp
-                                        </label>
-                                        <div class="input-group has-validation">
-                                            <span class="input-group-text bg-light border-end-0"><i
-                                                    class="bi bi-telephone text-primary" aria-hidden="true"></i></span>
-                                            <input type="tel"
-                                                class="form-control form-control-lg border-start-0 ps-0 @error('phone') is-invalid @enderror"
-                                                id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
-                                                placeholder="Contoh: 08123456789">
-                                            @error('phone')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
+                                        <x-form-input 
+                                            name="phone" 
+                                            label="No. Telepon / WhatsApp"
+                                            type="tel"
+                                            :value="old('phone', $user->phone)"
+                                            placeholder="Contoh: 08123456789"
+                                            :errors="$errors" />
                                     </div>
 
                                     <div class="col-12">
-                                        <label for="address" class="form-label fw-bold small text-muted text-uppercase">
-                                            Alamat Pengiriman Default
-                                        </label>
-                                        <textarea class="form-control form-control-lg bg-light @error('address') is-invalid @enderror" id="address"
-                                            name="address" rows="3" placeholder="Alamat lengkap untuk pengiriman (Otomatis terisi saat checkout)">{{ old('address', $user->address) }}</textarea>
-                                        @error('address')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
+                                        <x-form-input 
+                                            name="address" 
+                                            label="Alamat Pengiriman Default"
+                                            type="textarea"
+                                            :value="old('address', $user->address)"
+                                            placeholder="Alamat lengkap untuk pengiriman (Otomatis terisi saat checkout)"
+                                            rows="3"
+                                            :errors="$errors" />
                                     </div>
 
                                     <div class="col-md-6">
