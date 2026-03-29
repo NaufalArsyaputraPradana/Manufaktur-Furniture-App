@@ -69,9 +69,13 @@
                     {{-- Product Name --}}
                     <div class="col-12">
                         <h5 class="mb-1 fw-bold text-dark">
-                            {{ $prod->name ?? 'Produk' }}
+                            @if ($detail->is_custom)
+                                {{ $detail->product_name ?? 'Custom Produk' }}
+                            @else
+                                {{ $prod->name ?? 'Produk' }}
+                            @endif
                         </h5>
-                        @if ($prod && $prod->sku)
+                        @if (!$detail->is_custom && $prod && $prod->sku)
                             <small class="text-muted">SKU: {{ $prod->sku }}</small>
                         @endif
                     </div>
