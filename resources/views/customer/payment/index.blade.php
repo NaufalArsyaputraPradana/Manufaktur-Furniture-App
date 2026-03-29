@@ -104,7 +104,8 @@
                                 $calculatedTotal = $order->orderDetails->sum(fn($d) => $d->unit_price * $d->quantity);
                                 $pct = (float) 50;
                                 $dpAmt = round($calculatedTotal * $pct / 100, 2);
-                                $dueNow = $isBalanceUi ? $order->remainingPayableAmount() : $dpAmt;
+                                $remainingPayment = $calculatedTotal - $dpAmt;
+                                $dueNow = $isBalanceUi ? $remainingPayment : $dpAmt;
                                 $dueLabel = $isBalanceUi ? 'Sisa pelunasan' : 'Jumlah transfer sekarang (DP ' . $pct . '%)';
                             @endphp
                             <div class="bg-light p-4 rounded-4 text-center border-2 border-success border-opacity-25">
