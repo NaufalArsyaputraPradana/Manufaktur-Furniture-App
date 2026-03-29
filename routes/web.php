@@ -163,6 +163,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/{payment}', 'show')->name('show');
         Route::post('/{payment}/verify', 'verify')->name('verify');
         Route::post('/{payment}/reject', 'reject')->name('reject');
+        Route::post('/{payment}/confirm-final', 'confirmFinalPayment')->name('confirm-final');
     });
 
     // Reports

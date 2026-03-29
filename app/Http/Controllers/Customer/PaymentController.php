@@ -118,4 +118,25 @@ class PaymentController extends Controller
             return back()->with('error', 'Gagal menolak pembayaran. Silakan coba lagi.');
         }
     }
+
+    public function confirmFinalPayment(Request $request, Payment $payment): RedirectResponse
+    {
+        try {
+            // Check if payment is in FULL_PENDING status
+            if ($payment->payment_status !== Payment::STATUS_FULL_PENDING) {
+                return back()->with('error', 'Pembayaran tidak dalam status menunggu konfirmasi pelunasan.');
+            }
+
+            $this->paymentService->confirmFinalPayment($payment);
+            $order = $payment->order;
+            $note = '[' . now()->format('d/m/Y H:i') . '] Pelunasan dikonfirmasi oleh Admin. Status pesanan berubah menjadi LUNAS.';
+            $order->update(['admin_notes' => trim(($order->admin_notes ?? '') . "\n" . $note)]);
+
+            return redirect()->route('admin.payments.show', $payment)
+                ->with('success', 'Pelunasan berhasil dikonfirmasi. Pesanan sekarang berstatus LUNAS.');
+        } catch (\Exception $e) {
+            Log::error('Final payment confirmation failed', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal mengkonfirmasi pelunasan: ' . $e->getMessage());
+        }
+    }
 }
