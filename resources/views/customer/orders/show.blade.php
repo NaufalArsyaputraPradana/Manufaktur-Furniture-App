@@ -1357,11 +1357,23 @@
                                                     @endif
                                                 </strong>
                                             </div>
-                                            <div class="payment-detail-row border-0 pb-0">
-                                                <span class="text-muted">Total</span>
-                                                <h5 class="mb-0 text-success fw-bold">
-                                                    Rp
-                                                    {{ number_format($order->payment->amount ?? $calculatedTotal, 0, ',', '.') }}
+                                            <div class="payment-detail-row border-bottom">
+                                                <span class="text-muted">Total Pesanan</span>
+                                                <strong class="text-dark">
+                                                    <span class="price-convert" data-price="{{ $calculatedTotal }}" data-currency="IDR">
+                                                        Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
+                                                    </span>
+                                                </strong>
+                                            </div>
+                                            @php
+                                                $dpAmountWaiting = round($calculatedTotal * 50 / 100, 2);
+                                            @endphp
+                                            <div class="payment-detail-row border-0 pb-0 pt-2">
+                                                <span class="text-muted">Total DP (50%)</span>
+                                                <h5 class="mb-0 text-warning fw-bold">
+                                                    <span class="price-convert" data-price="{{ $dpAmountWaiting }}" data-currency="IDR">
+                                                        Rp {{ number_format($dpAmountWaiting, 0, ',', '.') }}
+                                                    </span>
                                                 </h5>
                                             </div>
                                         </div>
