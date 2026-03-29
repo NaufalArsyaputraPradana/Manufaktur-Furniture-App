@@ -21,7 +21,12 @@ class OrderTrackingController extends Controller
 {
     public function index(): View
     {
-        $orders = Order::with(['user:id,name,email', 'orderDetails:id,order_id,product_id,product_name,quantity', 'payment:id,order_id,payment_status,amount_paid'])
+        $orders = Order::with([
+            'user:id,name,email',
+            'orderDetails:id,order_id,product_id,product_name,quantity,is_custom,custom_specifications',
+            'orderDetails.product:id,images',
+            'payment:id,order_id,payment_status,amount_paid'
+        ])
             ->when(Auth::user()?->role?->name === 'customer', function ($query) {
                 $query->where('user_id', Auth::id());
             })

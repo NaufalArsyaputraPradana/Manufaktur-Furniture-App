@@ -7,23 +7,26 @@
     // Get product reference
     $prod = $product ?? $detail->product;
     
-    // Image handling - same pattern as customer/orders/show.blade.php
+    // Image handling - robust pattern matching show.blade.php exactly
     $customImagePath = null;
     $productImagePath = null;
 
-    // 1. Check custom design image
+    // 1. Check custom design image first
     if ($detail->is_custom && $detail->custom_specifications) {
         $detailSpecs = is_string($detail->custom_specifications)
             ? json_decode($detail->custom_specifications, true)
             : $detail->custom_specifications;
-        $customImagePath = $detailSpecs['design_image'] ?? null;
+        // Get design_image from specs
+        if ($detailSpecs && is_array($detailSpecs)) {
+            $customImagePath = $detailSpecs['design_image'] ?? null;
+        }
     }
 
-    // 2. Fallback to product image
-    if (!$customImagePath && $prod?->images) {
-        $imgs = is_string($prod->images)
-            ? json_decode($prod->images, true) ?? []
-            : $prod->images;
+    // 2. Fallback to product image (only if no custom image AND product exists)
+    if (!$customImagePath && $detail->product?->images) {
+        $imgs = is_string($detail->product->images)
+            ? json_decode($detail->product->images, true) ?? []
+            : $detail->product->images;
         $first = is_array($imgs) ? $imgs[0] ?? null : $imgs->first();
         if ($first) {
             $productImagePath = is_object($first)
