@@ -209,76 +209,85 @@
                                 <input type="hidden" name="payment_channel" id="paymentChannelField" value="{{ $isBalanceUi ? \App\Models\Payment::CHANNEL_MANUAL_FULL : \App\Models\Payment::CHANNEL_MANUAL_DP }}">
 
                                 {{-- ===================================
-                                    SECTION 1: BANK DETAILS (Left Side)
+                                    SECTION 1: BANK DETAILS
                                     =================================== --}}
                                 @if($isBalanceUi)
-                                <div class="row mb-4">
-                                    <div class="col-lg-6">
-                                        <h6 class="fw-bold mb-3">
-                                            <i class="bi bi-bank me-2 text-primary"></i>Data Rekening Tujuan
-                                        </h6>
-                                        <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
-                                            <div class="mb-4">
-                                                <small class="text-muted d-block mb-1">Nama Bank</small>
-                                                <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['name'] ?? '-' }}</h6>
+                                <div class="bank-details-section mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="bi bi-bank me-2 text-primary" style="font-size: 1.5rem;"></i>
+                                        <h6 class="fw-bold mb-0">Data Rekening Tujuan</h6>
+                                    </div>
+                                    
+                                    <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-4">
+                                                <small class="text-muted d-block mb-2">Nama Bank</small>
+                                                <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ ($bank ?? [])['name'] ?? '-' }}</p>
                                             </div>
-                                            <div class="mb-4">
-                                                <small class="text-muted d-block mb-1">Atas Nama Rekening</small>
-                                                <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['holder'] ?? '-' }}</h6>
+                                            <div class="col-md-6 mb-4">
+                                                <small class="text-muted d-block mb-2">Atas Nama Rekening</small>
+                                                <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ ($bank ?? [])['holder'] ?? '-' }}</p>
                                             </div>
-                                            <div>
-                                                <small class="text-muted d-block mb-2">Nomor Rekening</small>
-                                                <div class="font-monospace fs-6 fw-bold text-success bg-light p-3 rounded-3 border-2 border-success border-opacity-50 text-center" id="rekeningNumber" style="display: block !important; visibility: visible !important;">
-                                                    {{ ($bank ?? [])['account'] ?? '-' }}
-                                                </div>
-                                                <small class="text-muted d-block mt-2 text-center">
-                                                    <i class="bi bi-info-circle me-1"></i>Salin nomor rekening di atas untuk transfer
-                                                </small>
+                                        </div>
+                                        
+                                        <hr class="my-3">
+                                        
+                                        <div>
+                                            <small class="text-muted d-block mb-2">Nomor Rekening</small>
+                                            <div class="font-monospace fw-bold text-success bg-white p-4 rounded-3 border-3 border-success border-opacity-50 text-center mb-3" id="rekeningNumber" style="display: block !important; visibility: visible !important; font-size: 1.5rem; letter-spacing: 2px;">
+                                                {{ ($bank ?? [])['account'] ?? '-' }}
+                                            </div>
+                                            <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-0">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                <small>Salin nomor rekening di atas untuk transfer</small>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    {{-- ===================================
-                                        SECTION 2: BUKTI TRANSFER (Right Side)
-                                        =================================== --}}
-                                    <div class="col-lg-6">
-                                        <h6 class="fw-bold mb-3">
-                                            <i class="bi bi-receipt me-2 text-primary"></i>Unggah Bukti Transfer
-                                        </h6>
-                                        <div id="proofUploadCard" class="proof-upload-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold mb-2">
-                                                    Bukti transfer <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="file" name="payment_proof" id="payment_proof" 
-                                                    class="form-control form-control-lg rounded-3" 
-                                                    accept="image/jpeg,image/png,image/webp">
-                                                <small class="text-muted d-block mt-2">
-                                                    Format: JPG, PNG, WebP (Max: 4MB)
-                                                </small>
-                                            </div>
+                                {{-- ===================================
+                                    SECTION 2: BUKTI TRANSFER (SEPARATE)
+                                    =================================== --}}
+                                <div class="proof-upload-section mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="bi bi-receipt me-2 text-primary" style="font-size: 1.5rem;"></i>
+                                        <h6 class="fw-bold mb-0">Unggah Bukti Transfer</h6>
+                                    </div>
+                                    
+                                    <div id="proofUploadCard" class="proof-upload-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
+                                        <label class="form-label fw-bold mb-3 d-block">
+                                            Bukti transfer <span class="text-danger">*</span>
+                                        </label>
+                                        
+                                        <input type="file" name="payment_proof" id="payment_proof" 
+                                            class="form-control form-control-lg rounded-3 mb-2" 
+                                            accept="image/jpeg,image/png,image/webp">
+                                        
+                                        <small class="text-muted d-block mb-3">
+                                            <i class="bi bi-info-circle me-1"></i>Format: JPG, PNG, WebP (Max: 4MB)
+                                        </small>
 
-                                            {{-- Preview --}}
-                                            <div id="paymentProofPreview" class="payment-proof-preview mt-4 d-none">
-                                                <div class="border-2 border-success border-opacity-25 rounded-4 p-3 bg-light text-center">
-                                                    <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:200px;cursor:pointer" onclick="openPaymentProofModal()">
-                                                    <div class="small text-muted mt-3 text-start">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <span id="fileName">-</span> · <span id="fileSize">-</span>
-                                                            </div>
-                                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removePaymentProof()">
-                                                                <i class="bi bi-trash me-1"></i>Hapus
-                                                            </button>
-                                                        </div>
+                                        {{-- Preview Section --}}
+                                        <div id="paymentProofPreview" class="payment-proof-preview d-none">
+                                            <div class="border-2 border-success border-opacity-25 rounded-4 p-4 bg-light text-center">
+                                                <small class="text-muted d-block mb-2">Preview Bukti Transfer</small>
+                                                <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:250px;cursor:pointer;display:block;margin:0 auto;" onclick="openPaymentProofModal()">
+                                                
+                                                <div class="small text-muted mt-3 d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i class="bi bi-file-image me-1"></i>
+                                                        <span id="fileName">-</span> · <span id="fileSize">-</span>
                                                     </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removePaymentProof()">
+                                                        <i class="bi bi-trash me-1"></i>Hapus
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="d-grid gap-3 mt-4">
+                                <div class="d-grid gap-3">
                                     <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="manualSubmitBtn">
                                         <i class="bi bi-upload me-2"></i>Kirim Bukti Pembayaran
                                     </button>
@@ -287,77 +296,88 @@
                                     </a>
                                 </div>
                             @else
-                                {{-- NON-BALANCE PAGE: Show bank details and proof only for manual modes --}}
+                                {{-- NON-BALANCE PAGE: Manual fields with separate sections --}}
                                 <div id="manualFields" class="d-none">
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <h6 class="fw-bold mb-3">
-                                                <i class="bi bi-bank me-2 text-primary"></i>Data Rekening Tujuan
-                                            </h6>
-                                            <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4">
-                                                <div class="mb-4">
-                                                    <small class="text-muted d-block mb-1">Nama Bank</small>
-                                                    <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['name'] ?? '-' }}</h6>
+                                    {{-- Section 1: Bank Details --}}
+                                    <div class="bank-details-section mb-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-bank me-2 text-primary" style="font-size: 1.5rem;"></i>
+                                            <h6 class="fw-bold mb-0">Data Rekening Tujuan</h6>
+                                        </div>
+                                        
+                                        <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-4">
+                                                    <small class="text-muted d-block mb-2">Nama Bank</small>
+                                                    <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ ($bank ?? [])['name'] ?? '-' }}</p>
                                                 </div>
-                                                <div class="mb-4">
-                                                    <small class="text-muted d-block mb-1">Atas Nama Rekening</small>
-                                                    <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['holder'] ?? '-' }}</h6>
+                                                <div class="col-md-6 mb-4">
+                                                    <small class="text-muted d-block mb-2">Atas Nama Rekening</small>
+                                                    <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ ($bank ?? [])['holder'] ?? '-' }}</p>
                                                 </div>
-                                                <div>
-                                                    <small class="text-muted d-block mb-2">Nomor Rekening</small>
-                                                    <div class="font-monospace fs-6 fw-bold text-success bg-light p-3 rounded-3 border-2 border-success border-opacity-50 text-center" id="rekeningNumber">
-                                                        {{ ($bank ?? [])['account'] ?? '-' }}
-                                                    </div>
-                                                    <small class="text-muted d-block mt-2 text-center">
-                                                        <i class="bi bi-info-circle me-1"></i>Salin nomor rekening di atas untuk transfer
-                                                    </small>
+                                            </div>
+                                            
+                                            <hr class="my-3">
+                                            
+                                            <div>
+                                                <small class="text-muted d-block mb-2">Nomor Rekening</small>
+                                                <div class="font-monospace fw-bold text-success bg-white p-4 rounded-3 border-3 border-success border-opacity-50 text-center mb-3" id="rekeningNumber" style="font-size: 1.5rem; letter-spacing: 2px;">
+                                                    {{ ($bank ?? [])['account'] ?? '-' }}
+                                                </div>
+                                                <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-0">
+                                                    <i class="bi bi-info-circle me-2"></i>
+                                                    <small>Salin nomor rekening di atas untuk transfer</small>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div class="col-lg-6">
-                                            <h6 class="fw-bold mb-3">
-                                                <i class="bi bi-receipt me-2 text-primary"></i>Unggah Bukti Transfer
-                                            </h6>
-                                            <div id="proofUploadCard" class="proof-upload-card border rounded-4 p-4">
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold mb-2">
-                                                        Bukti transfer <span class="text-danger">*</span>
-                                                    </label>
-                                                    <input type="file" name="payment_proof" id="payment_proof" 
-                                                        class="form-control form-control-lg rounded-3" 
-                                                        accept="image/jpeg,image/png,image/webp">
-                                                    <small class="text-muted d-block mt-2">
-                                                        Format: JPG, PNG, WebP (Max: 4MB)
-                                                    </small>
-                                                </div>
+                                    {{-- Section 2: Bukti Transfer --}}
+                                    <div class="proof-upload-section mb-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-receipt me-2 text-primary" style="font-size: 1.5rem;"></i>
+                                            <h6 class="fw-bold mb-0">Unggah Bukti Transfer</h6>
+                                        </div>
+                                        
+                                        <div id="proofUploadCard" class="proof-upload-card border rounded-4 p-4">
+                                            <label class="form-label fw-bold mb-3 d-block">
+                                                Bukti transfer <span class="text-danger">*</span>
+                                            </label>
+                                            
+                                            <input type="file" name="payment_proof" id="payment_proof" 
+                                                class="form-control form-control-lg rounded-3 mb-2" 
+                                                accept="image/jpeg,image/png,image/webp">
+                                            
+                                            <small class="text-muted d-block mb-3">
+                                                <i class="bi bi-info-circle me-1"></i>Format: JPG, PNG, WebP (Max: 4MB)
+                                            </small>
 
-                                                <div id="paymentProofPreview" class="payment-proof-preview mt-4 d-none">
-                                                    <div class="border-2 border-success border-opacity-25 rounded-4 p-3 bg-light text-center">
-                                                        <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:200px;cursor:pointer" onclick="openPaymentProofModal()">
-                                                        <div class="small text-muted mt-3 text-start">
-                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                <div>
-                                                                    <span id="fileName">-</span> · <span id="fileSize">-</span>
-                                                                </div>
-                                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removePaymentProof()">
-                                                                    <i class="bi bi-trash me-1"></i>Hapus
-                                                                </button>
-                                                            </div>
+                                            <div id="paymentProofPreview" class="payment-proof-preview d-none">
+                                                <div class="border-2 border-success border-opacity-25 rounded-4 p-4 bg-light text-center">
+                                                    <small class="text-muted d-block mb-2">Preview Bukti Transfer</small>
+                                                    <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:250px;cursor:pointer;display:block;margin:0 auto;" onclick="openPaymentProofModal()">
+                                                    
+                                                    <div class="small text-muted mt-3 d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <i class="bi bi-file-image me-1"></i>
+                                                            <span id="fileName">-</span> · <span id="fileSize">-</span>
                                                         </div>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removePaymentProof()">
+                                                            <i class="bi bi-trash me-1"></i>Hapus
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="d-grid gap-3 mt-4">
+                                    <div class="d-grid gap-3">
                                         <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="manualSubmitBtn">
                                             <i class="bi bi-upload me-2"></i>Kirim Bukti Pembayaran
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
-                                            <i class="bi bi-arrow-left me-2"></i>Kembali
-                                        </button>
+                                        <a href="{{ route('customer.orders.show', $order) }}" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
+                                            <i class="bi bi-arrow-left me-2"></i>Kembali ke Pesanan
+                                        </a>
                                     </div>
                                 </div>
 
@@ -634,6 +654,36 @@
         .proof-upload-card h6 {
             font-size: 1rem;
             margin-bottom: 0;
+        }
+
+        /* ============================================
+           SECTION STYLING - SEPARATE SECTIONS
+           ============================================ */
+        .bank-details-section {
+            padding: 0;
+            animation: slideInUp 0.3s ease;
+        }
+
+        .proof-upload-section {
+            padding: 0;
+            animation: slideInUp 0.3s ease 0.1s backwards;
+        }
+
+        .bank-details-section .d-flex,
+        .proof-upload-section .d-flex {
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes checkmark-pop {
