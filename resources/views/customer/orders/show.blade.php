@@ -960,6 +960,7 @@
                                                 <strong class="text-success">
                                                     @php
                                                         $dpAmount = round($calculatedTotal * 50 / 100, 2);
+                                                        $remainingPayment = $calculatedTotal - $dpAmount;
                                                     @endphp
                                                     <span class="price-convert" data-price="{{ $dpAmount }}" data-currency="IDR">
                                                         Rp {{ number_format($dpAmount, 0, ',', '.') }}
@@ -969,8 +970,8 @@
                                             <div class="payment-detail-row border-top pt-3">
                                                 <span class="text-muted fw-bold">Sisa Pembayaran (50%)</span>
                                                 <h5 class="mb-0 text-primary fw-bold">
-                                                    <span class="price-convert" data-price="{{ $order->remainingPayableAmount() }}" data-currency="IDR">
-                                                        Rp {{ number_format($order->remainingPayableAmount(), 0, ',', '.') }}
+                                                    <span class="price-convert" data-price="{{ $remainingPayment }}" data-currency="IDR">
+                                                        Rp {{ number_format($remainingPayment, 0, ',', '.') }}
                                                     </span>
                                                 </h5>
                                             </div>
