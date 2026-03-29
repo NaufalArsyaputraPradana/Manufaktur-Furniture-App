@@ -68,13 +68,21 @@ class PaymentController extends Controller
 
     public function pendingVerification(): View
     {
-        $payments = Payment::with(['order.user', 'order.orderDetails.product'])
+        // Pending payments - waiting for verification
+        $pendingPayments = Payment::with(['order.user', 'order.orderDetails.product'])
             ->whereNotNull('payment_proof')
-            ->whereIn('payment_status', [Payment::STATUS_PENDING, Payment::STATUS_DP_PAID])
+            ->whereIn('payment_status', [Payment::STATUS_PENDING, Payment::STATUS_FULL_PENDING])
             ->latest()
             ->paginate(20);
 
-        return view('admin.payments.pending', compact('payments'));
+        // Completed payments - already verified (approved or rejected)
+        $completedPayments = Payment::with(['order.user', 'order.orderDetails.product'])
+            ->whereNotNull('payment_proof')
+            ->whereIn('payment_status', [Payment::STATUS_DP_PAID, Payment::STATUS_PAID, Payment::STATUS_FAILED])
+            ->latest()
+            ->paginate(20, ['*'], 'completed_page');
+
+        return view('admin.payments.pending', compact('pendingPayments', 'completedPayments'));
     }
 
     public function show(Payment $payment): View
