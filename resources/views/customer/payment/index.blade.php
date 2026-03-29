@@ -211,28 +211,30 @@
                                 @csrf
                                 <input type="hidden" name="payment_channel" id="paymentChannelField" value="{{ $isBalanceUi ? \App\Models\Payment::CHANNEL_MANUAL_DP : \App\Models\Payment::CHANNEL_MANUAL_FULL }}">
 
-                                <div id="manualFields" class="{{ $isBalanceUi ? '' : 'd-none' }}">
-                                    {{-- Bank details section --}}
-                                    <div class="alert alert-light border rounded-4 mb-4 small">
-                                        <div class="fw-bold text-uppercase text-muted mb-2">
-                                            <i class="bi bi-bank me-2" aria-hidden="true"></i>Rekening tujuan transfer
-                                        </div>
-                                        <div class="mb-3">
-                                            <small class="text-muted d-block">Nama Bank</small>
-                                            <strong class="text-dark d-block">{{ ($bank ?? [])['name'] ?? '-' }}</strong>
-                                        </div>
-                                        <div class="mb-3">
-                                            <small class="text-muted d-block">Atas Nama</small>
-                                            <strong class="text-dark d-block">{{ ($bank ?? [])['holder'] ?? '-' }}</strong>
-                                        </div>
-                                        <div>
-                                            <small class="text-muted d-block mb-1">Nomor Rekening</small>
-                                            <div class="font-monospace fs-5 fw-bold text-success bg-white p-3 rounded border border-success border-opacity-50">
-                                                {{ ($bank ?? [])['account'] ?? '-' }}
-                                            </div>
+                                {{-- BANK DETAILS SECTION - ALWAYS VISIBLE ON BALANCE PAGE, INDEPENDENT FROM MANUAL FIELDS --}}
+                                @if($isBalanceUi)
+                                <div id="bankDetailsCard" class="alert alert-light border rounded-4 mb-4 small" style="display: block !important; visibility: visible !important;">
+                                    <div class="fw-bold text-uppercase text-muted mb-2">
+                                        <i class="bi bi-bank me-2" aria-hidden="true"></i>Rekening tujuan transfer
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block">Nama Bank</small>
+                                        <strong class="text-dark d-block">{{ ($bank ?? [])['name'] ?? '-' }}</strong>
+                                    </div>
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block">Atas Nama</small>
+                                        <strong class="text-dark d-block">{{ ($bank ?? [])['holder'] ?? '-' }}</strong>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block mb-1">Nomor Rekening</small>
+                                        <div class="font-monospace fs-5 fw-bold text-success bg-white p-3 rounded border border-success border-opacity-50" id="rekeningNumber" style="display: block !important; visibility: visible !important;">
+                                            {{ ($bank ?? [])['account'] ?? '-' }}
                                         </div>
                                     </div>
+                                </div>
+                                @endif
 
+                                <div id="manualFields" class="{{ $isBalanceUi ? '' : 'd-none' }}">
                                     {{-- Upload proof section --}}
                                     <label class="form-label fw-bold">Bukti transfer <span class="text-danger">*</span></label>
                                     <input type="file" name="payment_proof" id="payment_proof" class="form-control form-control-lg"
@@ -519,6 +521,21 @@
             animation: fadeSlideIn 0.3s ease;
         }
 
+        /* ============================================
+           BANK DETAILS - PERMANENT VISIBILITY
+           ============================================ */
+        #bankDetailsCard {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        #rekeningNumber {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
         @keyframes fadeSlideIn {
             from {
                 opacity: 0;
@@ -601,6 +618,8 @@
 
             function initPayModeRadios() {
                 const manualFields = document.getElementById('manualFields');
+                const bankDetailsCard = document.getElementById('bankDetailsCard');
+                const rekeningNumber = document.getElementById('rekeningNumber');
                 const channelField = document.getElementById('paymentChannelField');
                 const midBtn = document.getElementById('submitBtn');
                 const manBtn = document.getElementById('manualSubmitBtn');
@@ -609,14 +628,23 @@
                     const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
                     const manual = mode === 'manual_dp' || mode === 'manual_full';
                     
-                    // Always visible on balance page (pelunasan)
+                    // On balance page, always ensure manual fields visible
                     if (isBalancePage) {
                         if (manualFields) {
                             manualFields.style.display = 'block';
                             manualFields.classList.remove('d-none');
                         }
+                        // Bank details always visible on balance page - maintained by CSS inline styles
+                        if (bankDetailsCard) {
+                            bankDetailsCard.style.display = 'block';
+                            bankDetailsCard.style.visibility = 'visible';
+                        }
+                        if (rekeningNumber) {
+                            rekeningNumber.style.display = 'block';
+                            rekeningNumber.style.visibility = 'visible';
+                        }
                     } else {
-                        // Toggle visibility based on mode selection
+                        // On initial page, toggle manual fields based on selection
                         if (manualFields) {
                             if (manual) {
                                 manualFields.style.display = 'block';
@@ -656,8 +684,40 @@
                     }
                 }
 
+                // Setup radio change listeners
                 document.querySelectorAll('input[name="pay_mode"]').forEach(r => r.addEventListener('change', sync));
-                sync();
+                sync(); // Initial sync
+
+                // =============================================
+                // VISIBILITY MONITOR - Ensure bank details stay visible
+                // =============================================
+                // Only monitor on balance page
+                if (isBalancePage && bankDetailsCard && rekeningNumber) {
+                    // Monitor every 500ms to catch any CSS or JS that tries to hide elements
+                    const visibilityMonitor = setInterval(function() {
+                        const bankStyle = window.getComputedStyle(bankDetailsCard);
+                        const rekeningStyle = window.getComputedStyle(rekeningNumber);
+                        
+                        // If either is hidden, force visible immediately
+                        if (bankStyle.display === 'none' || bankStyle.visibility === 'hidden') {
+                            console.warn('⚠️ Bank details got hidden, forcing visible...');
+                            bankDetailsCard.style.display = 'block !important';
+                            bankDetailsCard.style.visibility = 'visible !important';
+                        }
+                        
+                        if (rekeningStyle.display === 'none' || rekeningStyle.visibility === 'hidden') {
+                            console.warn('⚠️ Nomor rekening got hidden, forcing visible...');
+                            rekeningNumber.style.display = 'block !important';
+                            rekeningNumber.style.visibility = 'visible !important';
+                        }
+                    }, 500);
+                    
+                    // Stop monitoring after 30 seconds (page should be stable by then)
+                    setTimeout(function() {
+                        clearInterval(visibilityMonitor);
+                        console.log('✅ Visibility monitor stopped - bank details should be stable');
+                    }, 30000);
+                }
             }
 
             function initProofInput() {
