@@ -142,18 +142,18 @@
 
                     <div class="card shadow-lg rounded-4 border-0 mb-4">
                         <div class="card-body p-4">
-                            <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 me-2 text-primary"></i>Pilih metode</h6>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="form-check payment-choice border rounded-4 p-3 h-100">
-                                        <input class="form-check-input" type="radio" name="pay_mode" id="payMidtrans" value="midtrans" @if(!$isBalanceUi) checked @endif>
-                                        <label class="form-check-label w-100 ms-2" for="payMidtrans">
-                                            <strong>Bayar penuh (lunas) via Midtrans</strong>
-                                            <small class="d-block text-muted">VA, e-wallet, kartu, QRIS — status <strong>paid</strong> dari gateway</small>
-                                        </label>
+                            @if(!$isBalanceUi)
+                                <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 me-2 text-primary"></i>Pilih metode pembayaran</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-check payment-choice border rounded-4 p-3 h-100">
+                                            <input class="form-check-input" type="radio" name="pay_mode" id="payMidtrans" value="midtrans" checked>
+                                            <label class="form-check-label w-100 ms-2" for="payMidtrans">
+                                                <strong>Bayar penuh (lunas) via Midtrans</strong>
+                                                <small class="d-block text-muted">VA, e-wallet, kartu, QRIS — status <strong>paid</strong> dari gateway</small>
+                                            </label>
+                                        </div>
                                     </div>
-                                </div>
-                                @if(!$isBalanceUi)
                                     <div class="col-12">
                                         <div class="form-check payment-choice border rounded-4 p-3 h-100">
                                             <input class="form-check-input" type="radio" name="pay_mode" id="payDp" value="manual_dp">
@@ -163,26 +163,23 @@
                                             </label>
                                         </div>
                                     </div>
-                                @endif
-                                <div class="col-12">
-                                    <div class="form-check payment-choice border rounded-4 p-3 h-100">
-                                        <input class="form-check-input" type="radio" name="pay_mode" id="payFullManual" value="manual_full" @if($isBalanceUi) checked @endif>
-                                        <label class="form-check-label w-100 ms-2" for="payFullManual">
-                                            <strong>Transfer manual — Lunas sekaligus</strong>
-                                            <small class="d-block text-muted">Bukti senilai total · verifikasi admin → <strong>paid</strong></small>
-                                        </label>
-                                    </div>
-                                </div>
-                                @if($isBalanceUi)
                                     <div class="col-12">
-                                        <div class="info-box info-box-blue border-0 rounded-4 mb-0 small">
-                                            Selesaikan <strong>pelunasan</strong> dengan mengunggah bukti transfer di bawah.
+                                        <div class="form-check payment-choice border rounded-4 p-3 h-100">
+                                            <input class="form-check-input" type="radio" name="pay_mode" id="payFullManual" value="manual_full">
+                                            <label class="form-check-label w-100 ms-2" for="payFullManual">
+                                                <strong>Transfer manual — Lunas sekaligus</strong>
+                                                <small class="d-block text-muted">Bukti senilai total · verifikasi admin → <strong>paid</strong></small>
+                                            </label>
                                         </div>
                                     </div>
-                                @endif
-                            </div>
-
-                            {{-- Bank details removed from here - moved inside manualFields --}}
+                                </div>
+                            @else
+                                {{-- BALANCE PAGE - Only manual transfer option --}}
+                                <div class="info-box info-box-blue border-0 rounded-4 mb-0 small mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>Selesaikan <strong>pelunasan</strong> dengan transfer manual.
+                                </div>
+                                <input type="hidden" name="pay_mode" id="payFullManual" value="manual_full">
+                            @endif
                         </div>
                     </div>
 
@@ -209,59 +206,170 @@
                             <form action="{{ route('customer.orders.payment.process', $order) }}" method="POST"
                                 enctype="multipart/form-data" id="paymentFormManual">
                                 @csrf
-                                <input type="hidden" name="payment_channel" id="paymentChannelField" value="{{ $isBalanceUi ? \App\Models\Payment::CHANNEL_MANUAL_DP : \App\Models\Payment::CHANNEL_MANUAL_FULL }}">
+                                <input type="hidden" name="payment_channel" id="paymentChannelField" value="{{ $isBalanceUi ? \App\Models\Payment::CHANNEL_MANUAL_FULL : \App\Models\Payment::CHANNEL_MANUAL_DP }}">
 
-                                {{-- BANK DETAILS SECTION - ALWAYS VISIBLE ON BALANCE PAGE, INDEPENDENT FROM MANUAL FIELDS --}}
+                                {{-- ===================================
+                                    SECTION 1: BANK DETAILS (Left Side)
+                                    =================================== --}}
                                 @if($isBalanceUi)
-                                <div id="bankDetailsCard" class="bank-details-card border rounded-4 mb-4 small" style="display: block !important; visibility: visible !important;">
-                                    <div class="fw-bold text-uppercase text-muted mb-2">
-                                        <i class="bi bi-bank me-2" aria-hidden="true"></i>Rekening tujuan transfer
-                                    </div>
-                                    <div class="mb-3">
-                                        <small class="text-muted d-block">Nama Bank</small>
-                                        <strong class="text-dark d-block">{{ ($bank ?? [])['name'] ?? '-' }}</strong>
-                                    </div>
-                                    <div class="mb-3">
-                                        <small class="text-muted d-block">Atas Nama</small>
-                                        <strong class="text-dark d-block">{{ ($bank ?? [])['holder'] ?? '-' }}</strong>
-                                    </div>
-                                    <div>
-                                        <small class="text-muted d-block mb-1">Nomor Rekening</small>
-                                        <div class="font-monospace fs-5 fw-bold text-success bg-white p-3 rounded border border-success border-opacity-50" id="rekeningNumber" style="display: block !important; visibility: visible !important;">
-                                            {{ ($bank ?? [])['account'] ?? '-' }}
+                                <div class="row mb-4">
+                                    <div class="col-lg-6">
+                                        <h6 class="fw-bold mb-3">
+                                            <i class="bi bi-bank me-2 text-primary"></i>Data Rekening Tujuan
+                                        </h6>
+                                        <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
+                                            <div class="mb-4">
+                                                <small class="text-muted d-block mb-1">Nama Bank</small>
+                                                <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['name'] ?? '-' }}</h6>
+                                            </div>
+                                            <div class="mb-4">
+                                                <small class="text-muted d-block mb-1">Atas Nama Rekening</small>
+                                                <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['holder'] ?? '-' }}</h6>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block mb-2">Nomor Rekening</small>
+                                                <div class="font-monospace fs-6 fw-bold text-success bg-light p-3 rounded-3 border-2 border-success border-opacity-50 text-center" id="rekeningNumber" style="display: block !important; visibility: visible !important;">
+                                                    {{ ($bank ?? [])['account'] ?? '-' }}
+                                                </div>
+                                                <small class="text-muted d-block mt-2 text-center">
+                                                    <i class="bi bi-info-circle me-1"></i>Salin nomor rekening di atas untuk transfer
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                @endif
 
-                                <div id="manualFields" class="{{ $isBalanceUi ? '' : 'd-none' }}">
-                                    {{-- Upload proof section --}}
-                                    <label class="form-label fw-bold">Bukti transfer <span class="text-danger">*</span></label>
-                                    <input type="file" name="payment_proof" id="payment_proof" class="form-control form-control-lg"
-                                        accept="image/jpeg,image/png,image/webp">
-                                    <div id="paymentProofPreview" class="payment-proof-preview mt-3 d-none">
-                                        <div class="border rounded-4 p-2 bg-light text-center">
-                                            <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:180px;cursor:pointer" onclick="openPaymentProofModal()">
-                                            <div class="small text-muted mt-2 text-start">
-                                                <span id="fileName">-</span> · <span id="fileSize">-</span>
-                                                <button type="button" class="btn btn-link btn-sm text-danger p-0 float-end" onclick="removePaymentProof()">Hapus</button>
+                                    {{-- ===================================
+                                        SECTION 2: BUKTI TRANSFER (Right Side)
+                                        =================================== --}}
+                                    <div class="col-lg-6">
+                                        <h6 class="fw-bold mb-3">
+                                            <i class="bi bi-receipt me-2 text-primary"></i>Unggah Bukti Transfer
+                                        </h6>
+                                        <div id="proofUploadCard" class="proof-upload-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold mb-2">
+                                                    Bukti transfer <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="file" name="payment_proof" id="payment_proof" 
+                                                    class="form-control form-control-lg rounded-3" 
+                                                    accept="image/jpeg,image/png,image/webp">
+                                                <small class="text-muted d-block mt-2">
+                                                    Format: JPG, PNG, WebP (Max: 4MB)
+                                                </small>
+                                            </div>
+
+                                            {{-- Preview --}}
+                                            <div id="paymentProofPreview" class="payment-proof-preview mt-4 d-none">
+                                                <div class="border-2 border-success border-opacity-25 rounded-4 p-3 bg-light text-center">
+                                                    <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:200px;cursor:pointer" onclick="openPaymentProofModal()">
+                                                    <div class="small text-muted mt-3 text-start">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <span id="fileName">-</span> · <span id="fileSize">-</span>
+                                                            </div>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removePaymentProof()">
+                                                                <i class="bi bi-trash me-1"></i>Hapus
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="d-grid gap-3 mt-3">
-                                    <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold {{ $isBalanceUi ? '' : 'd-none' }}" id="manualSubmitBtn">
-                                        <i class="bi bi-upload me-2"></i>Kirim bukti pembayaran
+                                <div class="d-grid gap-3 mt-4">
+                                    <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="manualSubmitBtn">
+                                        <i class="bi bi-upload me-2"></i>Kirim Bukti Pembayaran
                                     </button>
-                                    <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold {{ $isBalanceUi ? 'd-none' : '' }}" id="submitBtn">
-                                        <i class="bi bi-credit-card-fill me-2" aria-hidden="true"></i>Lanjutkan ke pembayaran Midtrans
-                                    </button>
-                                    <a href="{{ route('customer.orders.show', $order) }}"
-                                        class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
-                                        <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Kembali
+                                    <a href="{{ route('customer.orders.show', $order) }}" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
+                                        <i class="bi bi-arrow-left me-2"></i>Kembali ke Pesanan
                                     </a>
                                 </div>
+                            @else
+                                {{-- NON-BALANCE PAGE: Show bank details and proof only for manual modes --}}
+                                <div id="manualFields" class="d-none">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <h6 class="fw-bold mb-3">
+                                                <i class="bi bi-bank me-2 text-primary"></i>Data Rekening Tujuan
+                                            </h6>
+                                            <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4">
+                                                <div class="mb-4">
+                                                    <small class="text-muted d-block mb-1">Nama Bank</small>
+                                                    <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['name'] ?? '-' }}</h6>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <small class="text-muted d-block mb-1">Atas Nama Rekening</small>
+                                                    <h6 class="mb-0 text-dark fw-bold">{{ ($bank ?? [])['holder'] ?? '-' }}</h6>
+                                                </div>
+                                                <div>
+                                                    <small class="text-muted d-block mb-2">Nomor Rekening</small>
+                                                    <div class="font-monospace fs-6 fw-bold text-success bg-light p-3 rounded-3 border-2 border-success border-opacity-50 text-center" id="rekeningNumber">
+                                                        {{ ($bank ?? [])['account'] ?? '-' }}
+                                                    </div>
+                                                    <small class="text-muted d-block mt-2 text-center">
+                                                        <i class="bi bi-info-circle me-1"></i>Salin nomor rekening di atas untuk transfer
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <h6 class="fw-bold mb-3">
+                                                <i class="bi bi-receipt me-2 text-primary"></i>Unggah Bukti Transfer
+                                            </h6>
+                                            <div id="proofUploadCard" class="proof-upload-card border rounded-4 p-4">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold mb-2">
+                                                        Bukti transfer <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="file" name="payment_proof" id="payment_proof" 
+                                                        class="form-control form-control-lg rounded-3" 
+                                                        accept="image/jpeg,image/png,image/webp">
+                                                    <small class="text-muted d-block mt-2">
+                                                        Format: JPG, PNG, WebP (Max: 4MB)
+                                                    </small>
+                                                </div>
+
+                                                <div id="paymentProofPreview" class="payment-proof-preview mt-4 d-none">
+                                                    <div class="border-2 border-success border-opacity-25 rounded-4 p-3 bg-light text-center">
+                                                        <img src="" id="paymentProofImage" alt="Preview" class="img-fluid rounded" style="max-height:200px;cursor:pointer" onclick="openPaymentProofModal()">
+                                                        <div class="small text-muted mt-3 text-start">
+                                                            <div class="d-flex justify-content-between align-items-center">
+                                                                <div>
+                                                                    <span id="fileName">-</span> · <span id="fileSize">-</span>
+                                                                </div>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="removePaymentProof()">
+                                                                    <i class="bi bi-trash me-1"></i>Hapus
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-3 mt-4">
+                                        <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="manualSubmitBtn">
+                                            <i class="bi bi-upload me-2"></i>Kirim Bukti Pembayaran
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
+                                            <i class="bi bi-arrow-left me-2"></i>Kembali
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-3 mt-3">
+                                    <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold" id="submitBtn">
+                                        <i class="bi bi-credit-card-fill me-2" aria-hidden="true"></i>Lanjutkan ke pembayaran Midtrans
+                                    </button>
+                                    <a href="{{ route('customer.orders.show', $order) }}" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
+                                        <i class="bi bi-arrow-left me-2"></i>Kembali ke Pesanan
+                                    </a>
+                                </div>
+                            @endif
                             </form>
                             @endif
                         </div>
@@ -498,6 +606,36 @@
             color: #495057;
         }
 
+        /* ============================================
+           BANK DETAILS & PROOF UPLOAD CARDS
+           ============================================ */
+        .bank-details-card,
+        .proof-upload-card {
+            background-color: #f8f9fa !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            border-color: #dee2e6 !important;
+            transition: all 0.3s ease;
+        }
+
+        .bank-details-card:hover,
+        .proof-upload-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            background-color: #ffffff !important;
+        }
+
+        .bank-details-card small,
+        .proof-upload-card small {
+            font-size: 0.85rem;
+        }
+
+        .bank-details-card h6,
+        .proof-upload-card h6 {
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
         @keyframes checkmark-pop {
             0% {
                 transform: scale(0);
@@ -660,63 +798,48 @@
 
             function initPayModeRadios() {
                 const manualFields = document.getElementById('manualFields');
-                const bankDetailsCard = document.getElementById('bankDetailsCard');
-                const rekeningNumber = document.getElementById('rekeningNumber');
                 const channelField = document.getElementById('paymentChannelField');
                 const midBtn = document.getElementById('submitBtn');
                 const manBtn = document.getElementById('manualSubmitBtn');
+
+                // Skip radio logic if on balance page
+                if (isBalancePage) {
+                    console.log('✅ Balance page detected - using manual_full mode');
+                    return;
+                }
 
                 function sync() {
                     const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
                     const manual = mode === 'manual_dp' || mode === 'manual_full';
                     
-                    // On balance page, always ensure manual fields visible
-                    if (isBalancePage) {
-                        if (manualFields) {
+                    // Toggle manual fields based on selection
+                    if (manualFields) {
+                        if (manual) {
                             manualFields.style.display = 'block';
                             manualFields.classList.remove('d-none');
-                        }
-                        // Bank details always visible on balance page - maintained by CSS inline styles
-                        if (bankDetailsCard) {
-                            bankDetailsCard.style.display = 'block';
-                            bankDetailsCard.style.visibility = 'visible';
-                        }
-                        if (rekeningNumber) {
-                            rekeningNumber.style.display = 'block';
-                            rekeningNumber.style.visibility = 'visible';
-                        }
-                    } else {
-                        // On initial page, toggle manual fields based on selection
-                        if (manualFields) {
-                            if (manual) {
-                                manualFields.style.display = 'block';
-                                manualFields.classList.remove('d-none');
-                            } else {
-                                manualFields.style.display = 'none';
-                                manualFields.classList.add('d-none');
-                            }
+                        } else {
+                            manualFields.style.display = 'none';
+                            manualFields.classList.add('d-none');
                         }
                     }
                     
-                    // Only toggle button visibility if not on balance page
-                    if (!isBalancePage) {
-                        if (midBtn) {
-                            if (manual) {
-                                midBtn.classList.add('d-none');
-                                midBtn.style.display = 'none';
-                            } else {
-                                midBtn.classList.remove('d-none');
-                                midBtn.style.display = 'block';
-                            }
+                    // Toggle button visibility
+                    if (midBtn) {
+                        if (manual) {
+                            midBtn.classList.add('d-none');
+                            midBtn.style.display = 'none';
+                        } else {
+                            midBtn.classList.remove('d-none');
+                            midBtn.style.display = 'block';
                         }
-                        if (manBtn) {
-                            if (manual) {
-                                manBtn.classList.remove('d-none');
-                                manBtn.style.display = 'block';
-                            } else {
-                                manBtn.classList.add('d-none');
-                                manBtn.style.display = 'none';
-                            }
+                    }
+                    if (manBtn) {
+                        if (manual) {
+                            manBtn.classList.remove('d-none');
+                            manBtn.style.display = 'block';
+                        } else {
+                            manBtn.classList.add('d-none');
+                            manBtn.style.display = 'none';
                         }
                     }
                     
@@ -729,37 +852,6 @@
                 // Setup radio change listeners
                 document.querySelectorAll('input[name="pay_mode"]').forEach(r => r.addEventListener('change', sync));
                 sync(); // Initial sync
-
-                // =============================================
-                // VISIBILITY MONITOR - Ensure bank details stay visible
-                // =============================================
-                // Only monitor on balance page
-                if (isBalancePage && bankDetailsCard && rekeningNumber) {
-                    // Monitor every 500ms to catch any CSS or JS that tries to hide elements
-                    const visibilityMonitor = setInterval(function() {
-                        const bankStyle = window.getComputedStyle(bankDetailsCard);
-                        const rekeningStyle = window.getComputedStyle(rekeningNumber);
-                        
-                        // If either is hidden, force visible immediately
-                        if (bankStyle.display === 'none' || bankStyle.visibility === 'hidden') {
-                            console.warn('⚠️ Bank details got hidden, forcing visible...');
-                            bankDetailsCard.style.display = 'block !important';
-                            bankDetailsCard.style.visibility = 'visible !important';
-                        }
-                        
-                        if (rekeningStyle.display === 'none' || rekeningStyle.visibility === 'hidden') {
-                            console.warn('⚠️ Nomor rekening got hidden, forcing visible...');
-                            rekeningNumber.style.display = 'block !important';
-                            rekeningNumber.style.visibility = 'visible !important';
-                        }
-                    }, 500);
-                    
-                    // Stop monitoring after 30 seconds (page should be stable by then)
-                    setTimeout(function() {
-                        clearInterval(visibilityMonitor);
-                        console.log('✅ Visibility monitor stopped - bank details should be stable');
-                    }, 30000);
-                }
             }
 
             function initProofInput() {
