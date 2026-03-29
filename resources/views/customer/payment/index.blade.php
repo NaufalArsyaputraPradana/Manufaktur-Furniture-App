@@ -218,15 +218,59 @@
                                         <h6 class="fw-bold mb-0">Data Rekening Tujuan</h6>
                                     </div>
                                     
+                                    @if(isset($bankAccounts) && $bankAccounts->count() > 1)
+                                        {{-- Multiple bank accounts - show selector --}}
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold mb-2">Pilih Rekening Bank</label>
+                                            <div id="bankSelector" class="row g-2">
+                                                @foreach($bankAccounts as $bankAccount)
+                                                    <div class="col-12">
+                                                        <div class="form-check bank-choice border rounded-3 p-3 cursor-pointer"
+                                                            onclick="selectBank({{ $bankAccount->id }})">
+                                                            <input class="form-check-input bank-radio" type="radio" 
+                                                                name="selected_bank" 
+                                                                id="bank_{{ $bankAccount->id }}"
+                                                                value="{{ $bankAccount->id }}"
+                                                                data-bank-name="{{ $bankAccount->bank_name }}"
+                                                                data-account-holder="{{ $bankAccount->account_holder }}"
+                                                                data-account-number="{{ $bankAccount->account_number }}"
+                                                                @checked($loop->first)>
+                                                            <label class="form-check-label w-100 ms-2 cursor-pointer" 
+                                                                for="bank_{{ $bankAccount->id }}">
+                                                                <strong>{{ $bankAccount->bank_name }}</strong>
+                                                                <small class="d-block text-muted">{{ $bankAccount->account_holder }} • {{ $bankAccount->account_number }}</small>
+                                                                @if($bankAccount->notes)
+                                                                    <small class="d-block text-muted">{{ $bankAccount->notes }}</small>
+                                                                @endif
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
                                     <div id="bankDetailsCard" class="bank-details-card border rounded-4 p-4" style="display: block !important; visibility: visible !important;">
                                         <div class="row">
                                             <div class="col-md-6 mb-4">
                                                 <small class="text-muted d-block mb-2">Nama Bank</small>
-                                                <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ ($bank ?? [])['name'] ?? '-' }}</p>
+                                                <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;" id="displayBankName">
+                                                    @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                                        {{ $bankAccounts->first()->bank_name }}
+                                                    @else
+                                                        {{ ($bank ?? [])['name'] ?? '-' }}
+                                                    @endif
+                                                </p>
                                             </div>
                                             <div class="col-md-6 mb-4">
                                                 <small class="text-muted d-block mb-2">Atas Nama Rekening</small>
-                                                <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;">{{ ($bank ?? [])['holder'] ?? '-' }}</p>
+                                                <p class="mb-0 fw-bold text-dark" style="font-size: 1.1rem;" id="displayAccountHolder">
+                                                    @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                                        {{ $bankAccounts->first()->account_holder }}
+                                                    @else
+                                                        {{ ($bank ?? [])['holder'] ?? '-' }}
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                         
@@ -235,7 +279,11 @@
                                         <div>
                                             <small class="text-muted d-block mb-2">Nomor Rekening</small>
                                             <div class="font-monospace fw-bold text-success bg-white p-4 rounded-3 border-3 border-success border-opacity-50 text-center mb-3" id="rekeningNumber" style="display: block !important; visibility: visible !important; font-size: 1.5rem; letter-spacing: 2px;">
-                                                {{ ($bank ?? [])['account'] ?? '-' }}
+                                                @if(isset($bankAccounts) && $bankAccounts->count() > 0)
+                                                    {{ $bankAccounts->first()->account_number }}
+                                                @else
+                                                    {{ ($bank ?? [])['account'] ?? '-' }}
+                                                @endif
                                             </div>
                                             <div class="alert alert-info border-0 rounded-3 py-2 px-3 mb-0">
                                                 <i class="bi bi-info-circle me-2"></i>
@@ -423,9 +471,6 @@
                                         <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold" id="manualSubmitBtn">
                                             <i class="bi bi-upload me-2"></i>Kirim Bukti Pembayaran
                                         </button>
-                                        <a href="{{ route('customer.orders.show', $order) }}" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
-                                            <i class="bi bi-arrow-left me-2"></i>Kembali ke Pesanan
-                                        </a>
                                     </div>
                                 </div>
 
