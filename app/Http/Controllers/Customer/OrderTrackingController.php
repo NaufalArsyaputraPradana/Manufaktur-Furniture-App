@@ -236,10 +236,21 @@ class OrderTrackingController extends Controller
 
         $order->loadMissing('orderDetails.product', 'payment');
 
+        // Get active bank accounts from database
+        $bankAccounts = \App\Models\BankAccount::active()->get();
+        
+        // For backward compatibility, if no bank accounts in DB, use config
+        $bank = $bankAccounts->count() > 0 ? [
+            'name' => $bankAccounts->first()->bank_name,
+            'holder' => $bankAccounts->first()->account_holder,
+            'account' => $bankAccounts->first()->account_number,
+        ] : config('orders.bank', []);
+
         return view('customer.payment.index', [
             'order' => $order,
             'dpAmount' => round((float) $order->total * (float) config('orders.down_payment_percent', 30) / 100, 2),
-            'bank' => config('orders.bank', []),
+            'bank' => $bank,
+            'bankAccounts' => $bankAccounts,
         ]);
     }
 

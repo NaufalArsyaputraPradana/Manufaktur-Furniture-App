@@ -60,6 +60,12 @@
             <span>Pembayaran</span>
         </a>
 
+        <a href="{{ route('admin.bank-accounts.index') }}"
+            class="nav-link text-white d-flex align-items-center p-3 rounded transition-all {{ request()->routeIs('admin.bank-accounts.*') ? 'bg-white bg-opacity-25 fw-bold shadow-sm' : 'opacity-75 hover-opacity-100' }}">
+            <i class="bi bi-bank2 me-3 fs-5"></i>
+            <span>Rekening Bank</span>
+        </a>
+
         <a href="{{ route('admin.reports.index') }}"
             class="nav-link text-white d-flex align-items-center p-3 rounded transition-all {{ request()->routeIs('admin.reports.*') ? 'bg-white bg-opacity-25 fw-bold shadow-sm' : 'opacity-75 hover-opacity-100' }}">
             <i class="bi bi-file-earmark-bar-graph me-3 fs-5"></i>

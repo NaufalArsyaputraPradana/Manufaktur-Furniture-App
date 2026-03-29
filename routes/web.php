@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\CustomOrderController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
+use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Production\ProductionController;
 use App\Http\Controllers\Production\ProductionProcessController;
 use App\Http\Controllers\Production\ProductionTodoController;
@@ -156,6 +157,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/{orderDetail}/calculate', 'calculate')->name('calculate');
         Route::post('/{orderDetail}', 'store')->name('store');
     });
+
+    // Bank Accounts Management
+    Route::resource('bank-accounts', BankAccountController::class);
 
     // Payment Verification
     Route::prefix('payments')->name('payments.')->controller(CustomerPaymentController::class)->group(function () {
