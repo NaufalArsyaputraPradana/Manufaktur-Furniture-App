@@ -182,12 +182,7 @@
                                 @endif
                             </div>
 
-                            {{-- Bank details (shown when manual transfer is selected) --}}
-                            <div id="manualBankBox" class="alert alert-light border rounded-4 mt-4 small d-none">
-                                <div class="fw-bold text-uppercase text-muted mb-2">Rekening tujuan</div>
-                                <div><strong>{{ ($bank ?? [])['name'] ?? '-' }}</strong> — a/n {{ ($bank ?? [])['holder'] ?? '-' }}</div>
-                                <div class="font-monospace fs-5 fw-bold">{{ ($bank ?? [])['account'] ?? '-' }}</div>
-                            </div>
+                            {{-- Bank details removed from here - moved inside manualFields --}}
                         </div>
                     </div>
 
@@ -217,6 +212,28 @@
                                 <input type="hidden" name="payment_channel" id="paymentChannelField" value="{{ $isBalanceUi ? \App\Models\Payment::CHANNEL_MANUAL_DP : \App\Models\Payment::CHANNEL_MANUAL_FULL }}">
 
                                 <div id="manualFields" class="{{ $isBalanceUi ? '' : 'd-none' }}">
+                                    {{-- Bank details section --}}
+                                    <div class="alert alert-light border rounded-4 mb-4 small">
+                                        <div class="fw-bold text-uppercase text-muted mb-2">
+                                            <i class="bi bi-bank me-2" aria-hidden="true"></i>Rekening tujuan transfer
+                                        </div>
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block">Nama Bank</small>
+                                            <strong class="text-dark d-block">{{ ($bank ?? [])['name'] ?? '-' }}</strong>
+                                        </div>
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block">Atas Nama</small>
+                                            <strong class="text-dark d-block">{{ ($bank ?? [])['holder'] ?? '-' }}</strong>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block mb-1">Nomor Rekening</small>
+                                            <div class="font-monospace fs-5 fw-bold text-success bg-white p-3 rounded border border-success border-opacity-50">
+                                                {{ ($bank ?? [])['account'] ?? '-' }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Upload proof section --}}
                                     <label class="form-label fw-bold">Bukti transfer <span class="text-danger">*</span></label>
                                     <input type="file" name="payment_proof" id="payment_proof" class="form-control form-control-lg"
                                         accept="image/jpeg,image/png,image/webp">
@@ -583,7 +600,6 @@
             }
 
             function initPayModeRadios() {
-                const bankBox = document.getElementById('manualBankBox');
                 const manualFields = document.getElementById('manualFields');
                 const channelField = document.getElementById('paymentChannelField');
                 const midBtn = document.getElementById('submitBtn');
@@ -593,8 +609,7 @@
                     const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
                     const manual = mode === 'manual_dp' || mode === 'manual_full';
                     
-                    // Always sync visibility based on selected mode
-                    if (bankBox) bankBox.classList.toggle('d-none', !manual);
+                    // Toggle manual fields visibility
                     if (manualFields) manualFields.classList.toggle('d-none', !manual);
                     
                     // Only toggle button visibility if not on balance page
