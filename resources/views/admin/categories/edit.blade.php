@@ -83,44 +83,30 @@
                             <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-info-circle me-2"></i>Informasi Utama</h6>
                         </div>
                         <div class="card-body p-4">
-                            <div class="mb-3">
-                                <label for="name" class="form-label fw-bold">Nama Kategori <span
-                                        class="text-danger">*</span></label>
-                                <input type="text"
-                                    class="form-control form-control-lg @error('name') is-invalid @enderror" id="name"
-                                    name="name" value="{{ old('name', $category->name) }}" required>
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="name" 
+                                label="Nama Kategori"
+                                type="text"
+                                :value="old('name', $category->name)"
+                                :errors="$errors"
+                                required />
 
-                            <div class="mb-3">
-                                <label for="parent_id" class="form-label fw-bold">Induk Kategori</label>
-                                <select class="form-select @error('parent_id') is-invalid @enderror" id="parent_id"
-                                    name="parent_id">
-                                    <option value="">-- Kategori Utama (Root) --</option>
-                                    @foreach ($parents as $parent)
-                                        <option value="{{ $parent->id }}"
-                                            {{ old('parent_id', $category->parent_id) == $parent->id ? 'selected' : '' }}>
-                                            {{ $parent->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="form-text">Ubah jika ingin memindahkan kategori ini ke bawah kategori lain.
-                                </div>
-                                @error('parent_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="parent_id" 
+                                label="Induk Kategori"
+                                type="select"
+                                :options="collect(['' => '-- Kategori Utama (Root) --'])->union($parents->pluck('name', 'id'))"
+                                :value="old('parent_id', $category->parent_id)"
+                                :errors="$errors"
+                                help="Ubah jika ingin memindahkan kategori ini ke bawah kategori lain." />
 
-                            <div class="mb-3">
-                                <label for="description" class="form-label fw-bold">Deskripsi</label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                    rows="4">{{ old('description', $category->description) }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="description" 
+                                label="Deskripsi"
+                                type="textarea"
+                                rows="4"
+                                :value="old('description', $category->description)"
+                                :errors="$errors" />
                         </div>
                     </div>
                 </div>
@@ -133,36 +119,18 @@
                             <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-image me-2"></i>Gambar Kategori</h6>
                         </div>
                         <div class="card-body text-center p-4">
-                            <div class="mb-3">
-                                <div class="image-preview-wrapper bg-light rounded border border-dashed d-flex align-items-center justify-content-center mx-auto mb-3"
-                                    style="width: 100%; height: 200px; overflow: hidden; position: relative;">
-                                    @if ($category->image)
-                                        <img id="previewImage" src="{{ asset('storage/' . $category->image) }}"
-                                            alt="Preview" class="w-100 h-100 object-fit-cover" style="cursor:pointer;"
-                                            onclick="showImageModal('{{ asset('storage/' . $category->image) }}', '{{ $category->name }}')">
-                                        <div id="placeholderImage" class="d-none text-muted text-center p-3">
-                                            <i class="bi bi-cloud-upload fs-1 d-block mb-2"></i>
-                                            <span class="small">Klik untuk ganti gambar</span>
-                                        </div>
-                                    @else
-                                        <img id="previewImage" src="#" alt="Preview"
-                                            class="d-none w-100 h-100 object-fit-cover">
-                                        <div id="placeholderImage" class="text-muted text-center p-3">
-                                            <i class="bi bi-cloud-upload fs-1 d-block mb-2"></i>
-                                            <span class="small">Klik untuk upload gambar</span>
-                                        </div>
-                                    @endif
-                                    <input type="file"
-                                        class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer @error('image') is-invalid @enderror"
-                                        id="image" name="image"
-                                        accept="image/png, image/jpeg, image/jpg, image/webp"
-                                        onchange="previewFile(this)">
-                                </div>
-                                <small class="text-muted d-block">Format: JPG, PNG, WEBP. Maks: 2MB.</small>
-                                @error('image')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-file-input
+                                name="image"
+                                id="image"
+                                label="Gambar Kategori"
+                                accept="image/png, image/jpeg, image/jpg, image/webp"
+                                maxSize="2"
+                                helpText="Format: JPG, PNG, WEBP. Maks: 2MB."
+                                preview
+                                :previewUrl="$category->image ? asset('storage/' . $category->image) : null"
+                                :previewAlt="$category->name"
+                                :error="$errors->has('image') ? $errors->first('image') : null"
+                            />
                         </div>
                     </div>
 

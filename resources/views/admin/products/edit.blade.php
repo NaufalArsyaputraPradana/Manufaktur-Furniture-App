@@ -47,83 +47,67 @@
                         <div class="card-body p-4">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label for="name" class="form-label fw-bold">Nama Produk <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('name') is-invalid @enderror"
-                                        id="name" name="name" value="{{ old('name', $product->name) }}" required>
-                                    @error('name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="name" 
+                                        label="Nama Produk"
+                                        type="text"
+                                        :value="old('name', $product->name)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="sku" class="form-label fw-bold">SKU <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('sku') is-invalid @enderror"
-                                        id="sku" name="sku" value="{{ old('sku', $product->sku) }}" required>
-                                    @error('sku')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="sku" 
+                                        label="SKU"
+                                        type="text"
+                                        :value="old('sku', $product->sku)"
+                                        :errors="$errors"
+                                        required />
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="category_id" class="form-label fw-bold">Kategori <span
-                                        class="text-danger">*</span></label>
-                                <select class="form-select @error('category_id') is-invalid @enderror" id="category_id"
-                                    name="category_id" required>
-                                    <option value="">-- Pilih --</option>
-                                    @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}"
-                                            {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
-                                            {{ $category->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('category_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="category_id" 
+                                label="Kategori"
+                                type="select"
+                                :options="collect(['' => '-- Pilih --'])->union($categories->pluck('name', 'id'))"
+                                :value="old('category_id', $product->category_id)"
+                                :errors="$errors"
+                                required />
 
-                            <div class="mb-3">
-                                <label for="description" class="form-label fw-bold">Deskripsi</label>
-                                <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description"
-                                    rows="5">{{ old('description', $product->description) }}</textarea>
-                                @error('description')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form-input 
+                                name="description" 
+                                label="Deskripsi"
+                                type="textarea"
+                                rows="5"
+                                :value="old('description', $product->description)"
+                                :errors="$errors" />
 
                             <h6 class="fw-bold mt-4 mb-3 text-success"><i class="bi bi-rulers me-2"></i>Spesifikasi</h6>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <label for="dimensions"
-                                        class="form-label small text-uppercase fw-bold text-muted">Dimensi</label>
-                                    <input type="text" class="form-control @error('dimensions') is-invalid @enderror"
-                                        id="dimensions" name="dimensions"
-                                        value="{{ old('dimensions', $product->dimensions) }}">
-                                    @error('dimensions')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="dimensions" 
+                                        label="Dimensi"
+                                        type="text"
+                                        :value="old('dimensions', $product->dimensions)"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label for="wood_type" class="form-label small text-uppercase fw-bold text-muted">Jenis
-                                        Kayu</label>
-                                    <input type="text" class="form-control @error('wood_type') is-invalid @enderror"
-                                        id="wood_type" name="wood_type"
-                                        value="{{ old('wood_type', $product->wood_type) }}">
-                                    @error('wood_type')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="wood_type" 
+                                        label="Jenis Kayu"
+                                        type="text"
+                                        :value="old('wood_type', $product->wood_type)"
+                                        :errors="$errors" />
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <label for="finishing_type"
-                                        class="form-label small text-uppercase fw-bold text-muted">Finishing</label>
-                                    <input type="text" class="form-control @error('finishing_type') is-invalid @enderror"
-                                        id="finishing_type" name="finishing_type"
-                                        value="{{ old('finishing_type', $product->finishing_type) }}">
-                                    @error('finishing_type')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <x-form-input 
+                                        name="finishing_type" 
+                                        label="Finishing"
+                                        type="text"
+                                        :value="old('finishing_type', $product->finishing_type)"
+                                        :errors="$errors" />
                                 </div>
                             </div>
                         </div>
@@ -191,18 +175,17 @@
                                 </div>
                             @endif
 
-                            <div class="mb-3">
-                                <label for="imagesInput" class="form-label fw-bold">Ganti Gambar</label>
-                                <input type="file" class="form-control @error('images.*') is-invalid @enderror"
-                                    name="images[]" id="imagesInput" multiple
-                                    accept="image/png, image/jpeg, image/jpg, image/webp">
-                                <small class="text-danger d-block mt-1 small"><i class="bi bi-exclamation-circle"></i>
-                                    Mengupload gambar baru akan mengganti semua gambar lama.</small>
-                                @error('images.*')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                            <x-file-input
+                                name="images[]"
+                                id="imagesInput"
+                                label="Ganti Gambar"
+                                multiple
+                                accept="image/png, image/jpeg, image/jpg, image/webp"
+                                maxSize="2"
+                                helpText="Mengupload gambar baru akan mengganti semua gambar lama."
+                                preview
+                                :error="$errors->has('images.*') ? $errors->first('images.*') : null"
+                            />
                         </div>
                     </div>
 

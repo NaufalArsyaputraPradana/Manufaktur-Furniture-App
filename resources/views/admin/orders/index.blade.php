@@ -53,30 +53,38 @@
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3 align-items-end">
                     <div class="col-lg-3 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Status</label>
-                        <select name="status" class="form-select">
-                            <option value="">Semua Status</option>
-                            @foreach ($orderStatuses as $status)
-                                <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                    {{ ucfirst(str_replace('_', ' ', $status)) }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-form-input
+                            name="status"
+                            label="Status"
+                            type="select"
+                            :options="collect(['' => 'Semua Status'])->union(collect($orderStatuses)->flip()->flip()->mapWithKeys(fn($status) => [$status => ucfirst(str_replace('_', ' ', $status))]))"
+                            :value="request('status')"
+                        />
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Dari Tanggal</label>
-                        <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
+                        <x-form-input
+                            name="date_from"
+                            label="Dari Tanggal"
+                            type="date"
+                            :value="request('date_from')"
+                        />
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Sampai Tanggal</label>
-                        <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
+                        <x-form-input
+                            name="date_to"
+                            label="Sampai Tanggal"
+                            type="date"
+                            :value="request('date_to')"
+                        />
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Pencarian</label>
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="No. Order / Nama..." value="{{ request('search') }}">
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
-                        </div>
+                        <label class="form-label fw-bold small text-uppercase text-muted d-block">Pencarian</label>
+                        <x-search-input 
+                            name="search" 
+                            value="{{ request('search') }}" 
+                            placeholder="No. Order / Nama..." 
+                            icon="bi-search"
+                        />
                     </div>
                 </form>
             </div>

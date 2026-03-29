@@ -103,19 +103,25 @@
                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-table me-2"></i>Daftar Item Custom</h5>
 
-                    <form class="d-flex gap-2" method="GET" action="{{ route('admin.custom-orders.index') }}">
+                    <form class="d-flex gap-2 align-items-end" method="GET" action="{{ route('admin.custom-orders.index') }}">
                         @if(request('order_id'))
                             <input type="hidden" name="order_id" value="{{ request('order_id') }}">
                         @endif
-                        <select name="status" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()">
-                            <option value="">Semua Status</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Menunggu Hitung</option>
-                            <option value="processed" {{ request('status') == 'processed' ? 'selected' : '' }}>Sudah Dihitung</option>
-                        </select>
-                        <div class="input-group input-group-sm shadow-sm">
-                            <input type="text" name="search" class="form-control" placeholder="Cari produk/customer..." value="{{ request('search') }}">
-                            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                        <div style="min-width: 140px;">
+                            <x-form-input 
+                                name="status" 
+                                type="select"
+                                :options="['pending' => 'Menunggu Hitung', 'processed' => 'Sudah Dihitung']"
+                                :value="request('status')"
+                                onchange="this.form.submit()"
+                            />
                         </div>
+                        <x-search-input 
+                            name="search" 
+                            value="{{ request('search') }}" 
+                            placeholder="Cari produk/customer..."
+                            icon="bi-search"
+                        />
                     </form>
                 </div>
             </div>
