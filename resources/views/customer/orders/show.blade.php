@@ -957,7 +957,9 @@
                                         </h6>
                                         @php
                                             $proofPath = null;
-                                            // For DP_PAID status, check payment_proof_dp field first, then payment_proof
+                                            // Check BOTH fields: payment_proof_dp (verified) AND payment_proof (pending verification)
+                                            // For DP_PAID: file will be in payment_proof_dp
+                                            // For PENDING (DP upload): file will be in payment_proof
                                             if ($order->payment?->payment_proof_dp) {
                                                 $proof = $order->payment->payment_proof_dp;
                                                 if (str_starts_with($proof, 'storage/')) {
@@ -968,7 +970,8 @@
                                                     $proofPath = asset('storage/' . $proof);
                                                 }
                                             } elseif ($order->payment?->payment_proof) {
-                                                // Fallback to payment_proof if payment_proof_dp is not yet migrated
+                                                // If payment_proof_dp is empty, check payment_proof
+                                                // This handles: PENDING DP uploads waiting for admin verification
                                                 $proof = $order->payment->payment_proof;
                                                 if (str_starts_with($proof, 'storage/')) {
                                                     $proofPath = asset($proof);
@@ -1068,36 +1071,39 @@
                             <div class="col-lg-5">
                                 <div class="card border-0 bg-light h-100">
                                     <div class="card-body p-4">
-                                        <h6 class="text-muted mb-3 fw-bold"><i class="bi bi-image me-2"></i>Bukti Transfer Pelunasan
+                                        @php
+                                            // Determine which type of payment is waiting
+                                            $isWaitingDpVerification = $order->payment->payment_status === \App\Models\Payment::STATUS_PENDING 
+                                                && $order->payment->payment_channel === \App\Models\Payment::CHANNEL_MANUAL_DP;
+                                            $isWaitingFullVerification = $order->payment->payment_status === \App\Models\Payment::STATUS_DP_PAID 
+                                                && $order->payment->payment_channel === \App\Models\Payment::CHANNEL_MANUAL_DP;
+                                        @endphp
+                                        <h6 class="text-muted mb-3 fw-bold">
+                                            <i class="bi bi-image me-2"></i>
+                                            @if ($isWaitingDpVerification)
+                                                Bukti Transfer DP
+                                            @else
+                                                Bukti Transfer Pelunasan
+                                            @endif
                                         </h6>
                                         @php
-                                            $paidProofPath = null;
-                                            // For PAID status, check payment_proof_full field first, then payment_proof
-                                            if ($order->payment?->payment_proof_full) {
-                                                $proof = $order->payment->payment_proof_full;
-                                                if (str_starts_with($proof, 'storage/')) {
-                                                    $paidProofPath = asset($proof);
-                                                } elseif (str_starts_with($proof, '/')) {
-                                                    $paidProofPath = asset('storage' . $proof);
-                                                } else {
-                                                    $paidProofPath = asset('storage/' . $proof);
-                                                }
-                                            } elseif ($order->payment?->payment_proof) {
-                                                // Fallback to payment_proof if payment_proof_full is not yet migrated
+                                            $waitingProofPath = null;
+                                            // Always check payment_proof for pending/awaiting verification
+                                            if ($order->payment?->payment_proof) {
                                                 $proof = $order->payment->payment_proof;
                                                 if (str_starts_with($proof, 'storage/')) {
-                                                    $paidProofPath = asset($proof);
+                                                    $waitingProofPath = asset($proof);
                                                 } elseif (str_starts_with($proof, '/')) {
-                                                    $paidProofPath = asset('storage' . $proof);
+                                                    $waitingProofPath = asset('storage' . $proof);
                                                 } else {
-                                                    $paidProofPath = asset('storage/' . $proof);
+                                                    $waitingProofPath = asset('storage/' . $proof);
                                                 }
                                             }
                                         @endphp
-                                        @if ($paidProofPath)
+                                        @if ($waitingProofPath)
                                             <div class="payment-proof-wrapper" data-bs-toggle="modal"
                                                 data-bs-target="#paymentProofModal">
-                                                <img src="{{ $paidProofPath }}"
+                                                <img src="{{ $waitingProofPath }}"
                                                     alt="Bukti Pembayaran" class="img-fluid rounded-3 shadow-sm w-100"
                                                     style="max-height:350px;object-fit:contain;">
                                                 <div class="payment-proof-overlay">
@@ -1110,8 +1116,8 @@
                                                     data-bs-toggle="modal" data-bs-target="#paymentProofModal">
                                                     <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
                                                 </button>
-                                                <a href="{{ $paidProofPath }}"
-                                                    download="Bukti_Pelunasan_{{ $order->order_number }}.jpg"
+                                                <a href="{{ $waitingProofPath }}"
+                                                    download="Bukti_Pembayaran_{{ $order->order_number }}.jpg"
                                                     class="btn btn-sm btn-outline-success">
                                                     <i class="bi bi-download me-1" aria-hidden="true"></i>Download
                                                 </a>
