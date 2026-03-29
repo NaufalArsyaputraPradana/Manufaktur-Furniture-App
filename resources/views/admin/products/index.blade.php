@@ -68,32 +68,29 @@
                 <form method="GET" action="{{ route('admin.products.index') }}" class="row g-3 align-items-end">
                     <div class="col-lg-4 col-md-6">
                         <label class="form-label fw-bold small text-uppercase text-muted">Pencarian</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i
-                                    class="bi bi-search text-muted"></i></span>
-                            <input type="text" name="search" class="form-control border-start-0 ps-0"
-                                placeholder="Cari nama atau SKU..." value="{{ request('search') }}">
-                        </div>
+                        <x-search-input 
+                            name="search" 
+                            value="{{ request('search') }}"
+                            placeholder="Cari nama atau SKU..."
+                        />
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Kategori</label>
-                        <select name="category_id" class="form-select">
-                            <option value="">Semua Kategori</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ request('category_id') == $category->id ? 'selected' : '' }}>
-                                    {{ $category->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-form-input
+                            name="category_id"
+                            label="Kategori"
+                            type="select"
+                            :options="collect(['' => 'Semua Kategori'])->union($categories->pluck('name', 'id'))"
+                            :value="request('category_id')"
+                        />
                     </div>
                     <div class="col-lg-2 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Status</label>
-                        <select name="is_active" class="form-select">
-                            <option value="">Semua</option>
-                            <option value="1" {{ request('is_active') == '1' ? 'selected' : '' }}>Aktif</option>
-                            <option value="0" {{ request('is_active') == '0' ? 'selected' : '' }}>Non-Aktif</option>
-                        </select>
+                        <x-form-input
+                            name="is_active"
+                            label="Status"
+                            type="select"
+                            :options="['1' => 'Aktif', '0' => 'Non-Aktif']"
+                            :value="request('is_active')"
+                        />
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <div class="d-flex gap-2">

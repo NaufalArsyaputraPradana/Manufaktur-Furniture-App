@@ -61,30 +61,29 @@
                 <form method="GET" action="{{ route('admin.users.index') }}" class="row g-3 align-items-end">
                     <div class="col-md-4">
                         <label class="form-label fw-bold small text-muted text-uppercase">Pencarian</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" name="search" class="form-control border-start-0 ps-0"
-                                placeholder="Nama, Email, atau No. HP..." value="{{ request('search') }}">
-                        </div>
+                        <x-search-input 
+                            name="search" 
+                            value="{{ request('search') }}"
+                            placeholder="Nama, Email, atau No. HP..."
+                        />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Role</label>
-                        <select name="role_id" class="form-select">
-                            <option value="">Semua Role</option>
-                            @foreach ($roles as $role)
-                                <option value="{{ $role->id }}" {{ request('role_id') == $role->id ? 'selected' : '' }}>
-                                    {{ ucfirst($role->name) }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-form-input
+                            name="role_id"
+                            label="Role"
+                            type="select"
+                            :options="collect(['' => 'Semua Role'])->union($roles->pluck('name', 'id')->map(fn($name) => ucfirst($name)))"
+                            :value="request('role_id')"
+                        />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Status</label>
-                        <select name="is_active" class="form-select">
-                            <option value="">Semua</option>
-                            <option value="1" {{ request('is_active') == '1' ? 'selected' : '' }}>Aktif</option>
-                            <option value="0" {{ request('is_active') == '0' ? 'selected' : '' }}>Nonaktif</option>
-                        </select>
+                        <x-form-input
+                            name="is_active"
+                            label="Status"
+                            type="select"
+                            :options="['1' => 'Aktif', '0' => 'Nonaktif']"
+                            :value="request('is_active')"
+                        />
                     </div>
                     <div class="col-md-3">
                         <div class="d-flex gap-2">
