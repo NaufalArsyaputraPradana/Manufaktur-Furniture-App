@@ -76,11 +76,11 @@
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* BACK TO TOP */
+/* BACK TO TOP — kanan bawah, di atas area aman; tidak tertutup WA (WA di kiri) */
 .back-to-top-btn {
     position: fixed;
-    bottom: 25px;
-    right: 25px;
+    bottom: calc(25px + env(safe-area-inset-bottom, 0px));
+    right: calc(25px + env(safe-area-inset-right, 0px));
     width: 45px;
     height: 45px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -90,7 +90,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1030;
+    z-index: 1045;
     transition: 0.3s;
     font-size: 1.2rem;
 }

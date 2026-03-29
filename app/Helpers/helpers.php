@@ -38,7 +38,8 @@ if (!function_exists('statusBadge')) {
             'finishing' => 'info',
             'quality_control' => 'warning',
             'paid' => 'success',
-            'unpaid' => 'danger',
+            'unpaid' => 'warning',
+            'dp_paid' => 'info',
             'active' => 'success',
             'inactive' => 'secondary',
         ];

@@ -47,6 +47,13 @@ return [
     */
     'google' => [
         'translate_api_key' => env('GOOGLE_TRANSLATE_API_KEY', ''),
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI', rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/auth/google/callback'),
+    ],
+
+    'rajaongkir' => [
+        'key' => env('RAJAONGKIR_API_KEY'),
     ],
 
 ];

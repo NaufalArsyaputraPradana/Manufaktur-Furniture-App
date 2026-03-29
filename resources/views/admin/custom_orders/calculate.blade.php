@@ -73,14 +73,24 @@
                             </div>
                         </div>
                         @if (!empty($orderDetail->custom_specifications['design_image']))
+                            @php
+                                $designPath = $orderDetail->custom_specifications['design_image'];
+                                $designUrl = asset('storage/' . $designPath);
+                                $isPdf = str_ends_with(strtolower($designPath), '.pdf');
+                            @endphp
                             <div class="mb-2">
-                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Gambar Desain</label>
-                                <a href="javascript:void(0)" onclick="showImageModal('{{ asset('storage/' . $orderDetail->custom_specifications['design_image']) }}', 'Desain Custom')" class="d-block hover-lift">
-                                    <img src="{{ asset('storage/' . $orderDetail->custom_specifications['design_image']) }}"
-                                        class="img-fluid rounded border shadow-sm w-100"
-                                        style="max-height: 250px; object-fit: cover; cursor:pointer;">
-                                </a>
-                                <small class="text-muted mt-2 d-block text-center fst-italic">Klik gambar untuk memperbesar</small>
+                                <label class="small text-muted fw-bold text-uppercase d-block mb-1">Desain referensi</label>
+                                @if ($isPdf)
+                                    <a href="{{ $designUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger btn-sm w-100 mb-2">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>Buka PDF desain
+                                    </a>
+                                @else
+                                    <button type="button" class="btn btn-link p-0 border-0 w-100 text-decoration-none design-thumb-trigger" data-src="{{ $designUrl }}" data-title="Desain custom — {{ $orderDetail->product_name }}">
+                                        <img src="{{ $designUrl }}" alt="Desain" class="img-fluid rounded border shadow-sm w-100 design-thumb"
+                                            style="max-height: 250px; object-fit: cover; cursor: zoom-in;">
+                                    </button>
+                                    <small class="text-muted mt-2 d-block text-center fst-italic">Klik untuk preview & zoom</small>
+                                @endif
                             </div>
                         @endif
                     </div>
@@ -236,6 +246,28 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="designLightboxModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-sm-down">
+            <div class="modal-content bg-dark border-0">
+                <div class="modal-header border-0 py-2 px-3 align-items-center">
+                    <h6 class="modal-title text-white mb-0 text-truncate pe-2" id="designLightboxTitle">Preview</h6>
+                    <div class="d-flex align-items-center gap-2 ms-auto">
+                        <button type="button" class="btn btn-sm btn-outline-light" id="designZoomOut" title="Zoom out">−</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="designZoomIn" title="Zoom in">+</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="designZoomReset" title="Reset">100%</button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0 d-flex align-items-center justify-content-center overflow-auto" id="designLightboxBody" style="min-height: 50vh; max-height: 85vh; cursor: grab;">
+                    <img src="" alt="" id="designLightboxImg" class="rounded shadow" style="max-width: none; transition: transform 0.15s ease-out; transform-origin: center center;">
+                </div>
+                <div class="modal-footer border-0 bg-dark text-white-50 small py-2">
+                    Scroll untuk zoom (jika didukung) atau gunakan tombol +/−
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -319,7 +351,42 @@
                 addRow();
             }
             calculateAll();
+            initDesignLightbox();
         });
+
+        function initDesignLightbox() {
+            const modalEl = document.getElementById('designLightboxModal');
+            const imgEl = document.getElementById('designLightboxImg');
+            const titleEl = document.getElementById('designLightboxTitle');
+            const bodyEl = document.getElementById('designLightboxBody');
+            if (!modalEl || !imgEl) return;
+
+            let scale = 1;
+            const setScale = (s) => {
+                scale = Math.min(4, Math.max(0.5, s));
+                imgEl.style.transform = 'scale(' + scale + ')';
+            };
+
+            document.querySelectorAll('.design-thumb-trigger').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    imgEl.src = btn.dataset.src || '';
+                    titleEl.textContent = btn.dataset.title || 'Preview';
+                    scale = 1;
+                    setScale(1);
+                    new bootstrap.Modal(modalEl).show();
+                });
+            });
+
+            document.getElementById('designZoomIn')?.addEventListener('click', () => setScale(scale + 0.25));
+            document.getElementById('designZoomOut')?.addEventListener('click', () => setScale(scale - 0.25));
+            document.getElementById('designZoomReset')?.addEventListener('click', () => setScale(1));
+
+            bodyEl?.addEventListener('wheel', (e) => {
+                if (!modalEl.classList.contains('show')) return;
+                e.preventDefault();
+                setScale(scale + (e.deltaY < 0 ? 0.15 : -0.15));
+            }, { passive: false });
+        }
 
         const mainForm = document.getElementById('calculatorForm');
         mainForm.addEventListener('submit', function() {

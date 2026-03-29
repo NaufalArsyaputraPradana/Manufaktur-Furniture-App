@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class OrderDetail extends Model
 {
@@ -74,6 +75,23 @@ class OrderDetail extends Model
             return $this->custom_specifications['description'] ?? '-';
         }
         return 'Standar Katalog';
+    }
+
+    /** URL publik untuk gambar desain custom (gambar saja; PDF tidak dijadikan URL img). */
+    public function customDesignImageUrl(): ?string
+    {
+        if (!$this->is_custom) {
+            return null;
+        }
+        $path = $this->custom_specifications['design_image'] ?? null;
+        if (!$path || str_ends_with(strtolower($path), '.pdf')) {
+            return null;
+        }
+        if (!Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return asset('storage/' . $path);
     }
 
     /**

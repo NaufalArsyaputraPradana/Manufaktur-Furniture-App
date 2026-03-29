@@ -200,7 +200,7 @@
                         <select class="form-select form-select-lg product-select bg-light"
                             name="products[INDEX][product_id]" onchange="onProductChange(this)">
                             <option value="">-- Pilih dari Katalog --</option>
-                            <option value="">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
+                            <option value="custom">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}" data-name="{{ $product->name }}"
                                     data-price="{{ $product->base_price ?? '' }}">
@@ -299,7 +299,8 @@
                                             class="text-secondary fw-normal text-lowercase">(Opsional)</span></label>
                                     <input type="file" class="form-control bg-white image-upload"
                                         name="products[INDEX][customizations][design_image]"
-                                        accept="image/jpeg,image/png,application/pdf" onchange="previewImage(this)">
+                                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                                        onchange="previewImage(this)">
                                     <small class="text-muted d-block mt-1"><i class="bi bi-info-circle me-1"></i>Format
                                         JPG, PNG, atau PDF (maks. 2MB)</small>
 
@@ -664,13 +665,11 @@
                 const customCheck = item.querySelector('.is-custom-check');
                 const opt = select.options[select.selectedIndex];
 
-                if (select.value) {
-                    // Catalog product
+                if (select.value && select.value !== 'custom') {
                     nameInput.value = opt.dataset.name || '';
                     priceInput.value = opt.dataset.price || 0;
                     customCheck.checked = false;
-                } else if (select.selectedIndex === 1) {
-                    // Custom product placeholder
+                } else if (select.value === 'custom') {
                     nameInput.value = '';
                     priceInput.value = 0;
                     customCheck.checked = true;
@@ -697,6 +696,12 @@
                     priceInput.readOnly = true;
                 } else {
                     specsSection.style.display = 'none';
+                    priceInput.readOnly = false;
+                    const sel = item.querySelector('.product-select');
+                    if (sel && sel.value && sel.value !== 'custom') {
+                        const opt = sel.options[sel.selectedIndex];
+                        priceInput.value = opt?.dataset?.price || 0;
+                    }
                 }
 
                 calculateItemTotal(checkbox);

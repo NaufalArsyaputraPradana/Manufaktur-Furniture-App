@@ -292,6 +292,7 @@
                                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                                         <input type="hidden" name="product_name" value="{{ $product->name }}">
                                         <input type="hidden" name="price" value="{{ $product->base_price }}">
+                                        <input type="hidden" name="image" value="{{ $product->images[0] ?? '' }}">
 
                                         {{-- Quantity --}}
                                         <div class="mb-4">

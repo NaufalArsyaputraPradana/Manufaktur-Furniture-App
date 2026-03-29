@@ -26,7 +26,7 @@
 <body>
     <!-- Sidebar Partial -->
     <div id="sidebar" class="sidebar">
-        @include('layouts.admin.sidebar')
+        <x-layouts.admin-sidebar />
     </div>
 
     <!-- Backdrop untuk Mobile -->

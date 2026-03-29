@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\Customer\InvoiceController;
 use App\Http\Controllers\Customer\HomeController;
 use App\Http\Controllers\Customer\ProductController as CustomerProductController;
 use App\Http\Controllers\Customer\CartController;
@@ -22,6 +24,7 @@ use App\Http\Controllers\Production\ProductionController;
 use App\Http\Controllers\Production\ProductionProcessController;
 use App\Http\Controllers\Production\ProductionTodoController;
 use App\Http\Controllers\Production\ProductionScheduleController;
+use App\Http\Controllers\Production\ShippingMonitoringController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +54,11 @@ Route::middleware('guest')->controller(AuthController::class)->group(function ()
     Route::post('/login', 'login')->middleware('throttle:5,1')->name('login.submit');
     Route::get('/register', 'showRegister')->name('register');
     Route::post('/register', 'register')->middleware('throttle:3,1')->name('register.submit');
+});
+
+Route::middleware('guest')->group(function () {
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
@@ -110,6 +118,8 @@ Route::middleware(['auth', 'role:customer,admin'])->prefix('customer/orders')->n
         Route::patch('/{order}/cancel', 'cancel')->name('cancel');
         Route::get('/{order}/payment', 'showPayment')->name('payment');
         Route::post('/{order}/payment', 'processPayment')->name('payment.process');
+        Route::get('/{order}/invoice', [InvoiceController::class, 'show'])->name('invoice');
+        Route::get('/{order}/invoice/download', [InvoiceController::class, 'download'])->name('invoice.download');
     });
 
 /*
@@ -132,9 +142,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('users', UserController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('products', AdminProductController::class);
-    Route::resource('orders', AdminOrderController::class)->except(['destroy']);
+    Route::resource('orders', AdminOrderController::class);
 
     // Admin Orders actions
+    Route::patch('/orders/{order}/shipping', [AdminOrderController::class, 'updateShipping'])->name('orders.shipping');
     Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.update-status');
     // PERBAIKAN: Ubah dari POST menjadi PATCH
     Route::patch('/orders/{order}/cancel', [AdminOrderController::class, 'cancel'])->name('orders.cancel');
@@ -217,6 +228,14 @@ Route::middleware(['auth', 'role:production_staff'])->prefix('production')->name
     Route::prefix('tracking')->name('tracking.')->controller(ProductionProcessController::class)->group(function () {
         Route::get('/', 'ordersIndex')->name('index');
         Route::get('/{process}', 'show')->name('show');
+    });
+
+    // Monitoring pengiriman (muat, ekspedisi, dokumen)
+    Route::prefix('shipping')->name('shipping.')->controller(ShippingMonitoringController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{order}', 'show')->name('show');
+        Route::post('/{order}/logs', 'storeLog')->name('logs.store');
+        Route::patch('/{order}/courier', 'updateCourier')->name('courier.update');
     });
 });
 

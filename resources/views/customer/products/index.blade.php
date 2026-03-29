@@ -376,6 +376,8 @@
                                                                     value="{{ $product->name }}">
                                                                 <input type="hidden" name="price"
                                                                     value="{{ $product->base_price }}">
+                                                                <input type="hidden" name="image"
+                                                                    value="{{ $product->images[0] ?? '' }}">
                                                                 <input type="hidden" name="quantity" value="1">
                                                                 <button type="submit"
                                                                     class="btn btn-primary w-100 rounded-3 shadow-sm fw-bold"

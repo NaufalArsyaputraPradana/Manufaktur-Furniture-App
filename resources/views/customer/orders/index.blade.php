@@ -51,7 +51,8 @@
                 <div class="row g-4">
                     @foreach ($orders as $order)
                         @php
-                            $isPaid = $order->payment?->payment_status === 'paid';
+                            $isPaid = $order->payment?->payment_status === \App\Models\Payment::STATUS_PAID;
+                            $isDpPaid = $order->payment?->payment_status === \App\Models\Payment::STATUS_DP_PAID;
                             $badgeClass = match (true) {
                                 $order->status === 'pending' && $isPaid => 'bg-info',
                                 $order->status === 'pending' => 'bg-warning text-dark',
@@ -82,6 +83,8 @@
                                         @if ($order->status === 'pending' && $isPaid)
                                             <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Menunggu Verifikasi
                                             Pembayaran
+                                        @elseif ($order->status === 'pending' && $isDpPaid)
+                                            <i class="bi bi-piggy-bank me-1" aria-hidden="true"></i>DP terverifikasi
                                         @elseif ($order->status === 'pending')
                                             <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Menunggu Pembayaran
                                         @elseif ($order->status === 'confirmed')

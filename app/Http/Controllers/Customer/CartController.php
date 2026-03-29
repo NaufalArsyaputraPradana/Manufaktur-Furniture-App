@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
@@ -16,9 +17,29 @@ class CartController extends Controller
     public function index(): View
     {
         $cart = session()->get('cart', []);
-        $total = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
+        
+        // Enrich cart dengan data product dari database
+        $enrichedCart = [];
+        foreach ($cart as $itemKey => $item) {
+            $enrichedCart[$itemKey] = $item;
+            
+            // Ambil product dari database untuk mendapat images terbaru
+            if (!empty($item['product_id'])) {
+                $product = Product::find($item['product_id']);
+                if ($product && $product->images) {
+                    // Jika product punya images, ambil dari sana
+                    $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                    if (!empty($images) && isset($images[0])) {
+                        $enrichedCart[$itemKey]['image'] = $images[0];
+                    }
+                }
+            }
+        }
+        
+        $total = collect($enrichedCart)->sum(fn($item) => $item['price'] * $item['quantity']);
 
-        return view('customer.cart.index', compact('cart', 'total'));
+        return view('customer.cart.index', compact('total'))
+            ->with('cart', $enrichedCart);
     }
 
     /**
@@ -31,6 +52,7 @@ class CartController extends Controller
             'product_name'      => 'required|string',
             'price'             => 'required|numeric|min:0',
             'quantity'          => 'required|integer|min:1',
+            'image'             => 'nullable|string',
             'custom_dimensions' => 'nullable|array',
         ]);
 
@@ -44,12 +66,17 @@ class CartController extends Controller
 
         if (isset($cart[$itemKey])) {
             $cart[$itemKey]['quantity'] += $validated['quantity'];
+            // Update image jika ada perubahan
+            if (!empty($validated['image'])) {
+                $cart[$itemKey]['image'] = $validated['image'];
+            }
         } else {
             $cart[$itemKey] = [
                 'product_id'        => $productId,
                 'name'              => $validated['product_name'],
                 'price'             => $validated['price'],
                 'quantity'          => $validated['quantity'],
+                'image'             => $validated['image'] ?? null,
                 'custom_dimensions' => $validated['custom_dimensions'] ?? null,
             ];
         }

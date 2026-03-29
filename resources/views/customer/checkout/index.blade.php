@@ -76,14 +76,25 @@
                                         <input type="email" class="form-control form-control-lg"
                                             value="{{ auth()->user()->email }}" readonly aria-label="Alamat email">
                                     </div>
+                                    <div class="col-md-12">
+                                        <label for="phone" class="form-label fw-semibold">
+                                            <i class="bi bi-telephone me-1 text-primary" aria-hidden="true"></i>Nomor Telepon
+                                        </label>
+                                        <input type="tel" class="form-control form-control-lg @error('phone') is-invalid @enderror" 
+                                            id="phone" name="phone"
+                                            value="{{ old('phone', auth()->user()->phone ?? '') }}" 
+                                            placeholder="Contoh: 082123456789"
+                                            aria-label="Nomor telepon">
+                                        @error('phone')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
                                 <div class="alert alert-info bg-opacity-10 border-info mt-3 mb-0" role="alert">
                                     <div class="d-flex align-items-start">
-                                        <i class="bi bi-info-circle-fill me-2 mt-1 flex-shrink-0" aria-hidden="true"></i>
+                                        <i class="bi bi-info-circle-fill me-2 mt-1 shrink-0" aria-hidden="true"></i>
                                         <small>
-                                            <strong>Info:</strong> Data pelanggan diambil dari profil Anda.
-                                            Untuk mengubah, silakan ke <a href="{{ route('customer.profile.index') }}"
-                                                class="alert-link">halaman profil</a>.
+                                            <strong>Info:</strong> Nama dan Email diambil dari profil Anda. Anda bisa mengubah Nomor Telepon di bawah jika berbeda.
                                         </small>
                                     </div>
                                 </div>
@@ -104,7 +115,7 @@
                                 </label>
                                 <textarea class="form-control form-control-lg @error('shipping_address') is-invalid @enderror" id="shipping_address"
                                     name="shipping_address" rows="4" required
-                                    placeholder="Contoh: Jl. Merdeka No. 123, RT 01/RW 05, Kelurahan Sentosa, Kecamatan Makmur, Kota Jakarta, 12345">{{ old('shipping_address') }}</textarea>
+                                    placeholder="Contoh: Jl. Merdeka No. 123, RT 01/RW 05, Kelurahan Sentosa, Kecamatan Makmur, Kota Jakarta, 12345">{{ old('shipping_address', auth()->user()->address ?? '') }}</textarea>
                                 @error('shipping_address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -139,55 +150,7 @@
                             </div>
                         </div>
 
-                        {{-- Payment Method --}}
-                        <div class="card shadow-sm rounded-4 border-0 mb-4 animate-on-scroll">
-                            <div class="card-header bg-info text-white border-0 p-4">
-                                <h2 class="h5 mb-0 fw-bold text-white">
-                                    <i class="bi bi-wallet2 me-2" aria-hidden="true"></i>Metode Pembayaran
-                                </h2>
-                            </div>
-                            <div class="card-body p-4">
-                                <label class="form-label fw-semibold">
-                                    Pilih Metode Pembayaran <span class="text-danger" aria-hidden="true">*</span>
-                                </label>
-                                <div class="row g-3 mb-3">
-                                    @foreach ([['id' => 'transfer', 'value' => 'transfer', 'icon' => 'bi-bank', 'color' => 'text-primary', 'label' => 'Transfer Bank', 'sub' => 'BCA, BNI, Mandiri'], ['id' => 'cash', 'value' => 'cash', 'icon' => 'bi-cash-stack', 'color' => 'text-success', 'label' => 'Tunai', 'sub' => 'Bayar di tempat'], ['id' => 'credit_card', 'value' => 'credit_card', 'icon' => 'bi-credit-card-2-front-fill', 'color' => 'text-danger', 'label' => 'Kartu Kredit', 'sub' => 'Visa, Mastercard']] as $method)
-                                        <div class="col-md-4">
-                                            <input class="form-check-input d-none" type="radio" name="payment_method"
-                                                id="{{ $method['id'] }}" value="{{ $method['value'] }}"
-                                                {{ $loop->first ? 'required' : '' }}>
-                                            <label class="payment-method-card d-block h-100" for="{{ $method['id'] }}">
-                                                <div class="card h-100 border">
-                                                    <div
-                                                        class="card-body text-center p-3 d-flex flex-column align-items-center justify-content-center">
-                                                        <i class="bi {{ $method['icon'] }} display-4 {{ $method['color'] }} mb-2"
-                                                            aria-hidden="true"></i>
-                                                        <strong class="d-block mb-1">{{ $method['label'] }}</strong>
-                                                        <small class="text-muted">{{ $method['sub'] }}</small>
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                                @error('payment_method')
-                                    <div class="text-danger mt-1 small">
-                                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>{{ $message }}
-                                    </div>
-                                @enderror
 
-                                <div class="alert alert-warning bg-opacity-10 border-warning mb-0" role="alert">
-                                    <div class="d-flex align-items-start">
-                                        <i class="bi bi-exclamation-triangle-fill me-2 mt-1 flex-shrink-0"
-                                            aria-hidden="true"></i>
-                                        <small>
-                                            <strong>Perhatian:</strong> Setelah melakukan checkout, Anda dapat melakukan
-                                            pembayaran melalui halaman detail pesanan.
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                     </div>
 
@@ -195,94 +158,154 @@
                     <div class="col-lg-4">
                         <div class="card shadow-sm rounded-4 border-0 sticky-summary animate-on-scroll">
                             <div class="card-header bg-gradient-primary text-white border-0 p-4">
-                                <h2 class="h5 mb-0 fw-bold text-white">
-                                    <i class="bi bi-receipt-cutoff me-2" aria-hidden="true"></i>Ringkasan Pesanan
-                                </h2>
-                            </div>
-                            <div class="card-body p-4">
-                                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                                    <span class="text-muted fw-semibold">Total Item:</span>
-                                    <span class="badge bg-primary rounded-pill fs-6">{{ count($cart) }}</span>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h2 class="h5 mb-0 fw-bold text-white">
+                                        <i class="bi bi-receipt-cutoff me-2" aria-hidden="true"></i>Ringkasan Pesanan
+                                    </h2>
+                                    <span class="badge bg-light text-primary fs-6 px-3 py-2">{{ count($cart) }} Item</span>
                                 </div>
-
-                                <h3 class="h6 text-muted mb-3 fw-bold">Detail Pesanan</h3>
-                                <div class="order-items-list mb-3">
+                            </div>
+                            <div class="card-body p-0">
+                                {{-- Items List --}}
+                                <div class="order-items-list border-bottom">
                                     @foreach ($cart as $item)
-                                        <div class="order-item d-flex align-items-start gap-3 mb-3 pb-3 border-bottom">
-                                            @if (!empty($item['image']))
-                                                <img src="{{ asset('storage/' . $item['image']) }}"
-                                                    alt="{{ $item['name'] ?? 'Produk' }}"
-                                                    class="order-item-image rounded-3 shadow-sm flex-shrink-0"
-                                                    loading="lazy"
-                                                    onerror="this.replaceWith(document.createElement('div')); this.className='order-item-placeholder bg-light rounded-3 d-flex align-items-center justify-content-center flex-shrink-0';">
-                                            @else
-                                                <div
-                                                    class="order-item-placeholder bg-light rounded-3 d-flex align-items-center justify-content-center flex-shrink-0">
-                                                    <i class="bi bi-image text-muted fs-4" aria-hidden="true"></i>
+                                        @php
+                                            $imagePath = null;
+                                            if (!empty($item['image'])) {
+                                                if (str_starts_with($item['image'], 'http')) {
+                                                    $imagePath = $item['image'];
+                                                } else {
+                                                    $imagePath = asset('storage/' . ltrim($item['image'], '/'));
+                                                }
+                                            }
+                                        @endphp
+                                        <div class="order-item-card p-3 border-bottom">
+                                            {{-- Product Image & Basic Info --}}
+                                            <div class="d-flex gap-3 mb-2">
+                                                {{-- Image --}}
+                                                <div class="position-relative flex-shrink-0">
+                                                    @if ($imagePath)
+                                                        <img src="{{ $imagePath }}"
+                                                            alt="{{ $item['name'] ?? 'Produk' }}"
+                                                            class="order-item-image rounded-2 shadow-sm cursor-pointer"
+                                                            loading="lazy"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#imageModal"
+                                                            onclick="showImageModal('{{ $imagePath }}', '{{ $item['name'] ?? 'Produk' }}')"
+                                                            onerror="this.classList.add('img-error')"
+                                                            style="cursor: pointer; transition: all 0.3s ease;"
+                                                            title="Klik untuk lihat gambar full">
+                                                    @else
+                                                        <div class="order-item-placeholder bg-light rounded-2 d-flex align-items-center justify-content-center">
+                                                            <i class="bi bi-image text-muted" aria-hidden="true"></i>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                {{-- Product Details --}}
+                                                <div class="flex-grow-1 min-w-0">
+                                                    <h6 class="mb-1 text-dark fw-semibold text-truncate" title="{{ $item['name'] ?? 'Produk' }}">
+                                                        {{ Str::limit($item['name'] ?? 'Produk', 25) }}
+                                                    </h6>
+                                                    <small class="text-muted d-block mb-1">
+                                                        <span class="price-convert" data-price="{{ $item['price'] ?? 0 }}" data-currency="IDR">
+                                                            Rp {{ number_format($item['price'] ?? 0, 0, ',', '.') }}
+                                                        </span> / item
+                                                    </small>
+                                                    <small class="text-muted d-block">
+                                                        <strong class="text-dark">×{{ $item['quantity'] ?? 1 }}</strong> item
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            {{-- Description (if available) --}}
+                                            @if (!empty($item['description']))
+                                                <div class="mb-2 ps-0">
+                                                    <small class="text-muted d-block" style="font-size: 0.8rem; line-height: 1.3; max-height: 2.6rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                                        {{ $item['description'] }}
+                                                    </small>
                                                 </div>
                                             @endif
-                                            <div class="flex-grow-1">
-                                                <strong
-                                                    class="d-block mb-1 small text-dark">{{ $item['name'] ?? 'Produk' }}</strong>
-                                                <small class="text-muted d-block mb-1">
-                                                    × {{ $item['quantity'] ?? 1 }} – <span class="price-convert"
-                                                        data-price="{{ $item['price'] ?? 0 }}" data-currency="IDR">Rp
-                                                        {{ number_format($item['price'] ?? 0, 0, ',', '.') }}</span>
-                                                </small>
-                                                <strong class="text-primary small price-convert"
+
+                                            {{-- Specifications --}}
+                                            @if (!empty($item['custom_dimensions']))
+                                                <div class="mb-2 ps-0">
+                                                    <small class="text-info d-block">
+                                                        <i class="bi bi-rulers me-1" aria-hidden="true"></i>
+                                                        @if (is_array($item['custom_dimensions']))
+                                                            @foreach ($item['custom_dimensions'] as $key => $value)
+                                                                <span>{{ ucfirst($key) }}: <strong>{{ $value }}</strong></span>{{ !$loop->last ? ' • ' : '' }}
+                                                            @endforeach
+                                                        @else
+                                                            {{ $item['custom_dimensions'] }}
+                                                        @endif
+                                                    </small>
+                                                </div>
+                                            @endif
+
+                                            {{-- Subtotal --}}
+                                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                                <small class="text-muted">Subtotal:</small>
+                                                <strong class="text-primary price-convert"
                                                     data-price="{{ ($item['price'] ?? 0) * ($item['quantity'] ?? 1) }}"
                                                     data-currency="IDR">
-                                                    Rp
-                                                    {{ number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1), 0, ',', '.') }}
+                                                    Rp {{ number_format(($item['price'] ?? 0) * ($item['quantity'] ?? 1), 0, ',', '.') }}
                                                 </strong>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
 
-                                <div class="bg-light p-3 rounded-3 mb-4">
-                                    <div
-                                        class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-white">
-                                        <span class="fw-semibold">Subtotal:</span>
-                                        <strong class="text-primary price-convert" data-price="{{ $subtotal }}"
-                                            data-currency="IDR">Rp {{ number_format($subtotal, 0, ',', '.') }}</strong>
+                                {{-- Price Summary --}}
+                                <div class="p-4">
+                                    {{-- Subtotal --}}
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Subtotal:</span>
+                                        <span class="price-convert" data-price="{{ $subtotal }}" data-currency="IDR">
+                                            Rp {{ number_format($subtotal, 0, ',', '.') }}
+                                        </span>
                                     </div>
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="text-muted small">Ongkos Kirim:</span>
+
+                                    {{-- Shipping Cost --}}
+                                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                                        <span class="text-muted">
+                                            <i class="bi bi-truck me-1" aria-hidden="true"></i>Ongkos Kirim:
+                                        </span>
                                         <span class="text-muted small"><em>Dihitung setelah checkout</em></span>
                                     </div>
-                                    <hr class="my-2">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <strong class="fs-5">Total Bayar:</strong>
-                                        <strong class="fs-4 text-success price-convert" data-price="{{ $total }}"
-                                            data-currency="IDR">Rp {{ number_format($total, 0, ',', '.') }}</strong>
+
+                                    {{-- Total --}}
+                                    <div class="d-flex justify-content-between align-items-baseline mb-4">
+                                        <strong class="fs-6">Total Pembayaran:</strong>
+                                        <div class="text-end">
+                                            <strong class="fs-5 text-success price-convert" data-price="{{ $total }}" data-currency="IDR">
+                                                Rp {{ number_format($total, 0, ',', '.') }}
+                                            </strong>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="d-grid gap-2 mb-4">
-                                    <button type="submit" class="btn btn-success btn-lg hover-lift" id="btnCheckout">
-                                        <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>Buat Pesanan
-                                    </button>
-                                    <a href="{{ route('customer.cart.index') }}"
-                                        class="btn btn-outline-secondary hover-lift">
-                                        <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Kembali ke Keranjang
-                                    </a>
-                                </div>
+                                    {{-- Action Buttons --}}
+                                    <div class="d-grid gap-2 mb-3">
+                                        <button type="submit" class="btn btn-success btn-lg hover-lift rounded-3" id="btnCheckout">
+                                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>Lanjutkan ke Pembayaran
+                                        </button>
+                                        <a href="{{ route('customer.cart.index') }}" class="btn btn-outline-secondary rounded-3 hover-lift">
+                                            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Edit Keranjang
+                                        </a>
+                                    </div>
 
-                                <div class="bg-light rounded-3 p-3">
-                                    <h3 class="h6 fw-bold mb-3 text-dark">
-                                        <i class="bi bi-shield-check text-success me-2" aria-hidden="true"></i>Keuntungan
-                                        Berbelanja
-                                    </h3>
-                                    <ul class="list-unstyled small mb-0">
-                                        @foreach (['Kualitas terjamin', 'Gratis konsultasi desain', 'Pembayaran aman & mudah', 'Tracking pesanan real-time'] as $benefit)
-                                            <li class="mb-2 d-flex align-items-start">
-                                                <i class="bi bi-check-circle-fill text-success me-2 mt-1 flex-shrink-0"
-                                                    aria-hidden="true"></i>
-                                                <span>{{ $benefit }}</span>
-                                            </li>
-                                        @endforeach
-                                    </ul>
+                                    {{-- Security Info --}}
+                                    <div class="alert alert-light border border-success-subtle rounded-3 p-3 mb-0">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <i class="bi bi-shield-check text-success mt-1 flex-shrink-0" aria-hidden="true"></i>
+                                            <div>
+                                                <small class="text-muted d-block">
+                                                    <strong class="text-dark">Pembayaran Aman</strong><br>
+                                                    Semua transaksi terenkripsi dan terlindungi
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -292,6 +315,29 @@
             </form>
         </div>
     </section>
+
+    {{-- ===== IMAGE MODAL ===== --}}
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header bg-gradient-primary text-white border-0 p-4">
+                    <h5 class="modal-title fw-bold" id="imageModalLabel">
+                        <i class="bi bi-image me-2" aria-hidden="true"></i>Gambar Produk
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light text-center" style="min-height: 400px; display: flex; align-items: center; justify-content: center;">
+                    <img id="modalImage" src="" alt="Gambar Produk" class="img-fluid rounded-2" style="max-height: 500px; max-width: 100%; object-fit: contain;">
+                </div>
+                <div class="modal-footer border-top bg-light p-4">
+                    <span id="modalImageName" class="text-muted flex-grow-1"></span>
+                    <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 @endsection
 
@@ -466,9 +512,10 @@
         }
 
         .order-items-list {
-            max-height: 350px;
+            max-height: 400px;
             overflow-y: auto;
             overflow-x: hidden;
+            background: #ffffff;
         }
 
         .order-items-list::-webkit-scrollbar {
@@ -485,23 +532,91 @@
             border-radius: 3px;
         }
 
+        .order-items-list::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        .order-item-card {
+            transition: all 0.3s ease;
+            background: #ffffff;
+        }
+
+        .order-item-card:hover {
+            background-color: #f8f9ff;
+        }
+
         .order-item-image {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             object-fit: cover;
             border: 2px solid #e9ecef;
+            border-radius: 0.5rem;
             transition: all 0.3s ease;
+            display: block;
+            cursor: pointer;
         }
 
         .order-item-image:hover {
-            transform: scale(1.05);
+            transform: scale(1.15);
             border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            filter: brightness(1.05);
+        }
+
+        .order-item-image:active {
+            transform: scale(1.1);
         }
 
         .order-item-placeholder {
-            width: 60px;
-            height: 60px;
-            min-width: 60px;
+            width: 70px;
+            height: 70px;
+            min-width: 70px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .order-item-card .badge.bg-danger {
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        /* ============================================
+           IMAGE MODAL STYLING
+           ============================================ */
+        .modal-content {
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-body {
+            border-top: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        #modalImage {
+            animation: zoomIn 0.3s ease-out;
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal.fade .modal-dialog {
+            transition: all 0.3s ease;
+        }
+
+        .modal.show .modal-dialog {
+            transform: scale(1);
         }
 
         /* ============================================
@@ -588,7 +703,6 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 initScrollAnimations();
-                initPaymentMethods();
                 initFormValidation();
                 showSessionMessages();
             });
@@ -645,31 +759,6 @@
             }
 
             // ============================================
-            // PAYMENT METHOD CARDS
-            // ============================================
-            function initPaymentMethods() {
-                document.querySelectorAll('.payment-method-card').forEach(function(card) {
-                    card.addEventListener('click', function() {
-                        const radio = document.getElementById(this.getAttribute('for'));
-                        if (radio) {
-                            radio.checked = true;
-                            updateCardStates();
-                        }
-                    });
-                });
-                document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
-                    radio.addEventListener('change', updateCardStates);
-                });
-            }
-
-            function updateCardStates() {
-                document.querySelectorAll('.payment-method-card').forEach(function(card) {
-                    const radio = document.getElementById(card.getAttribute('for'));
-                    card.classList.toggle('selected', !!(radio && radio.checked));
-                });
-            }
-
-            // ============================================
             // FORM VALIDATION
             // ============================================
             function initFormValidation() {
@@ -678,20 +767,37 @@
                 if (!form || !btnSubmit) return;
 
                 form.addEventListener('submit', function(e) {
-                    const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+                    const phone = document.getElementById('phone');
                     const shippingAddress = document.getElementById('shipping_address');
 
-                    if (!paymentMethod) {
+                    // Validate Phone Number
+                    if (!phone?.value.trim()) {
                         e.preventDefault();
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Pilih Metode Pembayaran',
-                            text: 'Silakan pilih metode pembayaran terlebih dahulu',
+                            title: 'Nomor Telepon Kosong',
+                            text: 'Silakan isi nomor telepon terlebih dahulu',
                             confirmButtonColor: '#667eea'
                         });
+                        phone?.focus();
                         return;
                     }
 
+                    // Validate Phone Format (basic validation)
+                    const phoneRegex = /^(\+62|62|0)[0-9]{9,12}$/;
+                    if (!phoneRegex.test(phone.value.replace(/\s+/g, ''))) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Format Nomor Telepon Tidak Valid',
+                            text: 'Format: 08xx-xxxx-xxxx atau +62',
+                            confirmButtonColor: '#667eea'
+                        });
+                        phone?.focus();
+                        return;
+                    }
+
+                    // Validate Shipping Address
                     if (!shippingAddress?.value.trim()) {
                         e.preventDefault();
                         Swal.fire({
@@ -716,6 +822,7 @@
                         return;
                     }
 
+                    // All validations passed
                     btnSubmit.disabled = true;
                     btnSubmit.innerHTML =
                         '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Memproses...';
@@ -728,6 +835,22 @@
                     });
                 });
             }
+
+            // ============================================
+            // IMAGE MODAL
+            // ============================================
+            window.showImageModal = function(imagePath, imageName) {
+                const modalImage = document.getElementById('modalImage');
+                const modalImageName = document.getElementById('modalImageName');
+                
+                if (modalImage) {
+                    modalImage.src = imagePath;
+                    modalImage.alt = imageName;
+                }
+                if (modalImageName) {
+                    modalImageName.textContent = imageName;
+                }
+            };
 
         })();
     </script>

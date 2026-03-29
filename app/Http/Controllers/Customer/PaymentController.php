@@ -53,6 +53,7 @@ class PaymentController extends Controller
                 ], 403);
             }
 
+            $order->loadMissing(['orderDetails', 'user']);
             $result = $this->paymentService->createMidtransTransaction($order);
 
             return response()->json(['status' => 'success', 'data' => $result]);
@@ -68,10 +69,11 @@ class PaymentController extends Controller
     public function pendingVerification(): View
     {
         $payments = Payment::with(['order.user', 'order.orderDetails.product'])
-            ->where('payment_status', Payment::STATUS_UNPAID)
             ->whereNotNull('payment_proof')
+            ->whereIn('payment_status', [Payment::STATUS_PENDING, Payment::STATUS_DP_PAID])
             ->latest()
             ->paginate(20);
+
         return view('admin.payments.pending', compact('payments'));
     }
 
@@ -84,14 +86,16 @@ class PaymentController extends Controller
     public function verify(Request $request, Payment $payment): RedirectResponse
     {
         try {
-            $this->paymentService->verifyManualPayment($payment);
+            $this->paymentService->verifyManualTransfer($payment);
             $order = $payment->order;
-            $note  = '[' . now()->format('d/m/Y H:i') . '] Pembayaran diverifikasi oleh Admin.';
+            $note = '[' . now()->format('d/m/Y H:i') . '] Pembayaran diverifikasi oleh Admin.';
             $order->update(['admin_notes' => trim(($order->admin_notes ?? '') . "\n" . $note)]);
+
             return redirect()->route('admin.payments.pending')
-                ->with('success', 'Pembayaran berhasil diverifikasi dan pesanan telah dikonfirmasi!');
+                ->with('success', 'Pembayaran berhasil diverifikasi.');
         } catch (\Exception $e) {
             Log::error('Payment verification failed', ['payment_id' => $payment->id, 'error' => $e->getMessage()]);
+
             return back()->with('error', 'Gagal memverifikasi pembayaran: ' . $e->getMessage());
         }
     }

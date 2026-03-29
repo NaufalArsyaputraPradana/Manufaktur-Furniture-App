@@ -19,8 +19,13 @@
 
     {{-- NOTIFICATION --}}
     @php
-        $pendingPaymentsCount = \App\Models\Payment::where('payment_status', \App\Models\Payment::STATUS_UNPAID)
-            ->whereNotNull('payment_proof')->count();
+        $pendingPaymentsCount = \App\Models\Payment::query()
+            ->whereNotNull('payment_proof')
+            ->whereIn('payment_status', [
+                \App\Models\Payment::STATUS_PENDING,
+                \App\Models\Payment::STATUS_DP_PAID,
+            ])
+            ->count();
         $pendingOrdersCount = \App\Models\Order::where('status', 'pending')->count();
         $totalNotifCount = $pendingPaymentsCount + $pendingOrdersCount;
     @endphp

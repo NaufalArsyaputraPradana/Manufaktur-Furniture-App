@@ -41,7 +41,7 @@
 
 <body>
 
-    @include('layouts.customer.navbar')
+    <x-layouts.customer-navbar />
 
     <main id="main-content">
         @yield('content')

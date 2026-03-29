@@ -80,10 +80,12 @@ body {
     margin-top: 0 !important;
 }
 
+/* Kiri bawah agar tidak bertabrakan dengan tombol "kembali ke atas" (kanan bawah) */
 .whatsapp-float {
     position: fixed;
     bottom: 30px;
-    right: 30px;
+    left: 30px;
+    right: auto;
     background: #25D366;
     color: #fff;
     width: 55px;
@@ -94,7 +96,7 @@ body {
     justify-content: center;
     font-size: 1.8rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1040;
+    z-index: 1035;
     text-decoration: none;
     transition: all 0.3s ease;
 }
@@ -107,8 +109,8 @@ body {
 
 @media (max-width: 576px) {
     .whatsapp-float {
-        bottom: 20px;
-        right: 20px;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        left: 20px;
         width: 48px;
         height: 48px;
         font-size: 1.5rem;

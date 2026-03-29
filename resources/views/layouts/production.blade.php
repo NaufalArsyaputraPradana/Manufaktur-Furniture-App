@@ -54,6 +54,11 @@
                     <i class="bi bi-boxes"></i> Daftar Order
                 </a>
 
+                <a href="{{ route('production.shipping.index') }}"
+                   class="sidebar-nav-link {{ request()->routeIs('production.shipping.*') ? 'active' : '' }}">
+                    <i class="bi bi-truck"></i> Monitoring Pengiriman
+                </a>
+
                 <a href="{{ route('staff.production.schedules.index') }}"
                    class="sidebar-nav-link {{ request()->routeIs('staff.production.schedules.*') ? 'active' : '' }}">
                     <i class="bi bi-calendar3"></i> Jadwal Produksi

@@ -163,15 +163,13 @@ class PaymentService
                 }
 
                 if ($payment->payment_status === Payment::STATUS_DP_PAID) {
+                    // When final payment proof is uploaded after DP, set to FULL_PENDING
+                    // instead of directly PAID, to wait for admin confirmation
                     $payment->update([
-                        'payment_status' => Payment::STATUS_PAID,
-                        'amount_paid'    => $total,
-                        'payment_date'   => now(),
+                        'payment_status' => Payment::STATUS_FULL_PENDING,
                         'payment_proof_full' => $payment->payment_proof,  // Move to full payment field
+                        'payment_proof'  => null,  // Clear from temp field
                     ]);
-                    if ($order->status === 'pending') {
-                        $order->update(['status' => 'confirmed']);
-                    }
 
                     return;
                 }
@@ -209,6 +207,36 @@ class PaymentService
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Confirm final payment (FULL_PENDING → PAID).
+     * Called by admin after verifying the final payment proof.
+     */
+    public function confirmFinalPayment(Payment $payment): void
+    {
+        DB::transaction(function () use ($payment) {
+            if ($payment->payment_status !== Payment::STATUS_FULL_PENDING) {
+                throw new \InvalidArgumentException('Pembayaran harus dalam status menunggu konfirmasi.');
+            }
+
+            $order = $payment->order;
+            if (!$order) {
+                throw new \InvalidArgumentException('Pesanan tidak ditemukan.');
+            }
+
+            $total = (float) $order->total;
+
+            $payment->update([
+                'payment_status' => Payment::STATUS_PAID,
+                'amount_paid'    => $total,
+                'payment_date'   => now(),
+            ]);
+
+            if ($order->status === 'pending') {
+                $order->update(['status' => 'confirmed']);
+            }
+        });
     }
 
     public function rejectPayment(Payment $payment, string $reason = ''): bool

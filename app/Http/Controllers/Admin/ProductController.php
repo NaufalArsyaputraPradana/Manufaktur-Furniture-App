@@ -23,7 +23,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with('category:id,name')
-            ->select('id', 'category_id', 'sku', 'name', 'base_price', 'is_active', 'created_at');
+            ->select('id', 'category_id', 'sku', 'name', 'base_price', 'is_active', 'images', 'created_at');
 
         if ($request->filled('search')) {
             $search = $request->search;

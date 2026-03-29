@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderRequest;
+use App\Http\Requests\Admin\UpdateOrderShippingRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,7 +19,7 @@ class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'orderDetails']);
+        $query = Order::with(['user', 'orderDetails.product', 'payment']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -178,5 +180,55 @@ class OrderController extends Controller
         $order->save();
 
         return redirect()->route('admin.orders.show', $order)->with('success', 'Pesanan dibatalkan.');
+    }
+
+    public function updateShipping(UpdateOrderShippingRequest $request, Order $order)
+    {
+        $v = $request->validated();
+
+        if (array_key_exists('shipping_status', $v)) {
+            $order->shipping_status = $v['shipping_status'] ?: null;
+            if ($order->shipping_status === 'shipped' && !$order->shipped_at) {
+                $order->shipped_at = now();
+            }
+            if ($order->shipping_status === 'delivered' && !$order->delivered_at) {
+                $order->delivered_at = now();
+            }
+        }
+
+        if (array_key_exists('courier', $v)) {
+            $c = $v['courier'] !== null ? trim((string) $v['courier']) : '';
+            $order->courier = $c !== '' ? $c : null;
+        }
+
+        if (array_key_exists('tracking_number', $v)) {
+            $t = $v['tracking_number'] !== null ? trim((string) $v['tracking_number']) : '';
+            $order->tracking_number = $t !== '' ? $t : null;
+        }
+
+        $order->save();
+
+        return redirect()->route('admin.orders.show', $order)->with('success', 'Data pengiriman diperbarui.');
+    }
+
+    public function destroy(Order $order)
+    {
+        if (!in_array($order->status, ['pending', 'cancelled'], true)) {
+            return back()->with('error', 'Hanya pesanan berstatus pending atau cancelled yang dapat dihapus.');
+        }
+
+        $st = $order->payment?->payment_status;
+        if (in_array($st, [Payment::STATUS_PAID, Payment::STATUS_DP_PAID], true)) {
+            return back()->with('error', 'Tidak dapat menghapus pesanan dengan pembayaran dp_paid atau paid.');
+        }
+
+        DB::transaction(function () use ($order) {
+            $order->productionProcesses()->delete();
+            $order->orderDetails()->delete();
+            $order->payment()->delete();
+            $order->delete();
+        });
+
+        return redirect()->route('admin.orders.index')->with('success', 'Pesanan dihapus.');
     }
 }

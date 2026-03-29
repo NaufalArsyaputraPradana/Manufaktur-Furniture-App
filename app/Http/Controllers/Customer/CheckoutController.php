@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
@@ -24,10 +25,41 @@ class CheckoutController extends Controller
                 ->with('error', 'Keranjang belanja Anda masih kosong.');
         }
 
+        // Enrich cart dengan data product dari database
+        $enrichedCart = [];
+        foreach ($cart as $itemKey => $item) {
+            $enrichedCart[$itemKey] = $item;
+            
+            // Ambil product dari database untuk mendapat images dan description terbaru
+            if (!empty($item['product_id'])) {
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    // Ambil images
+                    if ($product->images) {
+                        $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                        if (!empty($images) && isset($images[0])) {
+                            $enrichedCart[$itemKey]['image'] = $images[0];
+                        }
+                    }
+                    
+                    // Ambil description
+                    if ($product->description) {
+                        $enrichedCart[$itemKey]['description'] = $product->description;
+                    }
+                    
+                    // Ambil dimensions
+                    if ($product->dimensions) {
+                        $enrichedCart[$itemKey]['dimensions'] = $product->dimensions;
+                    }
+                }
+            }
+        }
+
         $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
         $total = $subtotal;
 
-        return view('customer.checkout.index', compact('cart', 'subtotal', 'total'));
+        return view('customer.checkout.index', compact('enrichedCart', 'subtotal', 'total'))
+            ->with('cart', $enrichedCart);
     }
 
     /**
@@ -37,8 +69,8 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'shipping_address' => 'required|string|max:500',
+            'phone' => 'required|string|max:20',
             'customer_notes' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:transfer,cash,credit_card',
         ]);
 
         $cart = session()->get('cart', []);
@@ -60,6 +92,7 @@ class CheckoutController extends Controller
                 'subtotal' => $subtotal,
                 'total' => $subtotal,
                 'shipping_address' => $validated['shipping_address'],
+                'phone' => $validated['phone'],
                 'customer_notes' => $validated['customer_notes'] ?? null,
                 'expected_completion_date' => now()->addDays(14),
             ]);

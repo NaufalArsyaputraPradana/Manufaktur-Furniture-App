@@ -79,12 +79,24 @@
                                                 <div class="col-lg-5">
                                                     <div class="d-flex gap-3 align-items-start">
                                                         <div class="flex-shrink-0">
-                                                            @if (!empty($item['image']))
-                                                                <img src="{{ asset('storage/' . $item['image']) }}"
+                                                            @php
+                                                                $imagePath = null;
+                                                                if (!empty($item['image'])) {
+                                                                    // Jika path sudah lengkap dengan asset URL
+                                                                    if (str_starts_with($item['image'], 'http')) {
+                                                                        $imagePath = $item['image'];
+                                                                    } else {
+                                                                        // Jika path relatif, tambahkan storage
+                                                                        $imagePath = asset('storage/' . ltrim($item['image'], '/'));
+                                                                    }
+                                                                }
+                                                            @endphp
+                                                            @if ($imagePath)
+                                                                <img src="{{ $imagePath }}"
                                                                     alt="{{ $item['name'] }}"
                                                                     class="cart-product-image rounded-3 shadow-sm"
                                                                     loading="lazy" style="cursor:zoom-in;"
-                                                                    onclick="openImageModal('{{ asset('storage/' . $item['image']) }}', '{{ addslashes($item['name']) }}')"
+                                                                    onclick="openImageModal('{{ $imagePath }}', '{{ addslashes($item['name']) }}')"
                                                                     onerror="this.classList.add('img-error')">
                                                             @else
                                                                 <div
@@ -93,7 +105,7 @@
                                                                         aria-hidden="true"></i>
                                                                 </div>
                                                             @endif
-                                                            @if (!empty($item['image']))
+                                                            @if ($imagePath)
                                                                 <div class="text-center mt-1">
                                                                     <small class="text-muted zoom-hint"
                                                                         style="font-size:0.7rem;">
@@ -864,8 +876,8 @@
             // AJAX SERVER UPDATE
             // ============================================
             function updateCartOnServer(itemKey, quantity) {
-                const url = '{{ route('customer.cart.update', ['itemKey' => 'ITEM_KEY']) }}'.replace('ITEM_KEY',
-                    itemKey);
+                const baseUrl = '{{ route('customer.cart.index') }}';
+                const url = baseUrl.replace(/\/$/, '') + '/' + encodeURIComponent(itemKey);
                 const csrfMeta = document.querySelector('meta[name="csrf-token"]');
                 if (!csrfMeta) return;
 
@@ -881,9 +893,19 @@
                         })
                     })
                     .then(res => {
-                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        console.log('Response Status:', res.status);
+                        if (!res.ok) {
+                            return res.json().then(data => {
+                                throw new Error(data.message || `HTTP ${res.status}`);
+                            });
+                        }
+                        return res.json();
                     })
-                    .catch(function() {
+                    .then(data => {
+                        console.log('Update Success:', data);
+                    })
+                    .catch(function(error) {
+                        console.error('Update Error:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Gagal Update',

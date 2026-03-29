@@ -73,7 +73,7 @@
                     </div>
                 </div>
 
-                @if ($payment->payment_status === 'unpaid' && $payment->payment_proof)
+                @if (in_array($payment->payment_status, [\App\Models\Payment::STATUS_PENDING, \App\Models\Payment::STATUS_DP_PAID], true) && $payment->payment_proof)
                     <div class="card shadow-sm border-0 rounded-3">
                         <div class="card-body p-4">
                             <h6 class="fw-bold mb-3">Tindakan</h6>

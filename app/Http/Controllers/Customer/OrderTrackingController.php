@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Customer\ProcessOrderPaymentRequest;
 use App\Models\Order;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\OrderDetail;
+use App\Models\Payment;
 use App\Models\ProductionProcess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
 class OrderTrackingController extends Controller
 {
-    /**
-     * Menampilkan daftar riwayat pesanan pelanggan.
-     */
     public function index(): View
     {
         $orders = Order::with(['orderDetails.product', 'payment'])
@@ -31,9 +31,6 @@ class OrderTrackingController extends Controller
         return view('customer.orders.index', compact('orders'));
     }
 
-    /**
-     * Menampilkan detail spesifik dari satu pesanan.
-     */
     public function show(Order $order): View
     {
         $this->authorizeOrder($order);
@@ -42,19 +39,16 @@ class OrderTrackingController extends Controller
             'user',
             'orderDetails.product.category',
             'payment',
-            'productionProcesses' => fn($q) => $q->with([
+            'productionProcesses' => fn ($q) => $q->with([
                 'orderDetail.product',
                 'assignedTo',
-                'logs' => fn($q) => $q->with(['user.role'])->orderByDesc('created_at'),
+                'logs' => fn ($q) => $q->with(['user.role'])->orderByDesc('created_at'),
             ])->orderBy('created_at'),
         ]);
 
         return view('customer.orders.show', compact('order'));
     }
 
-    /**
-     * Membatalkan pesanan (Hanya jika status pending dan belum dibayar).
-     */
     public function cancel(Order $order): RedirectResponse
     {
         $this->authorizeOrder($order);
@@ -66,22 +60,20 @@ class OrderTrackingController extends Controller
             );
         }
 
-        if ($order->payment?->payment_status === 'paid') {
+        $st = $order->payment?->payment_status;
+        if (in_array($st, [Payment::STATUS_PAID, Payment::STATUS_DP_PAID], true)) {
             return back()->with(
                 'error',
-                'Pesanan yang sudah dibayar tidak dapat dibatalkan secara sistem. Silakan hubungi admin untuk bantuan.'
+                'Pesanan yang sudah memiliki pembayaran terverifikasi tidak dapat dibatalkan dari halaman ini. Hubungi admin.'
             );
         }
 
         $order->update(['status' => 'cancelled']);
 
         return redirect()->route('customer.orders.index')
-            ->with('success', "Pesanan {$order->order_number} berhasil dibatalkan. ❌");
+            ->with('success', "Pesanan {$order->order_number} berhasil dibatalkan.");
     }
 
-    /**
-     * Menampilkan form untuk membuat pesanan custom.
-     */
     public function customOrderForm(): View
     {
         $categories = Category::where('is_active', true)->orderBy('name')->get();
@@ -94,14 +86,11 @@ class OrderTrackingController extends Controller
         return view('customer.orders.custom', compact('categories', 'products'));
     }
 
-    /**
-     * Memproses dan menyimpan pesanan custom.
-     */
     public function storeCustomOrder(Request $request): RedirectResponse
     {
         $rules = [
             'products' => 'required|array|min:1',
-            'products.*.product_id' => 'nullable|integer|exists:products,id',
+            'products.*.product_id' => ['nullable'],
             'products.*.product_name' => 'required|string|max:255',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.is_custom' => 'nullable|boolean',
@@ -116,16 +105,28 @@ class OrderTrackingController extends Controller
 
         $productsInput = $request->input('products', []);
         foreach ($productsInput as $idx => $item) {
-            $rules["products.$idx.unit_price"] = empty($item['is_custom'])
-                ? 'required|numeric|min:0'
-                : 'nullable|numeric|min:0';
+            $isCatalogCustom = ($item['product_id'] ?? null) === 'custom';
+            $rules["products.$idx.unit_price"] = (!empty($item['is_custom']) || $isCatalogCustom)
+                ? 'nullable|numeric|min:0'
+                : 'required|numeric|min:0';
 
             if ($request->hasFile("products.$idx.customizations.design_image")) {
-                $rules["products.$idx.customizations.design_image"] = 'file|mimes:jpg,jpeg,png,pdf|max:2048';
+                $rules["products.$idx.customizations.design_image"] = 'file|mimes:jpg,jpeg,png,pdf,webp|max:2048';
             }
         }
 
         $validated = $request->validate($rules);
+
+        foreach ($validated['products'] as $idx => $item) {
+            $pid = $item['product_id'] ?? null;
+            if ($pid !== null && $pid !== '' && $pid !== 'custom' && is_numeric($pid)) {
+                if (!Product::whereKey((int) $pid)->exists()) {
+                    return back()
+                        ->withErrors(["products.$idx.product_id" => 'Produk yang dipilih tidak valid.'])
+                        ->withInput();
+                }
+            }
+        }
 
         DB::beginTransaction();
 
@@ -134,8 +135,8 @@ class OrderTrackingController extends Controller
             $orderItems = [];
 
             foreach ($validated['products'] as $idx => $item) {
-                $isCustom = !empty($item['is_custom']);
-                $productId = $isCustom ? null : ($item['product_id'] ?? null);
+                $isCustom = !empty($item['is_custom']) || ($item['product_id'] ?? null) === 'custom';
+                $productId = $isCustom ? null : (is_numeric($item['product_id'] ?? null) ? (int) $item['product_id'] : null);
                 $unitPrice = (float) ($item['unit_price'] ?? 0);
                 $itemSubtotal = $unitPrice * $item['quantity'];
 
@@ -195,97 +196,142 @@ class OrderTrackingController extends Controller
             DB::commit();
 
             return redirect()->route('customer.orders.show', $order)
-                ->with('success', 'Pesanan custom berhasil dibuat! 🎨 Tim kami akan segera meninjau dan memberikan estimasi harga.');
+                ->with('success', 'Pesanan custom berhasil dibuat! Tim kami akan segera meninjau estimasi harga.');
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()
-                ->with('error', 'Gagal membuat pesanan custom! ❌ ' . $e->getMessage())
+                ->with('error', 'Gagal membuat pesanan custom: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
-    /**
-     * Menampilkan halaman upload pembayaran.
-     */
     public function showPayment(Order $order): View|RedirectResponse
     {
         $this->authorizeOrder($order);
 
         if ($order->status === 'cancelled') {
             return redirect()->route('customer.orders.show', $order)
-                ->with('error', 'Pembayaran ditolak! Pesanan ini telah dibatalkan.');
+                ->with('error', 'Pesanan ini telah dibatalkan.');
         }
 
-        if ($order->payment?->payment_status === 'paid') {
+        if ($order->payment?->payment_status === Payment::STATUS_PAID) {
             return redirect()->route('customer.orders.show', $order)
-                ->with('info', 'Pembayaran untuk pesanan ini sudah berhasil diproses. ✅');
+                ->with('info', 'Pembayaran untuk pesanan ini sudah lunas.');
         }
 
-        if ($order->payment?->payment_proof && $order->payment->payment_status === 'unpaid') {
+        $proof = $order->payment?->payment_proof;
+        $st = $order->payment?->payment_status;
+
+        if ($proof && $st === Payment::STATUS_PENDING) {
             return redirect()->route('customer.orders.show', $order)
-                ->with('info', 'Bukti pembayaran Anda sudah diupload. Tim kami akan memverifikasi dalam 1-2 hari kerja.');
+                ->with('info', 'Bukti pembayaran Anda menunggu verifikasi admin.');
         }
 
-        return view('customer.payment.index', compact('order'));
+        if ($proof && $st === Payment::STATUS_DP_PAID) {
+            return redirect()->route('customer.orders.show', $order)
+                ->with('info', 'Bukti pelunasan Anda menunggu verifikasi admin.');
+        }
+
+        $order->loadMissing('orderDetails.product', 'payment');
+
+        return view('customer.payment.index', [
+            'order' => $order,
+            'dpAmount' => round((float) $order->total * (float) config('orders.down_payment_percent', 30) / 100, 2),
+            'bank' => config('orders.bank', []),
+        ]);
     }
 
-    /**
-     * Memproses konfirmasi dan bukti pembayaran.
-     */
-    public function processPayment(Request $request, Order $order): RedirectResponse
+    public function processPayment(ProcessOrderPaymentRequest $request, Order $order): RedirectResponse
     {
         $this->authorizeOrder($order);
 
-        $validated = $request->validate([
-            'payment_method' => 'required|string|in:transfer,cash,credit_card',
-            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ], [
-            'payment_method.required' => 'Metode pembayaran harus dipilih.',
-            'payment_method.in' => 'Metode pembayaran tidak valid.',
-            'payment_proof.image' => 'Bukti pembayaran harus berupa gambar.',
-            'payment_proof.mimes' => 'Format bukti pembayaran harus: JPEG, PNG, atau JPG.',
-            'payment_proof.max' => 'Ukuran bukti pembayaran maksimal 2MB.',
-        ]);
+        if ($order->status === 'cancelled') {
+            return back()->with('error', 'Pesanan dibatalkan.');
+        }
+
+        $validated = $request->validated();
+        $channel = $validated['payment_channel'];
+        $total = (float) $order->total;
+
+        $existing = $order->payment;
+
+        if ($channel === Payment::CHANNEL_MANUAL_DP) {
+            if ($existing && $existing->payment_status === Payment::STATUS_DP_PAID) {
+                if (!$request->hasFile('payment_proof')) {
+                    return back()->with('error', 'Unggah bukti pelunasan.');
+                }
+            } elseif ($existing && $existing->payment_status === Payment::STATUS_PENDING && $existing->payment_proof) {
+                return redirect()->route('customer.orders.show', $order)
+                    ->with('info', 'Bukti Anda sedang diverifikasi.');
+            }
+        }
 
         try {
-            $paymentProofPath = $request->hasFile('payment_proof')
+            $proofPath = $request->hasFile('payment_proof')
                 ? $request->file('payment_proof')->store('payment-proofs', 'public')
                 : null;
 
-            $paymentData = [
-                'payment_method' => $validated['payment_method'],
-                'amount' => $order->total,
-                'payment_proof' => $paymentProofPath,
-            ];
+            $dpAmount = round($total * (float) config('orders.down_payment_percent', 30) / 100, 2);
 
-            if ($paymentProofPath) {
-                $paymentData['payment_status'] = 'unpaid';
-                $paymentData['payment_date'] = null;
-            } else {
-                $paymentData['payment_status'] = 'paid';
-                $paymentData['payment_date'] = now();
-            }
-
-            if ($order->payment) {
-                $order->payment->update($paymentData);
-            } else {
-                $order->payment()->create($paymentData);
+            if ($channel === Payment::CHANNEL_MANUAL_DP) {
+                if ($existing && $existing->payment_status === Payment::STATUS_DP_PAID) {
+                    if ($existing->payment_proof && Storage::disk('public')->exists($existing->payment_proof)) {
+                        Storage::disk('public')->delete($existing->payment_proof);
+                    }
+                    $existing->update([
+                        'payment_method'       => Payment::METHOD_BANK_TRANSFER,
+                        'payment_channel'      => Payment::CHANNEL_MANUAL_DP,
+                        'payment_proof'        => $proofPath,
+                        'payment_status'       => Payment::STATUS_DP_PAID,
+                        'amount'               => $total,
+                        'expected_dp_amount'   => $existing->expected_dp_amount ?? $dpAmount,
+                    ]);
+                } else {
+                    Payment::updateOrCreate(
+                        ['order_id' => $order->id],
+                        [
+                            'amount'                 => $total,
+                            'amount_paid'            => 0,
+                            'expected_dp_amount'     => $dpAmount,
+                            'payment_method'         => Payment::METHOD_BANK_TRANSFER,
+                            'payment_channel'        => Payment::CHANNEL_MANUAL_DP,
+                            'payment_status'         => Payment::STATUS_PENDING,
+                            'payment_proof'          => $proofPath,
+                            'transaction_id'         => Payment::generateTransactionId(),
+                        ]
+                    );
+                }
+            } elseif ($channel === Payment::CHANNEL_MANUAL_FULL) {
+                if ($existing?->payment_proof && Storage::disk('public')->exists($existing->payment_proof)) {
+                    Storage::disk('public')->delete($existing->payment_proof);
+                }
+                Payment::updateOrCreate(
+                    ['order_id' => $order->id],
+                    [
+                        'amount'             => $total,
+                        'amount_paid'        => 0,
+                        'expected_dp_amount' => null,
+                        'payment_method'     => Payment::METHOD_BANK_TRANSFER,
+                        'payment_channel'    => Payment::CHANNEL_MANUAL_FULL,
+                        'payment_status'     => Payment::STATUS_PENDING,
+                        'payment_proof'      => $proofPath,
+                        'transaction_id'     => $existing?->transaction_id ?? Payment::generateTransactionId(),
+                    ]
+                );
             }
 
             return redirect()->route('customer.orders.show', $order)
-                ->with('success', 'Pembayaran berhasil dikonfirmasi! 💳 Tim kami akan segera memverifikasinya.');
+                ->with('success', 'Bukti pembayaran berhasil diunggah. Tim kami akan memverifikasi.');
 
         } catch (\Exception $e) {
             return back()
-                ->with('error', 'Gagal memproses pembayaran! ❌ ' . $e->getMessage())
+                ->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
-    /**
-     * Memastikan hanya pemilik pesanan (Customer) atau Admin yang bisa mengakses detail order.
-     */
     private function authorizeOrder(Order $order): void
     {
         $user = Auth::user();

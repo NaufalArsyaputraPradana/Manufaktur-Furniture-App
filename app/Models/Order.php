@@ -16,7 +16,13 @@ class Order extends Model
         'order_number',
         'user_id',
         'status',
+        'shipping_status',
+        'courier',
+        'tracking_number',
+        'shipped_at',
+        'delivered_at',
         'shipping_address',
+        'phone',
         'customer_notes',
         'admin_notes',
         'subtotal',
@@ -34,7 +40,27 @@ class Order extends Model
             'order_date' => 'datetime',
             'expected_completion_date' => 'datetime',
             'actual_completion_date' => 'datetime',
+            'shipped_at' => 'datetime',
+            'delivered_at' => 'datetime',
         ];
+    }
+
+    public function remainingPayableAmount(): float
+    {
+        $total = (float) $this->total;
+        $paid = (float) ($this->payment?->amount_paid ?? 0);
+
+        return max(0, round($total - $paid, 2));
+    }
+
+    public function getShippingStatusLabelAttribute(): string
+    {
+        return match ($this->shipping_status) {
+            'processing' => 'Diproses',
+            'shipped' => 'Dikirim',
+            'delivered' => 'Sampai',
+            default => $this->shipping_status ? ucfirst(str_replace('_', ' ', $this->shipping_status)) : 'Belum diperbarui',
+        };
     }
 
     public static function generateOrderNumber(): string
@@ -93,5 +119,10 @@ class Order extends Model
     public function productionProcesses(): HasMany
     {
         return $this->hasMany(ProductionProcess::class);
+    }
+
+    public function shippingLogs(): HasMany
+    {
+        return $this->hasMany(OrderShippingLog::class)->orderByDesc('created_at');
     }
 }

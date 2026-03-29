@@ -10,6 +10,7 @@
         $paySt = $order->payment?->payment_status;
         $isPaid = $paySt === \App\Models\Payment::STATUS_PAID;
         $isDpPaid = $paySt === \App\Models\Payment::STATUS_DP_PAID;
+        $isFullPending = $paySt === \App\Models\Payment::STATUS_FULL_PENDING;
 
         $stageOrder = ['cutting', 'assembly', 'sanding', 'finishing', 'quality_control'];
         $stageLabels = [
@@ -32,6 +33,7 @@
 
         $statusBadge = match (true) {
             $order->status === 'pending' && $isPaid => ['bg-info', 'bi-cash-coin', 'Sudah Bayar'],
+            $order->status === 'pending' && $isFullPending => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
             $order->status === 'pending' && $isDpPaid => ['bg-info text-dark', 'bi-piggy-bank', 'DP diverifikasi'],
             $order->status === 'pending' => ['bg-warning text-dark', 'bi-clock-history', 'Menunggu Pembayaran'],
             $order->status === 'confirmed' => ['bg-info', 'bi-check-circle', 'Dikonfirmasi'],
@@ -1043,6 +1045,130 @@
                                             <div class="text-center py-5">
                                                 <i class="bi bi-image text-muted" style="font-size:3rem;" aria-hidden="true"></i>
                                                 <p class="text-muted mt-3 small">Bukti transfer DP belum tersedia</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($order->payment?->payment_status === \App\Models\Payment::STATUS_FULL_PENDING)
+                        {{-- FULL PENDING - MENUNGGU KONFIRMASI PELUNASAN --}}
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <div class="alert alert-warning border-0 shadow-sm mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-white rounded-circle p-3 me-3 flex-shrink-0">
+                                            <i class="bi bi-hourglass-split text-warning fs-2" aria-hidden="true"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1 fw-bold">Menunggu Konfirmasi Pelunasan</h5>
+                                            <p class="mb-0 small">Bukti pelunasan Anda telah diterima. Tim kami akan memverifikasi dalam 1–2 hari kerja. Pesanan produksi akan dimulai setelah verifikasi.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($order->payment)
+                                    <div class="card border-0 bg-light mb-3">
+                                        <div class="card-body p-4">
+                                            <h6 class="text-muted mb-3 fw-bold">
+                                                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Detail Pembayaran
+                                            </h6>
+                                            <div class="payment-detail-row">
+                                                <span class="text-muted">Total Pesanan</span>
+                                                <strong class="text-dark">
+                                                    <span class="price-convert" data-price="{{ $calculatedTotal }}" data-currency="IDR">
+                                                        Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
+                                                    </span>
+                                                </strong>
+                                            </div>
+                                            <div class="payment-detail-row">
+                                                <span class="text-muted">DP Verified (50%)</span>
+                                                <strong class="text-success">
+                                                    @php
+                                                        $dpAmount = round($calculatedTotal * 50 / 100, 2);
+                                                        $remainingPayment = $calculatedTotal - $dpAmount;
+                                                    @endphp
+                                                    <span class="price-convert" data-price="{{ $dpAmount }}" data-currency="IDR">
+                                                        Rp {{ number_format($dpAmount, 0, ',', '.') }}
+                                                    </span>
+                                                </strong>
+                                            </div>
+                                            <div class="payment-detail-row border-top pt-3">
+                                                <span class="text-muted fw-bold">Pelunasan (50%) - Pending</span>
+                                                <h5 class="mb-0 text-warning fw-bold">
+                                                    <span class="price-convert" data-price="{{ $remainingPayment }}" data-currency="IDR">
+                                                        Rp {{ number_format($remainingPayment, 0, ',', '.') }}
+                                                    </span>
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        <i class="bi bi-info-circle me-1"></i> Bukti pelunasan telah diupload dan menunggu verifikasi admin. Jangan upload bukti lagi.
+                                    </p>
+                                @endif
+
+                                <div class="alert alert-info mb-0">
+                                    <p class="mb-0 small">
+                                        <i class="bi bi-info-circle me-1"></i> <strong>Informasi:</strong> Setelah verifikasi selesai, pembayaran akan dikonfirmasi sebagai LUNAS dan produksi akan dimulai.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-body p-4">
+                                        <h6 class="text-muted mb-3 fw-bold">
+                                            <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer Pelunasan
+                                        </h6>
+                                        @php
+                                            $fullProofPath = null;
+                                            if ($order->payment?->payment_proof_full) {
+                                                $proof = $order->payment->payment_proof_full;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $fullProofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $fullProofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $fullProofPath = asset('storage/' . $proof);
+                                                }
+                                            } elseif ($order->payment?->payment_proof) {
+                                                $proof = $order->payment->payment_proof;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $fullProofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $fullProofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $fullProofPath = asset('storage/' . $proof);
+                                                }
+                                            }
+                                        @endphp
+                                        @if ($fullProofPath)
+                                            <div class="payment-proof-wrapper" data-bs-toggle="modal"
+                                                data-bs-target="#paymentProofModal">
+                                                <img src="{{ $fullProofPath }}"
+                                                    alt="Bukti Pembayaran Pelunasan" class="img-fluid rounded-3 shadow-sm w-100"
+                                                    style="max-height:350px;object-fit:contain;">
+                                                <div class="payment-proof-overlay">
+                                                    <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
+                                                    <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 text-center d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                </button>
+                                                <a href="{{ $fullProofPath }}"
+                                                    download="Bukti_Pelunasan_{{ $order->order_number }}.jpg"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+                                                </a>
+                                            </div>
+                                        @else
+                                            <div class="text-center py-5">
+                                                <i class="bi bi-image text-muted" style="font-size:3rem;" aria-hidden="true"></i>
+                                                <p class="text-muted mt-3 small">Bukti pelunasan tidak tersedia</p>
                                             </div>
                                         @endif
                                     </div>

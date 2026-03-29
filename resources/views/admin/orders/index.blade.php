@@ -96,6 +96,7 @@
                         <table class="table table-hover align-middle mb-0 modern-table">
                             <thead class="bg-light">
                                 <tr>
+                                    <th class="ps-4 py-3 border-bottom-0 fw-bold text-secondary text-uppercase small" width="56"></th>
                                     <th class="ps-4 py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">No. Order</th>
                                     <th class="py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">Pelanggan</th>
                                     <th class="py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">Tanggal</th>
@@ -106,8 +107,19 @@
                             </thead>
                             <tbody>
                                 @foreach ($orders as $order)
+                                    @php
+                                        $d0 = $order->orderDetails->first();
+                                        $thumb = $d0 ? ($d0->customDesignImageUrl() ?: ($d0->product ? $d0->product->thumbnail : null)) : null;
+                                    @endphp
                                     <tr>
                                         <td class="ps-4">
+                                            @if ($thumb)
+                                                <img src="{{ $thumb }}" alt="" class="rounded border" width="40" height="40" style="object-fit:cover;">
+                                            @else
+                                                <span class="d-inline-flex rounded bg-light border align-items-center justify-content-center text-muted small" style="width:40px;height:40px;">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="ps-2">
                                             <a href="{{ route('admin.orders.show', $order) }}"
                                                 class="fw-bold text-primary text-decoration-none">
                                                 #{{ $order->order_number }}
@@ -141,11 +153,18 @@
                                                 class="btn btn-sm btn-info text-white shadow-sm" data-bs-toggle="tooltip" title="Lihat Detail">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            @if ($order->status == 'pending')
+                                            @if (!in_array($order->status, ['cancelled', 'completed'], true))
                                                 <a href="{{ route('admin.orders.edit', $order) }}"
                                                     class="btn btn-sm btn-warning text-white shadow-sm" data-bs-toggle="tooltip" title="Edit">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
+                                            @endif
+                                            @if (in_array($order->status, ['pending', 'cancelled'], true) && !in_array($order->payment?->payment_status, [\App\Models\Payment::STATUS_PAID, \App\Models\Payment::STATUS_DP_PAID], true))
+                                                <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus pesanan ini?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm" data-bs-toggle="tooltip" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </form>
                                             @endif
                                         </td>
                                     </tr>
