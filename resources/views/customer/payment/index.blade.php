@@ -609,13 +609,45 @@
                     const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
                     const manual = mode === 'manual_dp' || mode === 'manual_full';
                     
-                    // Toggle manual fields visibility
-                    if (manualFields) manualFields.classList.toggle('d-none', !manual);
+                    // Always visible on balance page (pelunasan)
+                    if (isBalancePage) {
+                        if (manualFields) {
+                            manualFields.style.display = 'block';
+                            manualFields.classList.remove('d-none');
+                        }
+                    } else {
+                        // Toggle visibility based on mode selection
+                        if (manualFields) {
+                            if (manual) {
+                                manualFields.style.display = 'block';
+                                manualFields.classList.remove('d-none');
+                            } else {
+                                manualFields.style.display = 'none';
+                                manualFields.classList.add('d-none');
+                            }
+                        }
+                    }
                     
                     // Only toggle button visibility if not on balance page
                     if (!isBalancePage) {
-                        if (midBtn) midBtn.classList.toggle('d-none', manual);
-                        if (manBtn) manBtn.classList.toggle('d-none', !manual);
+                        if (midBtn) {
+                            if (manual) {
+                                midBtn.classList.add('d-none');
+                                midBtn.style.display = 'none';
+                            } else {
+                                midBtn.classList.remove('d-none');
+                                midBtn.style.display = 'block';
+                            }
+                        }
+                        if (manBtn) {
+                            if (manual) {
+                                manBtn.classList.remove('d-none');
+                                manBtn.style.display = 'block';
+                            } else {
+                                manBtn.classList.add('d-none');
+                                manBtn.style.display = 'none';
+                            }
+                        }
                     }
                     
                     if (channelField) {
