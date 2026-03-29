@@ -7,7 +7,9 @@
     {{-- Pre-compute reusable values --}}
     @php
         $calculatedTotal = $order->orderDetails->sum(fn($d) => $d->unit_price * $d->quantity);
-        $isPaid = $order->payment?->payment_status === 'paid';
+        $paySt = $order->payment?->payment_status;
+        $isPaid = $paySt === \App\Models\Payment::STATUS_PAID;
+        $isDpPaid = $paySt === \App\Models\Payment::STATUS_DP_PAID;
 
         $stageOrder = ['cutting', 'assembly', 'sanding', 'finishing', 'quality_control'];
         $stageLabels = [
@@ -30,6 +32,7 @@
 
         $statusBadge = match (true) {
             $order->status === 'pending' && $isPaid => ['bg-info', 'bi-cash-coin', 'Sudah Bayar'],
+            $order->status === 'pending' && $isDpPaid => ['bg-info text-dark', 'bi-piggy-bank', 'DP diverifikasi'],
             $order->status === 'pending' => ['bg-warning text-dark', 'bi-clock-history', 'Menunggu Pembayaran'],
             $order->status === 'confirmed' => ['bg-info', 'bi-check-circle', 'Dikonfirmasi'],
             $order->status === 'in_production' => ['bg-light text-dark', 'bi-gear', 'Dalam Produksi'],
@@ -130,7 +133,7 @@
                 <div class="card-body p-4">
                     <div class="row g-4">
                         {{-- Customer Info --}}
-                        <div class="col-md-6">
+                        <div class="col-lg-4">
                             <div class="info-box">
                                 <h6 class="info-box-title">
                                     <i class="bi bi-person-circle me-2" aria-hidden="true"></i>Informasi Pelanggan
@@ -145,19 +148,36 @@
                                 </div>
                                 <div class="mb-2">
                                     <small class="text-muted d-block">Telepon</small>
-                                    <strong>{{ $order->user?->phone ?? 'N/A' }}</strong>
+                                    <strong>{{ $order->phone ?? $order->user?->phone ?? 'N/A' }}</strong>
                                 </div>
                                 @if ($order->user?->address)
                                     <div>
-                                        <small class="text-muted d-block">Alamat</small>
+                                        <small class="text-muted d-block">Alamat Profil</small>
                                         <strong>{{ $order->user->address }}</strong>
                                     </div>
                                 @endif
                             </div>
                         </div>
 
+                        {{-- Shipping Address --}}
+                        <div class="col-lg-4">
+                            <div class="info-box">
+                                <h6 class="info-box-title">
+                                    <i class="bi bi-truck me-2" aria-hidden="true"></i>Alamat Pengiriman
+                                </h6>
+                                @if ($order->shipping_address)
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">Tujuan Pengiriman</small>
+                                        <p class="mb-0">{{ nl2br(e($order->shipping_address)) }}</p>
+                                    </div>
+                                @else
+                                    <p class="text-muted small mb-0">-</p>
+                                @endif
+                            </div>
+                        </div>
+
                         {{-- Timeline --}}
-                        <div class="col-md-6">
+                        <div class="col-lg-4">
                             <div class="info-box">
                                 <h6 class="info-box-title">
                                     <i class="bi bi-calendar-check me-2" aria-hidden="true"></i>Timeline
@@ -466,6 +486,42 @@
                         </div>
                     @endif
 
+                    @if ($order->shipping_status || $order->courier || $order->tracking_number)
+                        @php
+                            $custTrackUrl = app(\App\Support\CourierTrackingService::class)->publicTrackingUrl($order->courier, $order->tracking_number);
+                        @endphp
+                        <div class="p-4 rounded-4 border bg-white shadow-sm mt-4">
+                            <h6 class="fw-bold mb-3 text-primary">
+                                <i class="bi bi-truck me-2" aria-hidden="true"></i>Status pengiriman
+                            </h6>
+                            <div class="row g-3 small">
+                                @if ($order->shipping_status)
+                                    <div class="col-md-4">
+                                        <span class="text-muted d-block">Status</span>
+                                        <strong>{{ $order->shipping_status_label }}</strong>
+                                    </div>
+                                @endif
+                                @if ($order->courier)
+                                    <div class="col-md-4">
+                                        <span class="text-muted d-block">Ekspedisi</span>
+                                        <strong>{{ $order->courier }}</strong>
+                                    </div>
+                                @endif
+                                @if ($order->tracking_number)
+                                    <div class="col-md-4">
+                                        <span class="text-muted d-block">No. resi</span>
+                                        <strong class="font-monospace">{{ $order->tracking_number }}</strong>
+                                    </div>
+                                @endif
+                            </div>
+                            @if ($custTrackUrl)
+                                <a href="{{ $custTrackUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm rounded-pill mt-3">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i>Lacak paket
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Image Modals --}}
                     @foreach ($order->orderDetails as $detail)
                         @php
@@ -594,8 +650,8 @@
 
                 <div class="card-body p-4">
 
-                    @if ($isPaid || in_array($order->status, ['confirmed', 'in_production', 'completed']))
-                        {{-- PAID --}}
+                    @if ($isPaid || (!$isDpPaid && in_array($order->status, ['confirmed', 'in_production', 'completed'])))
+                        {{-- PAID atau alur produksi (bukan hanya DP) --}}
                         <div class="row g-4">
                             <div class="col-lg-7">
                                 <div class="alert alert-success border-0 shadow-sm mb-4">
@@ -604,8 +660,8 @@
                                             <i class="bi bi-check-circle-fill text-success fs-2" aria-hidden="true"></i>
                                         </div>
                                         <div>
-                                            <h5 class="mb-1 fw-bold">Pembayaran Berhasil</h5>
-                                            <p class="mb-0 small">Pesanan Anda telah lunas dibayar</p>
+                                            <h5 class="mb-1 fw-bold">{{ $isPaid ? 'Pembayaran Berhasil' : 'Pesanan aktif' }}</h5>
+                                            <p class="mb-0 small">{{ $isPaid ? 'Pesanan Anda telah lunas dibayar' : 'Pesanan Anda sedang diproses setelah konfirmasi pembayaran.' }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -644,55 +700,178 @@
                                                 <span class="text-muted">Total Dibayar</span>
                                                 <h5 class="mb-0 text-success fw-bold">
                                                     <span class="price-convert"
-                                                        data-price="{{ $order->payment->amount ?? $calculatedTotal }}"
+                                                        data-price="{{ $order->payment->amount_paid ?? $order->payment->amount ?? $calculatedTotal }}"
                                                         data-currency="IDR">
                                                         Rp
-                                                        {{ number_format($order->payment->amount ?? $calculatedTotal, 0, ',', '.') }}
+                                                        {{ number_format($order->payment->amount_paid ?? $order->payment->amount ?? $calculatedTotal, 0, ',', '.') }}
                                                     </span>
                                                 </h5>
                                             </div>
                                         </div>
                                     </div>
                                 @endif
+                                @if ($isPaid || $isDpPaid)
+                                    <div class="d-flex flex-wrap gap-2 mt-3">
+                                        <a href="{{ route('customer.orders.invoice', $order) }}" class="btn btn-outline-primary btn-sm rounded-pill">
+                                            <i class="bi bi-file-earmark-text me-1"></i>Invoice &amp; print
+                                        </a>
+                                        <a href="{{ route('customer.orders.invoice.download', $order) }}" class="btn btn-outline-success btn-sm rounded-pill">
+                                            <i class="bi bi-download me-1"></i>Unduh PDF
+                                        </a>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="col-lg-5">
-                                <div class="card border-0 bg-light h-100">
-                                    <div class="card-body p-4">
-                                        <h6 class="text-muted mb-3 fw-bold">
-                                            <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer
-                                        </h6>
-                                        @if ($order->payment?->payment_proof)
-                                            <div class="payment-proof-wrapper" data-bs-toggle="modal"
-                                                data-bs-target="#paymentProofModal">
-                                                <img src="{{ asset('storage/' . $order->payment->payment_proof) }}"
-                                                    alt="Bukti Pembayaran" class="img-fluid rounded-3 shadow-sm w-100"
-                                                    style="max-height:350px;object-fit:contain;">
-                                                <div class="payment-proof-overlay">
-                                                    <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
-                                                    <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                @if ($isPaid)
+                                    {{-- Show both DP and Full Payment proofs for PAID status --}}
+                                    <div class="card border-0 bg-light h-100">
+                                        <div class="card-body p-4">
+                                            <h6 class="text-muted mb-4 fw-bold">
+                                                <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer (DP 50%)
+                                            </h6>
+                                            @php
+                                                $dpProofPath = null;
+                                                if ($order->payment?->payment_proof_dp) {
+                                                    $proof = $order->payment->payment_proof_dp;
+                                                    if (str_starts_with($proof, 'storage/')) {
+                                                        $dpProofPath = asset($proof);
+                                                    } elseif (str_starts_with($proof, '/')) {
+                                                        $dpProofPath = asset('storage' . $proof);
+                                                    } else {
+                                                        $dpProofPath = asset('storage/' . $proof);
+                                                    }
+                                                }
+                                            @endphp
+                                            @if ($dpProofPath)
+                                                <div class="payment-proof-wrapper" data-bs-toggle="modal"
+                                                    data-bs-target="#paymentProofModal">
+                                                    <img src="{{ $dpProofPath }}"
+                                                        alt="Bukti Pembayaran DP" class="img-fluid rounded-3 shadow-sm w-100"
+                                                        style="max-height:280px;object-fit:contain;">
+                                                    <div class="payment-proof-overlay">
+                                                        <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
+                                                        <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="mt-3 text-center d-flex gap-2 justify-content-center">
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                    data-bs-toggle="modal" data-bs-target="#paymentProofModal">
-                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
-                                                </button>
-                                                <a href="{{ asset('storage/' . $order->payment->payment_proof) }}"
-                                                    download="Bukti_Pembayaran_{{ $order->order_number }}.jpg"
-                                                    class="btn btn-sm btn-outline-success">
-                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
-                                                </a>
-                                            </div>
-                                        @else
-                                            <div class="text-center py-5">
-                                                <i class="bi bi-image text-muted" style="font-size:4rem;"
-                                                    aria-hidden="true"></i>
-                                                <p class="text-muted mt-3 mb-0">Tidak ada bukti transfer yang diupload</p>
-                                            </div>
-                                        @endif
+                                                <div class="mt-2 text-center d-flex gap-1 justify-content-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                        <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                    </button>
+                                                    <a href="{{ $dpProofPath }}"
+                                                        download="Bukti_DP_{{ $order->order_number }}.jpg"
+                                                        class="btn btn-sm btn-outline-success">
+                                                        <i class="bi bi-download me-1" aria-hidden="true"></i>DL
+                                                    </a>
+                                                </div>
+                                            @else
+                                                <div class="text-center py-4">
+                                                    <i class="bi bi-image text-muted" style="font-size:2.5rem;"
+                                                        aria-hidden="true"></i>
+                                                    <p class="text-muted mt-2 small">Bukti DP tidak tersedia</p>
+                                                </div>
+                                            @endif
+                                            
+                                            <hr class="my-4">
+                                            
+                                            <h6 class="text-muted mb-4 fw-bold">
+                                                <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer Pelunasan (50%)
+                                            </h6>
+                                            @php
+                                                $fullProofPath = null;
+                                                if ($order->payment?->payment_proof_full) {
+                                                    $proof = $order->payment->payment_proof_full;
+                                                    if (str_starts_with($proof, 'storage/')) {
+                                                        $fullProofPath = asset($proof);
+                                                    } elseif (str_starts_with($proof, '/')) {
+                                                        $fullProofPath = asset('storage' . $proof);
+                                                    } else {
+                                                        $fullProofPath = asset('storage/' . $proof);
+                                                    }
+                                                }
+                                            @endphp
+                                            @if ($fullProofPath)
+                                                <div class="payment-proof-wrapper" data-bs-toggle="modal"
+                                                    data-bs-target="#paymentProofModal">
+                                                    <img src="{{ $fullProofPath }}"
+                                                        alt="Bukti Pembayaran Pelunasan" class="img-fluid rounded-3 shadow-sm w-100"
+                                                        style="max-height:280px;object-fit:contain;">
+                                                    <div class="payment-proof-overlay">
+                                                        <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
+                                                        <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2 text-center d-flex gap-1 justify-content-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                        <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                    </button>
+                                                    <a href="{{ $fullProofPath }}"
+                                                        download="Bukti_Pelunasan_{{ $order->order_number }}.jpg"
+                                                        class="btn btn-sm btn-outline-success">
+                                                        <i class="bi bi-download me-1" aria-hidden="true"></i>DL
+                                                    </a>
+                                                </div>
+                                            @else
+                                                <div class="text-center py-4">
+                                                    <i class="bi bi-image text-muted" style="font-size:2.5rem;"
+                                                        aria-hidden="true"></i>
+                                                    <p class="text-muted mt-2 small">Bukti pelunasan tidak tersedia</p>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
-                                </div>
+                                @else
+                                    {{-- Show single proof for other statuses --}}
+                                    <div class="card border-0 bg-light h-100">
+                                        <div class="card-body p-4">
+                                            <h6 class="text-muted mb-3 fw-bold">
+                                                <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer
+                                            </h6>
+                                            @if ($order->payment?->payment_proof)
+                                                @php
+                                                    $proof = $order->payment->payment_proof;
+                                                    $proofPath = null;
+                                                    if (str_starts_with($proof, 'storage/')) {
+                                                        $proofPath = asset($proof);
+                                                    } elseif (str_starts_with($proof, '/')) {
+                                                        $proofPath = asset('storage' . $proof);
+                                                    } else {
+                                                        $proofPath = asset('storage/' . $proof);
+                                                    }
+                                                @endphp
+                                                <div class="payment-proof-wrapper" data-bs-toggle="modal"
+                                                    data-bs-target="#paymentProofModal">
+                                                    <img src="{{ $proofPath }}"
+                                                        alt="Bukti Pembayaran" class="img-fluid rounded-3 shadow-sm w-100"
+                                                        style="max-height:350px;object-fit:contain;">
+                                                    <div class="payment-proof-overlay">
+                                                        <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
+                                                        <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3 text-center d-flex gap-2 justify-content-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                        <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                    </button>
+                                                    <a href="{{ $proofPath }}"
+                                                        download="Bukti_Pembayaran_{{ $order->order_number }}.jpg"
+                                                        class="btn btn-sm btn-outline-success">
+                                                        <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+                                                    </a>
+                                                </div>
+                                            @else
+                                                <div class="text-center py-5">
+                                                    <i class="bi bi-image text-muted" style="font-size:4rem;"
+                                                        aria-hidden="true"></i>
+                                                    <p class="text-muted mt-3 mb-0">Tidak ada bukti transfer yang diupload</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @elseif ($order->payment?->payment_status === 'failed')
@@ -715,7 +894,124 @@
                                 </div>
                             </div>
                         </div>
-                    @elseif ($order->payment && $order->payment->payment_proof && $order->payment->payment_status === 'unpaid')
+                    @elseif ($isDpPaid && $order->remainingPayableAmount() > 0.001)
+                        {{-- DP PAID - AWAITING REMAINING PAYMENT --}}
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <div class="alert alert-info border-0 shadow-sm mb-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-white rounded-circle p-3 me-3 flex-shrink-0">
+                                            <i class="bi bi-piggy-bank text-info fs-2" aria-hidden="true"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1 fw-bold">DP telah diverifikasi</h5>
+                                            <p class="mb-0 small">Pembayaran DP Anda telah diverifikasi. Selesaikan sisa pembayaran untuk melanjutkan produksi.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($order->payment)
+                                    <div class="card border-0 bg-light mb-3">
+                                        <div class="card-body p-4">
+                                            <h6 class="text-muted mb-3 fw-bold">
+                                                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Detail Pembayaran DP
+                                            </h6>
+                                            <div class="payment-detail-row">
+                                                <span class="text-muted">Total Pesanan</span>
+                                                <strong class="text-dark">
+                                                    <span class="price-convert" data-price="{{ $calculatedTotal }}" data-currency="IDR">
+                                                        Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
+                                                    </span>
+                                                </strong>
+                                            </div>
+                                            <div class="payment-detail-row">
+                                                <span class="text-muted">DP yang Dibayar (50%)</span>
+                                                <strong class="text-success">
+                                                    <span class="price-convert" data-price="{{ $order->payment->amount_paid ?? 0 }}" data-currency="IDR">
+                                                        Rp {{ number_format($order->payment->amount_paid ?? 0, 0, ',', '.') }}
+                                                    </span>
+                                                </strong>
+                                            </div>
+                                            <div class="payment-detail-row border-top pt-3">
+                                                <span class="text-muted fw-bold">Sisa Pembayaran (50%)</span>
+                                                <h5 class="mb-0 text-primary fw-bold">
+                                                    <span class="price-convert" data-price="{{ $order->remainingPayableAmount() }}" data-currency="IDR">
+                                                        Rp {{ number_format($order->remainingPayableAmount(), 0, ',', '.') }}
+                                                    </span>
+                                                </h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <a href="{{ route('customer.orders.payment', $order) }}" class="btn btn-primary btn-lg rounded-pill w-100 fw-bold">
+                                    <i class="bi bi-upload me-2" aria-hidden="true"></i>Unggah Bukti Pelunasan
+                                </a>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="card border-0 bg-light h-100">
+                                    <div class="card-body p-4">
+                                        <h6 class="text-muted mb-3 fw-bold">
+                                            <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer DP
+                                        </h6>
+                                        @php
+                                            $proofPath = null;
+                                            // For DP_PAID status, check payment_proof_dp field first, then payment_proof
+                                            if ($order->payment?->payment_proof_dp) {
+                                                $proof = $order->payment->payment_proof_dp;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $proofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $proofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $proofPath = asset('storage/' . $proof);
+                                                }
+                                            } elseif ($order->payment?->payment_proof) {
+                                                // Fallback to payment_proof if payment_proof_dp is not yet migrated
+                                                $proof = $order->payment->payment_proof;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $proofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $proofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $proofPath = asset('storage/' . $proof);
+                                                }
+                                            }
+                                        @endphp
+                                        @if ($proofPath)
+                                            <div class="payment-proof-wrapper" data-bs-toggle="modal"
+                                                data-bs-target="#paymentProofModal">
+                                                <img src="{{ $proofPath }}"
+                                                    alt="Bukti Pembayaran DP" class="img-fluid rounded-3 shadow-sm w-100"
+                                                    style="max-height:350px;object-fit:contain;">
+                                                <div class="payment-proof-overlay">
+                                                    <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
+                                                    <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 text-center d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                </button>
+                                                <a href="{{ $proofPath }}"
+                                                    download="Bukti_DP_{{ $order->order_number }}.jpg"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+                                                </a>
+                                            </div>
+                                        @else
+                                            <div class="text-center py-5">
+                                                <i class="bi bi-image text-muted" style="font-size:3rem;" aria-hidden="true"></i>
+                                                <p class="text-muted mt-3 small">Bukti transfer DP belum tersedia</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($order->payment && $order->payment->payment_proof && in_array($order->payment->payment_status, [\App\Models\Payment::STATUS_PENDING, \App\Models\Payment::STATUS_DP_PAID], true))
                         {{-- AWAITING VERIFICATION --}}
                         <div class="row g-4">
                             <div class="col-lg-7">
@@ -772,18 +1068,61 @@
                             <div class="col-lg-5">
                                 <div class="card border-0 bg-light h-100">
                                     <div class="card-body p-4">
-                                        <h6 class="text-muted mb-3 fw-bold"><i class="bi bi-image me-2"></i>Bukti Transfer
+                                        <h6 class="text-muted mb-3 fw-bold"><i class="bi bi-image me-2"></i>Bukti Transfer Pelunasan
                                         </h6>
-                                        <div class="payment-proof-wrapper" data-bs-toggle="modal"
-                                            data-bs-target="#paymentProofModal">
-                                            <img src="{{ asset('storage/' . $order->payment->payment_proof) }}"
-                                                alt="Bukti Pembayaran" class="img-fluid rounded-3 shadow-sm w-100"
-                                                style="max-height:350px;object-fit:contain;">
-                                            <div class="payment-proof-overlay">
-                                                <i class="bi bi-zoom-in text-white fs-1"></i>
-                                                <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                        @php
+                                            $paidProofPath = null;
+                                            // For PAID status, check payment_proof_full field first, then payment_proof
+                                            if ($order->payment?->payment_proof_full) {
+                                                $proof = $order->payment->payment_proof_full;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $paidProofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $paidProofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $paidProofPath = asset('storage/' . $proof);
+                                                }
+                                            } elseif ($order->payment?->payment_proof) {
+                                                // Fallback to payment_proof if payment_proof_full is not yet migrated
+                                                $proof = $order->payment->payment_proof;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $paidProofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $paidProofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $paidProofPath = asset('storage/' . $proof);
+                                                }
+                                            }
+                                        @endphp
+                                        @if ($paidProofPath)
+                                            <div class="payment-proof-wrapper" data-bs-toggle="modal"
+                                                data-bs-target="#paymentProofModal">
+                                                <img src="{{ $paidProofPath }}"
+                                                    alt="Bukti Pembayaran" class="img-fluid rounded-3 shadow-sm w-100"
+                                                    style="max-height:350px;object-fit:contain;">
+                                                <div class="payment-proof-overlay">
+                                                    <i class="bi bi-zoom-in text-white fs-1"></i>
+                                                    <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                </div>
                                             </div>
-                                        </div>
+                                            <div class="mt-3 text-center d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                </button>
+                                                <a href="{{ $paidProofPath }}"
+                                                    download="Bukti_Pelunasan_{{ $order->order_number }}.jpg"
+                                                    class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+                                                </a>
+                                            </div>
+                                        @else
+                                            <div class="text-center py-5">
+                                                <i class="bi bi-image text-muted" style="font-size:4rem;"
+                                                    aria-hidden="true"></i>
+                                                <p class="text-muted mt-3 mb-0">Tidak ada bukti transfer</p>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -852,6 +1191,17 @@
 
             {{-- Payment Proof Modal --}}
             @if ($order->payment?->payment_proof)
+                @php
+                    $modalProofPath = null;
+                    $proof = $order->payment->payment_proof;
+                    if (str_starts_with($proof, 'storage/')) {
+                        $modalProofPath = asset($proof);
+                    } elseif (str_starts_with($proof, '/')) {
+                        $modalProofPath = asset('storage' . $proof);
+                    } else {
+                        $modalProofPath = asset('storage/' . $proof);
+                    }
+                @endphp
                 <div class="modal fade" id="paymentProofModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content rounded-4 overflow-hidden">
@@ -865,7 +1215,7 @@
                                     aria-label="Tutup"></button>
                             </div>
                             <div class="modal-body p-0 bg-dark">
-                                <img src="{{ asset('storage/' . $order->payment->payment_proof) }}"
+                                <img src="{{ $modalProofPath }}"
                                     alt="Bukti Pembayaran" class="img-fluid w-100"
                                     style="max-height:80vh;object-fit:contain;">
                             </div>
@@ -875,7 +1225,7 @@
                                     Upload: {{ $order->payment->created_at->format('d M Y, H:i') }}
                                 </small>
                                 <div>
-                                    <a href="{{ asset('storage/' . $order->payment->payment_proof) }}"
+                                    <a href="{{ $modalProofPath }}"
                                         download="Bukti_Pembayaran_{{ $order->order_number }}.jpg"
                                         class="btn btn-sm btn-success me-2">
                                         <i class="bi bi-download me-1" aria-hidden="true"></i>Download
