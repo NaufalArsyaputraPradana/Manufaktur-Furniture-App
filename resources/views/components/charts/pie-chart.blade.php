@@ -1,11 +1,17 @@
-<div wire:ignore>
-    <canvas id="{{ $id ?? 'pieChart' }}"></canvas>
+<div wire:ignore class="position-relative w-100" style="min-height: 250px;">
+    <canvas id="{{ $id ?? 'pieChart' }}" class="w-100"></canvas>
 </div>
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('{{ $id ?? "pieChart" }}').getContext('2d');
+        const canvasElement = document.getElementById('{{ $id ?? "pieChart" }}');
+        if (!canvasElement) return;
+        
+        const ctx = canvasElement.getContext('2d');
+        
+        // Detect mobile for responsive sizing
+        const isMobile = window.innerWidth < 768;
         
         const colors = [
             '#3b82f6', '#ef4444', '#10b981', '#f59e0b', 
@@ -19,8 +25,8 @@
                 data: @json($data ?? []),
                 backgroundColor: @json($colors->slice(0, count($labels ?? [])) ?? $colors),
                 borderColor: '#fff',
-                borderWidth: 2,
-                hoverOffset: 10
+                borderWidth: isMobile ? 1 : 2,
+                hoverOffset: isMobile ? 8 : 10
             }]
         };
 
@@ -30,15 +36,16 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                devicePixelRatio: window.devicePixelRatio || 1,
                 plugins: {
                     legend: {
                         display: true,
-                        position: 'bottom',
+                        position: isMobile ? 'bottom' : 'bottom',
                         labels: {
                             usePointStyle: true,
-                            padding: 20,
+                            padding: isMobile ? 10 : 20,
                             font: {
-                                size: 12,
+                                size: isMobile ? 10 : 12,
                                 weight: 'bold'
                             }
                         }
@@ -47,19 +54,20 @@
                         display: !! '{{ $title ?? "" }}',
                         text: '{{ $title ?? "" }}',
                         font: {
-                            size: 16,
+                            size: isMobile ? 13 : 16,
                             weight: 'bold'
-                        }
+                        },
+                        padding: isMobile ? 10 : 20
                     },
                     tooltip: {
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        padding: 12,
+                        padding: isMobile ? 8 : 12,
                         titleFont: {
-                            size: 13,
+                            size: isMobile ? 11 : 13,
                             weight: 'bold'
                         },
                         bodyFont: {
-                            size: 12
+                            size: isMobile ? 10 : 12
                         },
                         borderColor: '#fff',
                         borderWidth: 1,

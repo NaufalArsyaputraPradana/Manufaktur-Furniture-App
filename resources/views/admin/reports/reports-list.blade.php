@@ -3,140 +3,142 @@
 @section('title', 'Daftar Laporan')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="mb-6 flex items-center justify-between">
+<div class="container-fluid px-2 md:px-4 py-3 md:py-6">
+    <!-- Header - Mobile optimized -->
+    <div class="mb-3 md:mb-6 d-flex flex-column md:flex-row justify-content-md-between align-items-md-start gap-3">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">Daftar Laporan</h1>
-            <p class="text-gray-600 mt-2">Kelola dan lihat semua laporan yang telah dibuat</p>
+            <h1 class="h4 md:h3 fw-bold text-gray-900">Daftar Laporan</h1>
+            <p class="text-muted small mt-1">Kelola dan lihat semua laporan yang telah dibuat</p>
         </div>
-        <a href="{{ route('admin.reports.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2">
-            <i class="fas fa-plus"></i>
-            Buat Laporan Baru
+        <a href="{{ route('admin.reports.create') }}" class="btn btn-primary btn-sm align-self-start md:btn">
+            <i class="bi bi-plus-circle"></i>
+            <span class="d-none sm:inline">Buat Laporan Baru</span><span class="d-sm-none">Buat</span>
         </a>
     </div>
 
+    <!-- Success/Error Messages -->
     @if (session('success'))
-        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start justify-between">
-            <div>
-                <h3 class="font-semibold text-green-800">Sukses</h3>
-                <p class="text-green-700 text-sm mt-1">{{ session('success') }}</p>
-            </div>
-            <button class="text-green-600 hover:text-green-800" onclick="this.parentElement.remove()">×</button>
+        <div class="alert alert-success alert-dismissible fade show mb-3 md:mb-6" role="alert">
+            <strong><i class="bi bi-check-circle"></i> Sukses</strong>
+            <p class="mb-0 text-sm mt-1">{{ session('success') }}</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start justify-between">
-            <div>
-                <h3 class="font-semibold text-red-800">Gagal</h3>
-                <p class="text-red-700 text-sm mt-1">{{ session('error') }}</p>
-            </div>
-            <button class="text-red-600 hover:text-red-800" onclick="this.parentElement.remove()">×</button>
+        <div class="alert alert-danger alert-dismissible fade show mb-3 md:mb-6" role="alert">
+            <strong><i class="bi bi-exclamation-circle"></i> Gagal</strong>
+            <p class="mb-0 text-sm mt-1">{{ session('error') }}</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <form action="{{ route('admin.reports.index') }}" method="GET" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Tipe Laporan</label>
-                    <select id="type" name="type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Semua Tipe --</option>
-                        <option value="sales" @selected(request('type') === 'sales')>Laporan Penjualan</option>
-                        <option value="production" @selected(request('type') === 'production')>Laporan Produksi</option>
-                        <option value="inventory" @selected(request('type') === 'inventory')>Laporan Inventori</option>
-                        <option value="financial" @selected(request('type') === 'financial')>Laporan Keuangan</option>
-                        <option value="custom" @selected(request('type') === 'custom')>Laporan Kustom</option>
-                    </select>
-                </div>
+    <!-- Filters - Mobile responsive -->
+    <div class="card border-0 shadow-sm mb-3 md:mb-6">
+        <div class="card-body p-3 md:p-4">
+            <form action="{{ route('admin.reports.index') }}" method="GET">
+                <div class="row g-2 md:g-3">
+                    <!-- Type Filter - Full width on mobile -->
+                    <div class="col-12 md:col-4">
+                        <label for="type" class="form-label small mb-1">Tipe Laporan</label>
+                        <select id="type" name="type" class="form-select form-select-sm md:form-select">
+                            <option value="">-- Semua Tipe --</option>
+                            <option value="sales" @selected(request('type') === 'sales')>Laporan Penjualan</option>
+                            <option value="production" @selected(request('type') === 'production')>Laporan Produksi</option>
+                            <option value="inventory" @selected(request('type') === 'inventory')>Laporan Inventori</option>
+                            <option value="financial" @selected(request('type') === 'financial')>Laporan Keuangan</option>
+                            <option value="custom" @selected(request('type') === 'custom')>Laporan Kustom</option>
+                        </select>
+                    </div>
 
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select id="status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Semua Status --</option>
-                        <option value="pending" @selected(request('status') === 'pending')>Pending</option>
-                        <option value="processing" @selected(request('status') === 'processing')>Sedang Diproses</option>
-                        <option value="completed" @selected(request('status') === 'completed')>Selesai</option>
-                        <option value="failed" @selected(request('status') === 'failed')>Gagal</option>
-                    </select>
-                </div>
+                    <!-- Status Filter - Full width on mobile -->
+                    <div class="col-12 md:col-4">
+                        <label for="status" class="form-label small mb-1">Status</label>
+                        <select id="status" name="status" class="form-select form-select-sm md:form-select">
+                            <option value="">-- Semua Status --</option>
+                            <option value="pending" @selected(request('status') === 'pending')>Pending</option>
+                            <option value="processing" @selected(request('status') === 'processing')>Sedang Diproses</option>
+                            <option value="completed" @selected(request('status') === 'completed')>Selesai</option>
+                            <option value="failed" @selected(request('status') === 'failed')>Gagal</option>
+                        </select>
+                    </div>
 
-                <div class="flex items-end gap-2">
-                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                    <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                        Reset
-                    </a>
+                    <!-- Buttons - Stack on mobile -->
+                    <div class="col-12 md:col-4 d-flex gap-2 align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1 md:flex-grow-0 md:btn">
+                            <i class="bi bi-funnel"></i> Filter
+                        </button>
+                        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm flex-grow-1 md:flex-grow-0 md:btn">
+                            Reset
+                        </a>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
-    <!-- Reports Table -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <!-- Reports Table - Responsive -->
+    <div class="card border-0 shadow-sm">
         @if ($reports->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-100 border-b border-gray-300">
+            <!-- Desktop Table View -->
+            <div class="table-responsive d-none md:block">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Judul Laporan</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Tipe</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Periode</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Dibuat Oleh</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Dibuat Pada</th>
-                            <th class="px-6 py-3 text-right text-sm font-semibold text-gray-900">Aksi</th>
+                            <th class="px-3 py-2 text-sm">Judul Laporan</th>
+                            <th class="px-3 py-2 text-sm">Tipe</th>
+                            <th class="px-3 py-2 text-sm">Periode</th>
+                            <th class="px-3 py-2 text-sm">Status</th>
+                            <th class="px-3 py-2 text-sm d-none lg:table-cell">Dibuat Oleh</th>
+                            <th class="px-3 py-2 text-sm">Dibuat Pada</th>
+                            <th class="px-3 py-2 text-end text-sm">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="table-group-divider">
                         @foreach ($reports as $report)
-                            <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-4 text-sm text-gray-900 font-medium">
-                                    <a href="{{ route('admin.reports.show', $report) }}" class="text-blue-600 hover:underline">
+                            <tr class="align-middle">
+                                <td class="px-3 py-3 text-sm font-weight-bold">
+                                    <a href="{{ route('admin.reports.show', $report) }}" class="text-primary text-decoration-none">
                                         {{ $report->title }}
                                     </a>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
-                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                                        {{ ucfirst($report->report_type) }}
-                                    </span>
+                                <td class="px-3 py-3 text-sm">
+                                    <span class="badge bg-info">{{ ucfirst($report->report_type) }}</span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
+                                <td class="px-3 py-3 text-sm text-muted">
                                     {{ \Carbon\Carbon::parse($report->start_date)->format('d M Y') }} - 
                                     {{ \Carbon\Carbon::parse($report->end_date)->format('d M Y') }}
                                 </td>
-                                <td class="px-6 py-4 text-sm">
+                                <td class="px-3 py-3 text-sm">
                                     @if ($report->status === 'completed')
-                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Selesai</span>
+                                        <span class="badge bg-success">Selesai</span>
                                     @elseif ($report->status === 'processing')
-                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">Sedang Diproses</span>
+                                        <span class="badge bg-warning text-dark">Sedang Diproses</span>
                                     @elseif ($report->status === 'failed')
-                                        <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Gagal</span>
+                                        <span class="badge bg-danger">Gagal</span>
                                     @else
-                                        <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">{{ ucfirst($report->status) }}</span>
+                                        <span class="badge bg-secondary">{{ ucfirst($report->status) }}</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
+                                <td class="px-3 py-3 text-sm text-muted d-none lg:table-cell">
                                     {{ $report->generatedBy?->name ?? 'Admin' }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">
+                                <td class="px-3 py-3 text-sm text-muted">
                                     {{ $report->created_at->format('d M Y H:i') }}
                                 </td>
-                                <td class="px-6 py-4 text-right text-sm">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <a href="{{ route('admin.reports.show', $report) }}" class="text-blue-600 hover:text-blue-800 transition" title="Lihat">
-                                            <i class="fas fa-eye"></i>
+                                <td class="px-3 py-3 text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ route('admin.reports.show', $report) }}" class="btn btn-outline-primary" title="Lihat">
+                                            <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="{{ route('admin.reports.edit', $report) }}" class="text-yellow-600 hover:text-yellow-800 transition" title="Edit">
-                                            <i class="fas fa-edit"></i>
+                                        <a href="{{ route('admin.reports.edit', $report) }}" class="btn btn-outline-warning" title="Edit">
+                                            <i class="bi bi-pencil"></i>
                                         </a>
-                                        <form action="{{ route('admin.reports.destroy', $report) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus laporan ini?')">
+                                        <form action="{{ route('admin.reports.destroy', $report) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-800 transition" title="Hapus">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Hapus">
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -147,40 +149,100 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
-            <div class="px-6 py-4 border-t border-gray-200">
-                {{ $reports->links() }}
+            <!-- Mobile Card View -->
+            <div class="d-md-none">
+                <div class="list-group list-group-flush">
+                    @foreach ($reports as $report)
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{{ route('admin.reports.show', $report) }}" class="text-primary text-decoration-none">
+                                            {{ $report->title }}
+                                        </a>
+                                    </h6>
+                                    <div class="d-flex gap-2 flex-wrap mb-2">
+                                        <span class="badge bg-info text-sm">{{ ucfirst($report->report_type) }}</span>
+                                        @if ($report->status === 'completed')
+                                            <span class="badge bg-success text-sm">Selesai</span>
+                                        @elseif ($report->status === 'processing')
+                                            <span class="badge bg-warning text-dark text-sm">Sedang Diproses</span>
+                                        @elseif ($report->status === 'failed')
+                                            <span class="badge bg-danger text-sm">Gagal</span>
+                                        @else
+                                            <span class="badge bg-secondary text-sm">{{ ucfirst($report->status) }}</span>
+                                        @endif
+                                    </div>
+                                    <small class="text-muted d-block">
+                                        <strong>Periode:</strong> {{ \Carbon\Carbon::parse($report->start_date)->format('d M Y') }} - {{ \Carbon\Carbon::parse($report->end_date)->format('d M Y') }}
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <strong>Dibuat:</strong> {{ $report->created_at->format('d M Y H:i') }}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('admin.reports.show', $report) }}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                    <i class="bi bi-eye"></i> Lihat
+                                </a>
+                                <a href="{{ route('admin.reports.edit', $report) }}" class="btn btn-sm btn-outline-warning flex-grow-1">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <form action="{{ route('admin.reports.destroy', $report) }}" method="POST" class="flex-grow-1" onsubmit="return confirm('Yakin?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Pagination - Mobile optimized -->
+            <div class="card-footer bg-light border-top p-3 md:p-4">
+                {{ $reports->links('pagination::bootstrap-5') }}
             </div>
         @else
-            <div class="p-12 text-center">
-                <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Belum Ada Laporan</h3>
-                <p class="text-gray-600 mb-6">Mulai dengan membuat laporan pertama Anda</p>
-                <a href="{{ route('admin.reports.create') }}" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition inline-flex items-center gap-2">
-                    <i class="fas fa-plus"></i>
-                    Buat Laporan Baru
+            <!-- Empty State -->
+            <div class="card-body text-center py-8 md:py-12">
+                <i class="bi bi-inbox text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
+                <h5 class="mt-4 mb-2 text-muted">Belum Ada Laporan</h5>
+                <p class="text-muted text-sm mb-4">Mulai dengan membuat laporan pertama Anda</p>
+                <a href="{{ route('admin.reports.create') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Buat Laporan Baru
                 </a>
             </div>
         @endif
     </div>
 
-    <!-- Quick Stats -->
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-lg shadow-md p-4">
-            <p class="text-gray-600 text-sm">Total Laporan</p>
-            <p class="text-3xl font-bold text-gray-900">{{ $reports->total() }}</p>
+    <!-- Quick Stats - Mobile responsive -->
+    <div class="row g-2 md:g-4 mt-3 md:mt-6">
+        <div class="col-6 sm:col-3">
+            <div class="card border-0 shadow-sm text-center p-3 md:p-4">
+                <p class="text-muted small mb-2">Total Laporan</p>
+                <p class="h5 md:h3 fw-bold text-dark mb-0">{{ $reports->total() }}</p>
+            </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
-            <p class="text-gray-600 text-sm">Selesai</p>
-            <p class="text-3xl font-bold text-green-600">{{ $reports->where('status', 'completed')->count() }}</p>
+        <div class="col-6 sm:col-3">
+            <div class="card border-0 shadow-sm text-center p-3 md:p-4">
+                <p class="text-muted small mb-2">Selesai</p>
+                <p class="h5 md:h3 fw-bold text-success mb-0">{{ $reports->where('status', 'completed')->count() }}</p>
+            </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
-            <p class="text-gray-600 text-sm">Sedang Diproses</p>
-            <p class="text-3xl font-bold text-yellow-600">{{ $reports->where('status', 'processing')->count() }}</p>
+        <div class="col-6 sm:col-3 mt-2 sm:mt-0">
+            <div class="card border-0 shadow-sm text-center p-3 md:p-4">
+                <p class="text-muted small mb-2">Diproses</p>
+                <p class="h5 md:h3 fw-bold text-warning mb-0">{{ $reports->where('status', 'processing')->count() }}</p>
+            </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
-            <p class="text-gray-600 text-sm">Gagal</p>
-            <p class="text-3xl font-bold text-red-600">{{ $reports->where('status', 'failed')->count() }}</p>
+        <div class="col-6 sm:col-3 mt-2 sm:mt-0">
+            <div class="card border-0 shadow-sm text-center p-3 md:p-4">
+                <p class="text-muted small mb-2">Gagal</p>
+                <p class="h5 md:h3 fw-bold text-danger mb-0">{{ $reports->where('status', 'failed')->count() }}</p>
+            </div>
         </div>
     </div>
 </div>

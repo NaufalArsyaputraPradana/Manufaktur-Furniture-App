@@ -1,11 +1,17 @@
-<div wire:ignore>
-    <canvas id="{{ $id ?? 'barChart' }}"></canvas>
+<div wire:ignore class="position-relative w-100" style="min-height: 300px; overflow-x: auto;">
+    <canvas id="{{ $id ?? 'barChart' }}" class="w-100"></canvas>
 </div>
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('{{ $id ?? "barChart" }}').getContext('2d');
+        const canvasElement = document.getElementById('{{ $id ?? "barChart" }}');
+        if (!canvasElement) return;
+        
+        const ctx = canvasElement.getContext('2d');
+        
+        // Detect mobile for responsive sizing
+        const isMobile = window.innerWidth < 768;
         
         const data = {
             labels: @json($labels ?? []),
@@ -30,15 +36,17 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                devicePixelRatio: window.devicePixelRatio || 1,
+                indexAxis: isMobile ? 'y' : 'x', // Horizontal bars on mobile for better readability
                 plugins: {
                     legend: {
                         display: true,
                         position: 'top',
                         labels: {
                             usePointStyle: true,
-                            padding: 20,
+                            padding: isMobile ? 10 : 20,
                             font: {
-                                size: 12,
+                                size: isMobile ? 10 : 12,
                                 weight: 'bold'
                             }
                         }
@@ -47,9 +55,10 @@
                         display: !! '{{ $title ?? "" }}',
                         text: '{{ $title ?? "" }}',
                         font: {
-                            size: 16,
+                            size: isMobile ? 13 : 16,
                             weight: 'bold'
-                        }
+                        },
+                        padding: isMobile ? 10 : 20
                     }
                 },
                 scales: {
@@ -61,7 +70,7 @@
                         },
                         ticks: {
                             font: {
-                                size: 11
+                                size: isMobile ? 9 : 11
                             }
                         }
                     },
@@ -71,8 +80,22 @@
                         },
                         ticks: {
                             font: {
-                                size: 11
+                                size: isMobile ? 9 : 11
                             }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        };
+
+        new Chart(ctx, config);
+    });
+</script>
+@endpush
                         }
                     }
                 },

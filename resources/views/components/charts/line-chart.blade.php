@@ -1,11 +1,17 @@
-<div wire:ignore>
-    <canvas id="{{ $id ?? 'lineChart' }}"></canvas>
+<div wire:ignore class="position-relative" style="min-height: 250px; max-width: 100%;">
+    <canvas id="{{ $id ?? 'lineChart' }}" class="w-100"></canvas>
 </div>
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('{{ $id ?? "lineChart" }}').getContext('2d');
+        const canvasElement = document.getElementById('{{ $id ?? "lineChart" }}');
+        if (!canvasElement) return;
+        
+        const ctx = canvasElement.getContext('2d');
+        
+        // Detect mobile for responsive sizing
+        const isMobile = window.innerWidth < 768;
         
         const data = {
             labels: @json($labels ?? []),
@@ -17,12 +23,12 @@
                     borderColor: '{{ $dataset['borderColor'] ?? '#3b82f6' }}',
                     backgroundColor: '{{ $dataset['backgroundColor'] ?? 'rgba(59, 130, 246, 0.1)' }}',
                     tension: 0.4,
-                    borderWidth: 2,
+                    borderWidth: isMobile ? 1.5 : 2,
                     pointBackgroundColor: '{{ $dataset['pointColor'] ?? '#3b82f6' }}',
                     pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointBorderWidth: isMobile ? 1 : 2,
+                    pointRadius: isMobile ? 3 : 4,
+                    pointHoverRadius: isMobile ? 5 : 6,
                     fill: true,
                 },
                 @endforeach
@@ -35,15 +41,16 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                devicePixelRatio: window.devicePixelRatio || 1,
                 plugins: {
                     legend: {
                         display: true,
                         position: 'top',
                         labels: {
                             usePointStyle: true,
-                            padding: 20,
+                            padding: isMobile ? 10 : 20,
                             font: {
-                                size: 12,
+                                size: isMobile ? 10 : 12,
                                 weight: 'bold'
                             }
                         }
@@ -52,9 +59,10 @@
                         display: !! '{{ $title ?? "" }}',
                         text: '{{ $title ?? "" }}',
                         font: {
-                            size: 16,
+                            size: isMobile ? 13 : 16,
                             weight: 'bold'
-                        }
+                        },
+                        padding: isMobile ? 10 : 20
                     }
                 },
                 scales: {
@@ -66,7 +74,7 @@
                         },
                         ticks: {
                             font: {
-                                size: 11
+                                size: isMobile ? 9 : 11
                             }
                         }
                     },
@@ -76,8 +84,10 @@
                         },
                         ticks: {
                             font: {
-                                size: 11
-                            }
+                                size: isMobile ? 9 : 11
+                            },
+                            maxRotation: isMobile ? 45 : 0,
+                            minRotation: isMobile ? 45 : 0
                         }
                     }
                 },
