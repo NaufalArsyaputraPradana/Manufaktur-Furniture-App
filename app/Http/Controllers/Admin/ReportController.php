@@ -291,6 +291,253 @@ class ReportController extends Controller
     }
 
     /**
+     * Display dashboard with real-time data
+     */
+    public function dashboard(Request $request): View
+    {
+        $startDate = $request->get('start_date', now()->subMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+
+        $query = Order::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+
+        // Statistics
+        $totalOrders = (clone $query)->count();
+        $totalRevenue = (clone $query)->sum('total');
+        $completedOrders = (clone $query)->where('status', 'completed')->count();
+        $averageOrderValue = $totalOrders > 0 ? round($totalRevenue / $totalOrders, 2) : 0;
+
+        // Sales trend data
+        $dailySales = (clone $query)
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as total'))
+            ->where('status', '!=', 'cancelled')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        $salesTrendLabels = [];
+        $salesTrendData = [];
+        foreach (CarbonPeriod::create($startDate, $endDate) as $date) {
+            $dateStr = $date->format('Y-m-d');
+            $salesTrendLabels[] = $date->format('M d');
+            $salesTrendData[] = $dailySales[$dateStr] ?? 0;
+        }
+
+        // Production status
+        $productionQuery = ProductionProcess::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        $productionPending = (clone $productionQuery)->where('status', 'pending')->count();
+        $productionInProgress = (clone $productionQuery)->where('status', 'in_progress')->count();
+        $productionCompleted = (clone $productionQuery)->where('status', 'completed')->count();
+
+        // Top products inventory
+        $topProducts = OrderDetail::select('product_name', DB::raw('SUM(quantity) as total_qty'))
+            ->whereHas('order', function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+                    ->where('status', '!=', 'cancelled');
+            })
+            ->groupBy('product_name')
+            ->orderByDesc('total_qty')
+            ->limit(10)
+            ->get();
+
+        // Financial summary
+        $totalPending = (clone $query)->whereHas('payment', fn($q) => $q->where('payment_status', 'pending'))->sum('total');
+        $totalFailed = (clone $query)->whereHas('payment', fn($q) => $q->where('payment_status', 'failed'))->sum('total');
+        $totalSuccess = (clone $query)->whereHas('payment', fn($q) => $q->where('payment_status', 'paid'))->sum('total');
+
+        // Recent reports
+        $recentReports = Report::latest()->limit(5)->get();
+
+        return view('admin.reports.dashboard', compact(
+            'startDate',
+            'endDate',
+            'totalOrders',
+            'totalRevenue',
+            'completedOrders',
+            'averageOrderValue',
+            'salesTrendLabels',
+            'salesTrendData',
+            'productionPending',
+            'productionInProgress',
+            'productionCompleted',
+            'topProducts',
+            'totalPending',
+            'totalFailed',
+            'totalSuccess',
+            'recentReports'
+        ));
+    }
+
+    /**
+     * List all reports
+     */
+    public function listReports(Request $request): View
+    {
+        $query = Report::query();
+
+        if ($request->has('type') && $request->type) {
+            $query->where('report_type', $request->type);
+        }
+
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $reports = $query->latest()->paginate(15)->withQueryString();
+
+        return view('admin.reports.index', compact('reports'));
+    }
+
+    /**
+     * Show create form
+     */
+    public function create(): View
+    {
+        return view('admin.reports.create');
+    }
+
+    /**
+     * Store new report
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'report_type' => 'required|in:sales,production,inventory,financial,custom',
+            'title' => 'required|string|max:255',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'filters' => 'nullable|array',
+        ]);
+
+        $validated['generated_by'] = auth()->id();
+        $validated['status'] = 'completed';
+
+        Report::create($validated);
+
+        return redirect()->route('admin.reports.index')->with('success', 'Laporan berhasil dibuat.');
+    }
+
+    /**
+     * Show single report
+     */
+    public function show(Report $report): View
+    {
+        return view('admin.reports.show', compact('report'));
+    }
+
+    /**
+     * Show edit form
+     */
+    public function edit(Report $report): View
+    {
+        return view('admin.reports.edit', compact('report'));
+    }
+
+    /**
+     * Update report
+     */
+    public function update(Request $request, Report $report): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'report_type' => 'required|in:sales,production,inventory,financial,custom',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'filters' => 'nullable|array',
+        ]);
+
+        $report->update($validated);
+
+        return redirect()->route('admin.reports.show', $report)->with('success', 'Laporan berhasil diperbarui.');
+    }
+
+    /**
+     * Delete report
+     */
+    public function destroy(Report $report): RedirectResponse
+    {
+        $report->delete();
+
+        return redirect()->route('admin.reports.index')->with('success', 'Laporan berhasil dihapus.');
+    }
+
+    /**
+     * Export report with multiple formats
+     */
+    public function exportReport(Request $request, Report $report): StreamedResponse|RedirectResponse
+    {
+        $format = $request->get('format', 'csv');
+
+        if (!in_array($format, ['csv', 'pdf', 'xlsx'])) {
+            return back()->with('error', 'Format export tidak didukung.');
+        }
+
+        switch ($format) {
+            case 'pdf':
+                return $this->exportPDF($report);
+            case 'xlsx':
+                return $this->exportExcel($report);
+            default:
+                return $this->exportCSV($report);
+        }
+    }
+
+    /**
+     * Export report as CSV
+     */
+    private function exportCSV(Report $report): StreamedResponse
+    {
+        $filename = "report-{$report->report_type}-" . now()->format('YmdHis') . ".csv";
+
+        return new StreamedResponse(function () use ($report) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, [$report->title]);
+            fputcsv($handle, ["Periode: {$report->start_date} s/d {$report->end_date}"]);
+            fputcsv($handle, ["Tipe: " . ucfirst($report->report_type)]);
+            fputcsv($handle, ["Dibuat: " . $report->generated_at->format('Y-m-d H:i')]);
+            fputcsv($handle, []);
+
+            if ($report->data) {
+                fputcsv($handle, array_keys((array)$report->data));
+                fputcsv($handle, array_values((array)$report->data));
+            }
+
+            fclose($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Export report as PDF (placeholder)
+     */
+    private function exportPDF(Report $report): StreamedResponse
+    {
+        // Placeholder - implement with dompdf or similar
+        return new StreamedResponse(function () use ($report) {
+            echo "PDF Export for: " . $report->title;
+        }, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="report-' . $report->id . '.pdf"',
+        ]);
+    }
+
+    /**
+     * Export report as Excel (placeholder)
+     */
+    private function exportExcel(Report $report): StreamedResponse
+    {
+        // Placeholder - implement with maatwebsite/excel or similar
+        return new StreamedResponse(function () use ($report) {
+            echo "Excel Export for: " . $report->title;
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="report-' . $report->id . '.xlsx"',
+        ]);
+    }
+
+    /**
      * Helper simpan laporan ke arsip database
      */
     private function saveReport(string $type, string $title, string $start, string $end, array $data): void
