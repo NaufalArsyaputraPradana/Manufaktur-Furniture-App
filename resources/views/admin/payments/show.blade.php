@@ -171,31 +171,61 @@
                             <hr>
                             <h6 class="fw-bold mb-3 text-primary">Rincian Pembayaran</h6>
                             
+                            <div class="mb-3 p-3 bg-light rounded-2 border">
+                                <small class="text-muted fw-bold d-block mb-2">TOTAL PESANAN</small>
+                                <div class="fs-5 fw-bold text-dark">
+                                    Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
+                                </div>
+                            </div>
+
                             <div class="mb-3 p-3 bg-light rounded-2 border border-success">
-                                <small class="text-success fw-bold d-block mb-2">✓ DP (50%) - TERVERIFIKASI</small>
+                                <small class="text-success fw-bold d-block mb-2">✓ DP DIBAYAR (50%) - TERVERIFIKASI</small>
                                 <div class="fs-5 fw-bold text-success">
                                     Rp {{ number_format($dpAmount, 0, ',', '.') }}
                                 </div>
                             </div>
 
-                            <div class="mb-3 p-3 bg-light rounded-2 border border-warning">
-                                <small class="text-warning fw-bold d-block mb-2">⏳ PELUNASAN (50%) - PENDING</small>
+                            <div class="p-3 bg-light rounded-2 border border-warning">
+                                <small class="text-warning fw-bold d-block mb-2">⏳ PELUNASAN DIBAYAR (50%) - PENDING VERIFIKASI</small>
                                 <div class="fs-5 fw-bold text-warning">
                                     Rp {{ number_format($remainingPayment, 0, ',', '.') }}
                                 </div>
                             </div>
-
-                            <div class="p-3 bg-light rounded-2 border-2 border-dark">
-                                <small class="text-muted d-block mb-2">TOTAL PESANAN</small>
-                                <div class="fs-4 fw-bold text-dark">
+                        @elseif ($isDpPaid)
+                            {{-- Detailed breakdown for DP_PAID --}}
+                            <hr>
+                            <h6 class="fw-bold mb-3 text-primary">Rincian Pembayaran DP</h6>
+                            
+                            <div class="mb-3 p-3 bg-light rounded-2 border">
+                                <small class="text-muted fw-bold d-block mb-2">TOTAL PESANAN</small>
+                                <div class="fs-5 fw-bold text-dark">
                                     Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
                                 </div>
                             </div>
+
+                            <div class="p-3 bg-light rounded-2 border border-success">
+                                <small class="text-success fw-bold d-block mb-2">✓ DP DIBAYAR (50%) - SUDAH TERVERIFIKASI</small>
+                                <div class="fs-5 fw-bold text-success">
+                                    Rp {{ number_format($dpAmount, 0, ',', '.') }}
+                                </div>
+                            </div>
                         @else
-                            {{-- Regular amount display --}}
-                            <div class="mb-3">
-                                <label class="small text-muted">Nominal</label>
-                                <div class="fs-5 fw-bold text-success">Rp {{ number_format($payment->amount ?? 0, 0, ',', '.') }}</div>
+                            {{-- Regular amount display for PENDING (initial DP) --}}
+                            <hr>
+                            <h6 class="fw-bold mb-3 text-primary">Rincian Pembayaran DP</h6>
+                            
+                            <div class="mb-3 p-3 bg-light rounded-2 border">
+                                <small class="text-muted fw-bold d-block mb-2">TOTAL PESANAN</small>
+                                <div class="fs-5 fw-bold text-dark">
+                                    Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-2 border border-warning">
+                                <small class="text-warning fw-bold d-block mb-2">⏳ DP DIBAYAR (50%) - PENDING VERIFIKASI</small>
+                                <div class="fs-5 fw-bold text-warning">
+                                    Rp {{ number_format($dpAmount, 0, ',', '.') }}
+                                </div>
                             </div>
                         @endif
 

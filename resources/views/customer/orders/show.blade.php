@@ -949,6 +949,7 @@
                                             <h6 class="text-muted mb-3 fw-bold">
                                                 <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Detail Pembayaran DP
                                             </h6>
+                                            {{-- Total Pesanan --}}
                                             <div class="payment-detail-row">
                                                 <span class="text-muted">Total Pesanan</span>
                                                 <strong class="text-dark">
@@ -957,6 +958,7 @@
                                                     </span>
                                                 </strong>
                                             </div>
+                                            {{-- DP Breakdown --}}
                                             <div class="payment-detail-row">
                                                 <span class="text-muted">DP yang Dibayar (50%)</span>
                                                 <strong class="text-success">
@@ -969,6 +971,7 @@
                                                     </span>
                                                 </strong>
                                             </div>
+                                            {{-- Sisa Pembayaran --}}
                                             <div class="payment-detail-row border-top pt-3">
                                                 <span class="text-muted fw-bold">Sisa Pembayaran (50%)</span>
                                                 <h5 class="mb-0 text-primary fw-bold">

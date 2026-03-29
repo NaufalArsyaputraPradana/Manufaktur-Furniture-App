@@ -108,12 +108,33 @@
                                 $dueLabel = $isBalanceUi ? 'Sisa pelunasan' : 'Jumlah transfer sekarang (DP ' . $pct . '%)';
                             @endphp
                             <div class="bg-light p-4 rounded-4 text-center border-2 border-success border-opacity-25">
+                                {{-- Show total order always --}}
                                 <small class="text-muted d-block mb-2">Total pesanan</small>
-                                <h3 class="mb-3 text-success fw-bold price-convert" data-price="{{ $calculatedTotal }}"
-                                    data-currency="IDR">Rp {{ number_format($calculatedTotal, 0, ',', '.') }}</h3>
+                                <h5 class="mb-3 text-dark fw-bold price-convert" data-price="{{ $calculatedTotal }}"
+                                    data-currency="IDR">Rp {{ number_format($calculatedTotal, 0, ',', '.') }}</h5>
                                 <hr class="my-2">
-                                <small class="text-muted d-block mb-1">{{ $dueLabel }}</small>
-                                <h2 class="mb-0 text-primary fw-bold">Rp {{ number_format($dueNow, 0, ',', '.') }}</h2>
+                                
+                                {{-- Breakdown based on payment type --}}
+                                @if($isBalanceUi)
+                                    {{-- When paying balance (DP already verified) --}}
+                                    <div class="text-start mb-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <small class="text-muted">DP yang Sudah Dibayar (50%)</small>
+                                            <small class="text-success fw-bold">✓ Rp {{ number_format($dpAmt, 0, ',', '.') }}</small>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small class="text-muted">Sisa Pelunasan (50%)</small>
+                                            <small class="text-primary fw-bold">Rp {{ number_format($dueNow, 0, ',', '.') }}</small>
+                                        </div>
+                                    </div>
+                                    <hr class="my-2">
+                                    <small class="text-muted d-block mb-1">{{ $dueLabel }}</small>
+                                    <h2 class="mb-0 text-primary fw-bold">Rp {{ number_format($dueNow, 0, ',', '.') }}</h2>
+                                @else
+                                    {{-- When choosing payment method (initial payment) --}}
+                                    <small class="text-muted d-block mb-1">{{ $dueLabel }}</small>
+                                    <h2 class="mb-0 text-primary fw-bold">Rp {{ number_format($dueNow, 0, ',', '.') }}</h2>
+                                @endif
                             </div>
                         </div>
                     </div>
