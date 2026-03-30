@@ -14,7 +14,7 @@
                     <i class="bi bi-box-seam"></i>
                 </div>
                 <div class="brand-text">
-                    <span class="brand-name">UD Bisa</span>
+                    <span class="brand-name">Bisa</span>
                     <span class="brand-sub">Furniture</span>
                 </div>
             </a>
