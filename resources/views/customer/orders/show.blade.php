@@ -31,10 +31,17 @@
         $hasProcesses = $order->productionProcesses && $order->productionProcesses->count() > 0;
         $avgProgress = $hasProcesses ? round($order->productionProcesses->avg('progress_percentage')) : 0;
 
+        // Check if payment proof exists (waiting for admin verification)
+        // Kondisi: pembayaran status = pending DAN ada bukti pembayaran yang terupload
+        $hasPendingPaymentProof = $order->payment && 
+                                  $order->payment->payment_status === \App\Models\Payment::STATUS_PENDING && 
+                                  !empty($order->payment->payment_proof);
+
         $statusBadge = match (true) {
             $order->status === 'pending' && $isPaid => ['bg-info', 'bi-cash-coin', 'Sudah Bayar'],
             $order->status === 'pending' && $isFullPending => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
             $order->status === 'pending' && $isDpPaid => ['bg-info text-dark', 'bi-piggy-bank', 'DP diverifikasi'],
+            $order->status === 'pending' && $hasPendingPaymentProof => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
             $order->status === 'pending' => ['bg-warning text-dark', 'bi-clock-history', 'Menunggu Pembayaran'],
             $order->status === 'confirmed' => ['bg-info', 'bi-check-circle', 'Dikonfirmasi'],
             $order->status === 'in_production' => ['bg-light text-dark', 'bi-gear', 'Dalam Produksi'],
@@ -652,7 +659,187 @@
 
                 <div class="card-body p-4">
 
-                    @if ($isPaid || (!$isDpPaid && in_array($order->status, ['confirmed', 'in_production', 'completed'])))
+                    {{-- PAYMENT STATUS FLOW: --}}
+                    {{-- 1. FAILED - Pembayaran gagal --}}
+                    {{-- 2. PENDING + PROOF - Menunggu konfirmasi (bukti ada) --}}
+                    {{-- 3. DP_PAID - DP terverifikasi, tunggu pelunasan --}}
+                    {{-- 4. FULL_PENDING - Pelunasan pending verifikasi --}}
+                    {{-- 5. PAID - Lunas --}}
+                    {{-- 6. PENDING - Belum bayar --}}
+                    {{-- 7. CANCELLED order --}}
+
+                    @if ($order->status === 'cancelled')
+                        {{-- CANCELLED --}}
+                        <div class="alert alert-secondary border-0 text-center py-4">
+                            <i class="bi bi-x-circle text-secondary" style="font-size:4rem;" aria-hidden="true"></i>
+                            <h5 class="mt-3 mb-1">Pesanan Dibatalkan</h5>
+                            <p class="text-muted mb-0">Pesanan ini telah dibatalkan.</p>
+                        </div>
+
+                    @elseif ($order->payment?->payment_status === 'failed')
+                        {{-- FAILED PAYMENT --}}
+                        <div class="alert alert-danger border-0 shadow-sm">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-x-circle-fill fs-2 me-3 flex-shrink-0" aria-hidden="true"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-2">Pembayaran Gagal</h5>
+                                    <p class="mb-3">Terjadi kesalahan saat memproses pembayaran Anda.</p>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="{{ route('customer.orders.payment', $order) }}" class="btn btn-danger">
+                                            <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Coba Lagi
+                                        </a>
+                                        <a href="https://wa.me/6285290505442?text=Halo,%20saya%20mengalami%20masalah%20pembayaran%20untuk%20pesanan%20{{ $order->order_number }}"
+                                            target="_blank" rel="noopener noreferrer" class="btn btn-outline-danger">
+                                            <i class="bi bi-whatsapp me-2" aria-hidden="true"></i>Hubungi CS
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    @elseif ($hasPendingPaymentProof)
+                        {{-- PENDING PAYMENT WITH PROOF - WAITING FOR ADMIN VERIFICATION (DP or FULL) --}}
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <div class="alert alert-warning border-0 shadow-sm mb-4">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-white rounded-circle p-3 me-3 flex-shrink-0">
+                                            <i class="bi bi-hourglass-split text-warning fs-2" aria-hidden="true"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h5 class="mb-1 fw-bold">Menunggu Konfirmasi Pembayaran</h5>
+                                            <p class="mb-0 small">Bukti pembayaran Anda telah diterima dan sedang dalam proses verifikasi. Tim kami akan memverifikasi dalam 1–2 hari kerja. Anda akan diberitahu setelah verifikasi selesai.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if ($order->payment)
+                                    <div class="card border-0 bg-light mb-3">
+                                        <div class="card-body p-4">
+                                            <h6 class="text-muted mb-3 fw-bold">
+                                                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Detail Pembayaran
+                                            </h6>
+                                            <div class="payment-detail-row">
+                                                <span class="text-muted">ID Transaksi</span>
+                                                <strong class="text-primary">{{ $order->payment->transaction_id ?? '-' }}</strong>
+                                            </div>
+                                            <div class="payment-detail-row">
+                                                <span class="text-muted">Metode</span>
+                                                <strong>
+                                                    @if ($order->payment->payment_method === 'transfer')
+                                                        <i class="bi bi-bank2 me-1" aria-hidden="true"></i>Transfer Bank
+                                                    @elseif ($order->payment->payment_method === 'credit_card')
+                                                        <i class="bi bi-credit-card me-1" aria-hidden="true"></i>Kartu Kredit
+                                                    @elseif ($order->payment->payment_method === 'cash')
+                                                        <i class="bi bi-cash me-1" aria-hidden="true"></i>Tunai
+                                                    @else
+                                                        {{ ucfirst($order->payment->payment_method) }}
+                                                    @endif
+                                                </strong>
+                                            </div>
+                                            <div class="payment-detail-row border-bottom">
+                                                <span class="text-muted">Total Pesanan</span>
+                                                <strong class="text-dark">
+                                                    <span class="price-convert" data-price="{{ $calculatedTotal }}" data-currency="IDR">
+                                                        Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
+                                                    </span>
+                                                </strong>
+                                            </div>
+                                            @if ($order->payment->payment_status === \App\Models\Payment::STATUS_FULL_PENDING)
+                                                {{-- Full pending (DP already verified, now awaiting full payment verification) --}}
+                                                @php
+                                                    $dpAmount = round($calculatedTotal * 50 / 100, 2);
+                                                    $remainingAmount = $calculatedTotal - $dpAmount;
+                                                @endphp
+                                                <div class="payment-detail-row pt-3">
+                                                    <span class="text-muted small">DP Terverifikasi (50%)</span>
+                                                    <strong class="text-success small">
+                                                        <span class="price-convert" data-price="{{ $dpAmount }}" data-currency="IDR">
+                                                            Rp {{ number_format($dpAmount, 0, ',', '.') }}
+                                                        </span>
+                                                    </strong>
+                                                </div>
+                                                <div class="payment-detail-row border-0 pb-0">
+                                                    <span class="text-muted small">Pelunasan Menunggu Verifikasi (50%)</span>
+                                                    <strong class="text-warning small">
+                                                        <span class="price-convert" data-price="{{ $remainingAmount }}" data-currency="IDR">
+                                                            Rp {{ number_format($remainingAmount, 0, ',', '.') }}
+                                                        </span>
+                                                    </strong>
+                                                </div>
+                                            @else
+                                                {{-- DP pending verification --}}
+                                                <div class="payment-detail-row border-0 pb-0 pt-2">
+                                                    <span class="text-muted">Total DP (50%)</span>
+                                                    <h5 class="mb-0 text-warning fw-bold">
+                                                        <span class="price-convert" data-price="{{ round($calculatedTotal * 50 / 100, 2) }}" data-currency="IDR">
+                                                            Rp {{ number_format(round($calculatedTotal * 50 / 100, 2), 0, ',', '.') }}
+                                                        </span>
+                                                    </h5>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="card border-warning h-100">
+                                    <div class="card-body p-4">
+                                        <div class="text-center mb-4">
+                                            <div style="width: 70px; height: 70px; background: #fef3c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 0 0 10px rgba(245, 158, 11, 0.1);">
+                                                <i class="bi bi-hourglass-split text-warning" style="font-size:2rem;" aria-hidden="true"></i>
+                                            </div>
+                                        </div>
+                                        <h6 class="text-muted mb-3 fw-bold text-center">
+                                            <i class="bi bi-image me-2" aria-hidden="true"></i>Bukti Transfer
+                                        </h6>
+                                        @php
+                                            $pendingProofPath = null;
+                                            if ($order->payment?->payment_proof) {
+                                                $proof = $order->payment->payment_proof;
+                                                if (str_starts_with($proof, 'storage/')) {
+                                                    $pendingProofPath = asset($proof);
+                                                } elseif (str_starts_with($proof, '/')) {
+                                                    $pendingProofPath = asset('storage' . $proof);
+                                                } else {
+                                                    $pendingProofPath = asset('storage/' . $proof);
+                                                }
+                                            }
+                                        @endphp
+                                        @if ($pendingProofPath)
+                                            <div class="payment-proof-wrapper" data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                <img src="{{ $pendingProofPath }}" alt="Bukti Pembayaran"
+                                                    class="img-fluid rounded-3 shadow-sm w-100"
+                                                    style="max-height:280px;object-fit:contain;">
+                                                <div class="payment-proof-overlay">
+                                                    <i class="bi bi-zoom-in text-white fs-1" aria-hidden="true"></i>
+                                                    <p class="text-white mt-2 small">Klik untuk perbesar</p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 text-center d-flex gap-2 justify-content-center">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#paymentProofModal">
+                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
+                                                </button>
+                                                <a href="{{ $pendingProofPath }}" download="Bukti_Pembayaran_{{ $order->order_number }}.jpg" class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+                                                </a>
+                                            </div>
+                                        @else
+                                            <div class="text-center py-5">
+                                                <i class="bi bi-image text-muted" style="font-size:3rem;" aria-hidden="true"></i>
+                                                <p class="text-muted mt-3 small">Bukti tidak tersedia</p>
+                                            </div>
+                                        @endif
+                                        <hr class="my-3">
+                                        <h5 class="text-center mb-2 fw-bold">Sedang Diverifikasi</h5>
+                                        <p class="text-center text-muted small mb-0">Estimasi waktu verifikasi: 1-2 hari kerja</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    @elseif ($isPaid || (!$isDpPaid && in_array($order->status, ['confirmed', 'in_production', 'completed'])))
                         {{-- PAID atau alur produksi (bukan hanya DP) --}}
                         <div class="row g-4">
                             <div class="col-lg-7">
@@ -1315,146 +1502,9 @@
                                 </div>
                             </div>
                         @endif
-                    @elseif ($order->payment && $order->payment->payment_proof && in_array($order->payment->payment_status, [\App\Models\Payment::STATUS_PENDING, \App\Models\Payment::STATUS_DP_PAID], true))
-                        {{-- AWAITING VERIFICATION --}}
-                        <div class="row g-4">
-                            <div class="col-lg-7">
-                                <div class="alert alert-info border-0 shadow-sm mb-4">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-white rounded-circle p-3 me-3 flex-shrink-0">
-                                            <i class="bi bi-clock-history text-info fs-2" aria-hidden="true"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="mb-1 fw-bold">Menunggu Verifikasi</h5>
-                                            <p class="mb-0 small">Bukti pembayaran Anda telah diupload. Tim kami akan
-                                                memverifikasi dalam 1–2 hari kerja.</p>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                @if ($order->payment)
-                                    <div class="card border-0 bg-light mb-3">
-                                        <div class="card-body p-4">
-                                            <h6 class="text-muted mb-3 fw-bold">
-                                                <i class="bi bi-info-circle me-2" aria-hidden="true"></i>Detail Pembayaran
-                                            </h6>
-                                            <div class="payment-detail-row">
-                                                <span class="text-muted">ID Transaksi</span>
-                                                <strong
-                                                    class="text-primary">{{ $order->payment->transaction_id ?? '-' }}</strong>
-                                            </div>
-                                            <div class="payment-detail-row">
-                                                <span class="text-muted">Metode</span>
-                                                <strong>
-                                                    @if ($order->payment->payment_method === 'transfer')
-                                                        <i class="bi bi-bank2 me-1"></i>Transfer Bank
-                                                    @elseif ($order->payment->payment_method === 'credit_card')
-                                                        <i class="bi bi-credit-card me-1"></i>Kartu Kredit
-                                                    @elseif ($order->payment->payment_method === 'cash')
-                                                        <i class="bi bi-cash me-1"></i>Tunai
-                                                    @else
-                                                        {{ ucfirst($order->payment->payment_method) }}
-                                                    @endif
-                                                </strong>
-                                            </div>
-                                            <div class="payment-detail-row border-bottom">
-                                                <span class="text-muted">Total Pesanan</span>
-                                                <strong class="text-dark">
-                                                    <span class="price-convert" data-price="{{ $calculatedTotal }}" data-currency="IDR">
-                                                        Rp {{ number_format($calculatedTotal, 0, ',', '.') }}
-                                                    </span>
-                                                </strong>
-                                            </div>
-                                            @php
-                                                $dpAmountWaiting = round($calculatedTotal * 50 / 100, 2);
-                                            @endphp
-                                            <div class="payment-detail-row border-0 pb-0 pt-2">
-                                                <span class="text-muted">Total DP (50%)</span>
-                                                <h5 class="mb-0 text-warning fw-bold">
-                                                    <span class="price-convert" data-price="{{ $dpAmountWaiting }}" data-currency="IDR">
-                                                        Rp {{ number_format($dpAmountWaiting, 0, ',', '.') }}
-                                                    </span>
-                                                </h5>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="col-lg-5">
-                                <div class="card border-0 bg-light h-100">
-                                    <div class="card-body p-4">
-                                        @php
-                                            // Determine which type of payment is waiting
-                                            $isWaitingDpVerification = $order->payment->payment_status === \App\Models\Payment::STATUS_PENDING 
-                                                && $order->payment->payment_channel === \App\Models\Payment::CHANNEL_MANUAL_DP;
-                                            $isWaitingFullVerification = $order->payment->payment_status === \App\Models\Payment::STATUS_DP_PAID 
-                                                && $order->payment->payment_channel === \App\Models\Payment::CHANNEL_MANUAL_DP;
-                                        @endphp
-                                        <h6 class="text-muted mb-3 fw-bold">
-                                            <i class="bi bi-image me-2"></i>
-                                            @if ($isWaitingDpVerification)
-                                                Bukti Transfer DP
-                                            @else
-                                                Bukti Transfer Pelunasan
-                                            @endif
-                                        </h6>
-                                        @php
-                                            $waitingProofPath = null;
-                                            // Always check payment_proof for pending/awaiting verification
-                                            if ($order->payment?->payment_proof) {
-                                                $proof = $order->payment->payment_proof;
-                                                if (str_starts_with($proof, 'storage/')) {
-                                                    $waitingProofPath = asset($proof);
-                                                } elseif (str_starts_with($proof, '/')) {
-                                                    $waitingProofPath = asset('storage' . $proof);
-                                                } else {
-                                                    $waitingProofPath = asset('storage/' . $proof);
-                                                }
-                                            }
-                                        @endphp
-                                        @if ($waitingProofPath)
-                                            <div class="payment-proof-wrapper" data-bs-toggle="modal"
-                                                data-bs-target="#paymentProofModal">
-                                                <img src="{{ $waitingProofPath }}"
-                                                    alt="Bukti Pembayaran" class="img-fluid rounded-3 shadow-sm w-100"
-                                                    style="max-height:350px;object-fit:contain;">
-                                                <div class="payment-proof-overlay">
-                                                    <i class="bi bi-zoom-in text-white fs-1"></i>
-                                                    <p class="text-white mt-2 small">Klik untuk perbesar</p>
-                                                </div>
-                                            </div>
-                                            <div class="mt-3 text-center d-flex gap-2 justify-content-center">
-                                                <button type="button" class="btn btn-sm btn-outline-primary"
-                                                    data-bs-toggle="modal" data-bs-target="#paymentProofModal">
-                                                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Lihat
-                                                </button>
-                                                <a href="{{ $waitingProofPath }}"
-                                                    download="Bukti_Pembayaran_{{ $order->order_number }}.jpg"
-                                                    class="btn btn-sm btn-outline-success">
-                                                    <i class="bi bi-download me-1" aria-hidden="true"></i>Download
-                                                </a>
-                                            </div>
-                                        @else
-                                            <div class="text-center py-5">
-                                                <i class="bi bi-image text-muted" style="font-size:4rem;"
-                                                    aria-hidden="true"></i>
-                                                <p class="text-muted mt-3 mb-0">Tidak ada bukti transfer</p>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @elseif ($order->status === 'cancelled')
-                        {{-- CANCELLED --}}
-                        <div class="alert alert-secondary border-0 text-center py-4">
-                            <i class="bi bi-x-circle text-secondary" style="font-size:4rem;" aria-hidden="true"></i>
-                            <h5 class="mt-3 mb-1">Pesanan Dibatalkan</h5>
-                            <p class="text-muted mb-0">Pesanan ini telah dibatalkan.</p>
-                        </div>
                     @else
-                        {{-- PENDING PAYMENT --}}
+                        {{-- PENDING PAYMENT (NO PROOF YET) --}}
                         <div class="row g-4">
                             <div class="col-lg-7">
                                 <div class="alert alert-warning border-0 shadow-sm mb-4">
@@ -1541,7 +1591,7 @@
                             <div class="modal-footer bg-light d-flex justify-content-between">
                                 <small class="text-muted">
                                     <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
-                                    Upload: {{ $order->payment->created_at->format('d M Y, H:i') }}
+                                    Upload: {{ $order->payment?->created_at?->format('d M Y, H:i') ?? '-' }}
                                 </small>
                                 <div>
                                     <a href="{{ $modalProofPath }}"
@@ -2186,12 +2236,12 @@
                     $hasShipping = $shippingLogs->count() > 0;
                     $currentStage = $shippingLogs->first();
                     $shippingProgress = match (true) {
-                        $hasShipping && $currentStage->stage === 'delivered' => 100,
-                        $hasShipping && $currentStage->stage === 'out_for_delivery' => 80,
-                        $hasShipping && $currentStage->stage === 'in_transit' => 60,
-                        $hasShipping && $currentStage->stage === 'handover' => 40,
-                        $hasShipping && $currentStage->stage === 'loading' => 20,
-                        $hasShipping && $currentStage->stage === 'issue' => 50,
+                        $hasShipping && $currentStage?->stage === 'delivered' => 100,
+                        $hasShipping && $currentStage?->stage === 'out_for_delivery' => 80,
+                        $hasShipping && $currentStage?->stage === 'in_transit' => 60,
+                        $hasShipping && $currentStage?->stage === 'handover' => 40,
+                        $hasShipping && $currentStage?->stage === 'loading' => 20,
+                        $hasShipping && $currentStage?->stage === 'issue' => 50,
                         default => 0,
                     };
                 @endphp

@@ -53,7 +53,7 @@
                                     name="stage" 
                                     label="Tahap Produksi"
                                     type="select"
-                                    :options="collect(['', '-- Pilih Tahap --'])->union(collect(\App\Models\ProductionProcess::STAGE_LABELS)->mapWithKeys(function($label, $val) { return [$val => $label]; }))"
+                                    :options="['' => '-- Pilih Tahap --'] + \App\Models\ProductionProcess::STAGE_LABELS"
                                     :value="old('stage')"
                                     :errors="$errors"
                                     required />

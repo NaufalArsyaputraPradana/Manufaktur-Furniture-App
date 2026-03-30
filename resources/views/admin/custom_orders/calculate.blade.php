@@ -116,9 +116,9 @@
                                     <label for="grade" class="form-label fw-bold small text-secondary">Grade Kayu & Harga per m³</label>
                                     <select name="grade" id="grade" class="form-select border-success-subtle" required onchange="calculateAll()">
                                         <option value="">-- Pilih Kualitas Kayu --</option>
-                                        <option value="A" data-price="12000000" {{ ($existingBom['grade'] ?? '') == 'A' ? 'selected' : '' }}>Grade A (Premium - Rp 12jt/m³)</option>
-                                        <option value="B" data-price="10000000" {{ ($existingBom['grade'] ?? '') == 'B' ? 'selected' : '' }}>Grade B (Standar - Rp 10jt/m³)</option>
-                                        <option value="C" data-price="8000000" {{ ($existingBom['grade'] ?? '') == 'C' ? 'selected' : '' }}>Grade C (Ekonomis - Rp 8jt/m³)</option>
+                                        <option value="A" data-price="50000000" {{ ($existingBom['grade'] ?? '') == 'A' ? 'selected' : '' }}>Grade A (Premium - Rp 50jt/m³)</option>
+                                        <option value="B" data-price="30000000" {{ ($existingBom['grade'] ?? '') == 'B' ? 'selected' : '' }}>Grade B (Standar - Rp 30jt/m³)</option>
+                                        <option value="C" data-price="12000000" {{ ($existingBom['grade'] ?? '') == 'C' ? 'selected' : '' }}>Grade C (Ekonomis - Rp 12jt/m³)</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">

@@ -129,7 +129,7 @@ class CheckoutController extends Controller
 
             DB::commit();
 
-            return redirect()->route('customer.orders.show', $order)
+            return redirect()->route('customer.orders.payment', $order)
                 ->with('success', "🎉 Pesanan berhasil dibuat! Nomor order Anda: {$order->order_number}");
 
         } catch (\Exception $e) {

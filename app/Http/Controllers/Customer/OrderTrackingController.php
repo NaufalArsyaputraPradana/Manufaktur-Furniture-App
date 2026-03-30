@@ -43,10 +43,10 @@ class OrderTrackingController extends Controller
         $order->load([
             'user:id,name,email,phone',
             'orderDetails.product.category:id,name',
-            'payment:id,order_id,payment_status,amount_paid,payment_channel',
+            'payment:id,order_id,payment_status,payment_method,amount_paid,amount,expected_dp_amount,payment_channel,transaction_id,payment_date,payment_proof,payment_proof_dp,payment_proof_full',
             'shippingLogs:id,order_id,stage,status,notes,created_at',
             'productionProcesses' => fn ($q) => $q->with([
-                'orderDetails:id,order_id,product_id,product_name',
+                'orderDetail:id,order_id,product_id,product_name',
                 'assignedTo:id,name',
                 'logs' => fn ($q) => $q->with(['user:id,name'])->orderByDesc('created_at'),
             ])->orderBy('created_at'),

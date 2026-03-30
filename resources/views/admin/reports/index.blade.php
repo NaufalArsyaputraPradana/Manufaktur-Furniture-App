@@ -217,10 +217,13 @@
         </div>
 
         <!-- Table -->
+        @php
+            $selectedMonth = DateTime::createFromFormat('!m', $month)->format('F');
+        @endphp
         <div class="card shadow-sm border-0 rounded-3">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-2 text-primary"></i>Detail Pesanan Periode
-                    {{ DateTime::createFromFormat('!m', $month)->format('F') }} {{ $year }}</h6>
+                    {{ $selectedMonth }} {{ $year }}</h6>
                 <button class="btn btn-sm btn-outline-success"><i class="bi bi-download me-1"></i>Ekspor CSV</button>
             </div>
             <div class="table-responsive">
@@ -285,7 +288,13 @@
                 const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
                     'September', 'Oktober', 'November', 'Desember'
                 ];
-                const chartData = @json(array_values($chartData));
+                const chartDataObj = @json($chartData);
+                
+                // Convert object to sequential array
+                const chartData = [];
+                for (let i = 1; i <= 12; i++) {
+                    chartData.push(chartDataObj[i] || 0);
+                }
 
                 new Chart(ctx, {
                     type: 'line',

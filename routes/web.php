@@ -173,7 +173,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Reports
     Route::prefix('reports')->name('reports.')->controller(ReportController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard');
-        Route::get('/', 'listReports')->name('index');
+        Route::get('/', 'index')->name('index');
+        
+        // Legacy financial reports routes
+        Route::get('/sales', 'sales')->name('sales');
+        Route::get('/production', 'production')->name('production');
+        Route::get('/inventory', 'inventory')->name('inventory');
+        Route::get('/profitability', 'profitability')->name('profitability');
+        
+        // Report management routes
+        Route::get('/list', 'listReports')->name('list');
         Route::get('/create', 'create')->name('create');
         Route::post('/', 'store')->name('store');
         Route::get('/{report}', 'show')->name('show');
@@ -181,12 +190,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::patch('/{report}', 'update')->name('update');
         Route::delete('/{report}', 'destroy')->name('destroy');
         Route::get('/{report}/export', 'exportReport')->name('export');
-        
-        // Legacy routes - keep for backward compatibility
-        Route::get('/sales', 'sales')->name('sales');
-        Route::get('/production', 'production')->name('production');
-        Route::get('/inventory', 'inventory')->name('inventory');
-        Route::get('/profitability', 'profitability')->name('profitability');
         Route::post('/export-legacy', 'export')->name('export-legacy');
     });
 

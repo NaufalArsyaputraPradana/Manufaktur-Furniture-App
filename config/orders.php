@@ -7,7 +7,7 @@ return [
     | Down payment (DP) — persentase dari total pesanan untuk pembayaran manual
     |--------------------------------------------------------------------------
     */
-    'down_payment_percent' => (float) env('ORDER_DP_PERCENT', 30),
+    'down_payment_percent' => (float) env('ORDER_DP_PERCENT', 50),
 
     /*
     |--------------------------------------------------------------------------

@@ -39,7 +39,7 @@ class ProductionProcessController extends Controller
         $order->load(['user:id,name,email', 'payment:id,order_id,payment_status', 'orderDetails:id,order_id,product_name,quantity']);
 
         $processes = ProductionProcess::where('order_id', $order->id)
-            ->with(['assignedTo:id,name', 'logs:id,production_process_id,status,created_at,created_by'])
+            ->with(['assignedTo:id,name', 'logs:id,production_process_id,action,created_at,user_id'])
             ->orderBy('created_at')
             ->get();
 

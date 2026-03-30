@@ -374,6 +374,10 @@ class ReportController extends Controller
      */
     public function listReports(Request $request): View
     {
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
+
+        // Get reports with filters
         $query = Report::query();
 
         if ($request->has('type') && $request->type) {
@@ -384,9 +388,46 @@ class ReportController extends Controller
             $query->where('status', $request->status);
         }
 
-        $reports = $query->latest()->paginate(15)->withQueryString();
+        // For backward compatibility, use 'orders' key
+        $orders = $query->latest()->paginate(15)->withQueryString();
+        
+        // Get financial data for the selected month/year
+        $ordersQuery = Order::whereMonth('created_at', $month)->whereYear('created_at', $year);
 
-        return view('admin.reports.index', compact('reports'));
+        $jumlahPesanan = (clone $ordersQuery)->count();
+        $totalTransaksi = (clone $ordersQuery)->sum('total');
+
+        $pembayaranSukses = (clone $ordersQuery)->whereHas('payment', fn($q) => $q->where('payment_status', 'paid'))->count();
+        $pembayaranGagal = (clone $ordersQuery)->whereHas('payment', fn($q) => $q->where('payment_status', 'failed'))->count();
+        $belumDibayar = $jumlahPesanan - $pembayaranSukses - $pembayaranGagal;
+
+        // Get monthly revenue data
+        $monthlyRevenue = Order::select(
+            DB::raw('MONTH(created_at) as bulan'),
+            DB::raw('SUM(total) as total')
+        )
+            ->whereYear('created_at', $year)
+            ->where('status', '!=', 'cancelled')
+            ->groupBy('bulan')
+            ->pluck('total', 'bulan')
+            ->toArray();
+
+        $chartData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $chartData[$i] = $monthlyRevenue[$i] ?? 0;
+        }
+
+        return view('admin.reports.index', compact(
+            'orders',
+            'month',
+            'year',
+            'totalTransaksi',
+            'jumlahPesanan',
+            'pembayaranSukses',
+            'pembayaranGagal',
+            'belumDibayar',
+            'chartData'
+        ));
     }
 
     /**

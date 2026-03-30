@@ -46,7 +46,7 @@
                                 name="user_id" 
                                 label="Pelanggan"
                                 type="select"
-                                :options="collect(['', '-- Pilih Pelanggan --'])->union($customers->pluck('name', 'id'))"
+                                :options="collect(['' => '-- Pilih Pelanggan --'])->union($customers->pluck('name', 'id'))"
                                 :value="old('user_id')"
                                 :errors="$errors"
                                 required />
@@ -205,10 +205,37 @@
                                     <div class="col-md-12">
                                         <label for="custom_image_INDEX" class="form-label small">Upload Gambar Desain
                                             (Opsional)</label>
-                                        <input type="file" class="form-control" id="custom_image_INDEX"
+                                        <input type="file" class="form-control design-image-input" id="custom_image_INDEX"
                                             name="products[INDEX][customizations][design_image]"
-                                            accept="image/png, image/jpeg, image/jpg, image/webp">
+                                            accept="image/png, image/jpeg, image/jpg, image/webp"
+                                            onchange="previewImage(this)">
                                         <small class="text-muted">Format: JPG, PNG, WEBP. Max 2MB.</small>
+                                        
+                                        <!-- Image Preview -->
+                                        <div class="mt-3 design-image-preview-INDEX" style="display: none;">
+                                            <div class="card border-0 bg-light">
+                                                <div class="card-body p-3">
+                                                    <div class="position-relative d-inline-block">
+                                                        <img id="preview_image_INDEX" src="" alt="Preview Gambar" 
+                                                            class="img-fluid rounded" style="max-width: 200px; max-height: 200px; object-fit: contain;">
+                                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 remove-preview"
+                                                            onclick="removeImagePreview(this, INDEX)" data-index="INDEX">
+                                                            <i class="bi bi-trash me-1"></i>Hapus
+                                                        </button>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <small class="text-muted d-block">
+                                                            <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                                            <span class="image-file-name">Nama file</span>
+                                                        </small>
+                                                        <small class="text-muted d-block">
+                                                            <i class="bi bi-file-earmark-image me-1"></i>
+                                                            <span class="image-file-size">0 KB</span>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -257,6 +284,17 @@
             });
             clone.querySelectorAll('[aria-controls*="INDEX"]').forEach(el => {
                 el.setAttribute('aria-controls', el.getAttribute('aria-controls').replace(/INDEX/g, itemCounter));
+            });
+
+            // Replace INDEX in class names for preview container
+            clone.querySelectorAll('[class*="INDEX"]').forEach(el => {
+                const newClass = el.className.replace(/INDEX/g, itemCounter);
+                el.className = newClass;
+            });
+
+            // Replace INDEX in data attributes
+            clone.querySelectorAll('[data-index*="INDEX"]').forEach(el => {
+                el.setAttribute('data-index', el.getAttribute('data-index').replace(/INDEX/g, itemCounter));
             });
 
             clone.querySelector('.item-index').textContent = itemCounter + 1;
@@ -311,6 +349,66 @@
 
             // Tanpa Pajak, Total = Subtotal
             document.getElementById('summaryTotal').textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(total);
+        }
+
+        function previewImage(input) {
+            const row = input.closest('.item-row');
+            const customIndex = input.id.replace('custom_image_', '');
+            const previewContainer = row.querySelector('.design-image-preview-' + customIndex);
+            const previewImage = row.querySelector('#preview_image_' + customIndex);
+            const fileName = row.querySelector('.image-file-name');
+            const fileSize = row.querySelector('.image-file-size');
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+
+                // Validate file size (2MB = 2097152 bytes)
+                if (file.size > 2097152) {
+                    alert('Ukuran file terlalu besar! Maksimal 2MB.');
+                    input.value = ''; // Clear input
+                    previewContainer.style.display = 'none';
+                    return;
+                }
+
+                // Validate file type
+                const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Format file tidak didukung! Gunakan JPG, PNG, atau WEBP.');
+                    input.value = ''; // Clear input
+                    previewContainer.style.display = 'none';
+                    return;
+                }
+
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+
+                    // Display file info
+                    fileName.textContent = file.name;
+                    const fileSizeKB = (file.size / 1024).toFixed(2);
+                    fileSize.textContent = fileSizeKB + ' KB';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+
+        function removeImagePreview(btn, index) {
+            const row = btn.closest('.item-row');
+            const customIndex = row.querySelector('.design-image-preview-' + index) ? index : btn.getAttribute('data-index');
+            const input = row.querySelector('#custom_image_' + customIndex);
+            const previewContainer = row.querySelector('.design-image-preview-' + customIndex);
+
+            // Clear file input
+            input.value = '';
+            
+            // Hide preview
+            if (previewContainer) {
+                previewContainer.style.display = 'none';
+            }
         }
 
         // Initialize first item on load

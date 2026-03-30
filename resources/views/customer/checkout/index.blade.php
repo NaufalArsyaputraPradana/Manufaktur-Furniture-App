@@ -776,7 +776,7 @@
                             confirmButtonColor: '#667eea'
                         });
                         phone?.focus();
-                        return;
+                        return false;
                     }
 
                     // Validate Phone Format (basic validation)
@@ -790,7 +790,7 @@
                             confirmButtonColor: '#667eea'
                         });
                         phone?.focus();
-                        return;
+                        return false;
                     }
 
                     // Validate Shipping Address
@@ -803,32 +803,27 @@
                             confirmButtonColor: '#667eea'
                         });
                         shippingAddress?.focus();
-                        return;
+                        return false;
                     }
 
-                    if (shippingAddress.value.trim().length < 20) {
-                        e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Alamat Terlalu Singkat',
-                            text: 'Alamat pengiriman harus minimal 20 karakter',
-                            confirmButtonColor: '#667eea'
-                        });
-                        shippingAddress.focus();
-                        return;
-                    }
-
-                    // All validations passed
+                    // All validations passed - disable button and show loading, then let form submit naturally
                     btnSubmit.disabled = true;
                     btnSubmit.innerHTML =
                         '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Memproses...';
+                    
+                    // Show loading dialog without blocking form submission
                     Swal.fire({
                         title: 'Memproses Pesanan',
                         html: 'Mohon tunggu...',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
+                        showConfirmButton: false,
                         didOpen: () => Swal.showLoading()
                     });
+
+                    // Form will submit naturally - don't prevent it
+                    // Browser will show loading dialog while processing
+                    return true;
                 });
             }
 
