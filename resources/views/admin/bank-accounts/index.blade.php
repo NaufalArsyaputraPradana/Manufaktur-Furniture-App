@@ -2,6 +2,10 @@
 
 @section('title', 'Manajemen Rekening Bank')
 
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endpush
+
 @push('styles')
     <style>
         :root {
@@ -63,24 +67,10 @@
             </div>
         </div>
 
-        {{-- Alert Messages --}}
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-                <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
-                <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
         {{-- Stats Section --}}
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-3 border-start border-success border-4">
+                <div class="card shadow-sm rounded-3 border-start border-success border-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -97,7 +87,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-3 border-start border-warning border-4">
+                <div class="card shadow-sm rounded-3 border-start border-warning border-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -161,17 +151,15 @@
 
                                         <div class="d-flex gap-2">
                                             <a href="{{ route('admin.bank-accounts.edit', $bank) }}"
-                                                class="btn btn-sm btn-primary rounded-2 flex-grow-1">
+                                                class="btn btn-primary rounded-2 flex-grow-1">
                                                 <i class="bi bi-pencil me-1"></i>Edit
                                             </a>
-                                            <form action="{{ route('admin.bank-accounts.destroy', $bank) }}" method="POST"
-                                                class="d-inline flex-grow-1" onsubmit="return confirm('Yakin ingin menghapus rekening ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger rounded-2 w-100">
-                                                    <i class="bi bi-trash me-1"></i>Hapus
-                                                </button>
-                                            </form>
+                                            <button type="button" class="btn btn-danger rounded-2 flex-grow-1 delete-bank"
+                                                data-bank-id="{{ $bank->id }}"
+                                                data-bank-name="{{ $bank->bank_name }}"
+                                                data-bank-account="{{ $bank->account_number }}">
+                                                <i class="bi bi-trash me-1"></i>Hapus
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -198,3 +186,63 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        // Handle delete button clicks
+        document.querySelectorAll('.delete-bank').forEach(button => {
+            button.addEventListener('click', function() {
+                const bankId = this.dataset.bankId;
+                const bankName = this.dataset.bankName;
+                const bankAccount = this.dataset.bankAccount;
+
+                Swal.fire({
+                    title: 'Hapus Rekening?',
+                    html: `<strong>${bankName}</strong><br><small class="text-muted">${bankAccount}</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-trash me-2"></i>Hapus',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    focusCancel: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Create and submit delete form
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `/admin/bank-accounts/${bankId}`;
+                        form.innerHTML = `
+                            @csrf
+                            @method('DELETE')
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        // Show success/error messages with SweetAlert
+        @if (session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false,
+            });
+        @endif
+
+        @if (session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: '{{ session('error') }}',
+                confirmButtonText: 'OK'
+            });
+        @endif
+    </script>
+@endpush

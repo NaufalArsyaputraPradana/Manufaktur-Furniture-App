@@ -19,7 +19,6 @@ return new class extends Migration {
             $table->string('location', 255)->nullable();
             $table->timestamps();
             $table->softDeletes();
-            $table->index('user_id');
             $table->index(['start_datetime', 'end_datetime']);
         });
     }

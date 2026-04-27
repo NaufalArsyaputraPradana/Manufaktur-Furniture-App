@@ -46,75 +46,67 @@
                             <div class="row g-3">
                                 <!-- Nama & Email -->
                                 <div class="col-md-6">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="name" 
                                         label="Nama Lengkap"
+                                        type="text"
                                         placeholder="Contoh: John Doe"
-                                        :value="old('name')"
-                                        :errors="$errors"
+                                        value="{{ old('name') }}"
                                         required />
                                 </div>
                                 <div class="col-md-6">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="email" 
                                         label="Alamat Email"
                                         type="email"
                                         placeholder="email@example.com"
-                                        :value="old('email')"
-                                        :errors="$errors"
+                                        value="{{ old('email') }}"
                                         required />
                                 </div>
 
                                 <!-- Password -->
                                 <div class="col-md-6">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="password" 
                                         label="Password"
                                         type="password"
                                         placeholder="Minimal 8 karakter"
-                                        :errors="$errors"
                                         required />
                                 </div>
                                 <div class="col-md-6">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="password_confirmation" 
                                         label="Konfirmasi Password"
                                         type="password"
                                         placeholder="Ulangi password"
-                                        :errors="$errors"
                                         required />
                                 </div>
 
                                 <!-- Kontak & Role -->
                                 <div class="col-md-6">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="phone" 
                                         label="No. Telepon"
                                         type="tel"
                                         placeholder="0812..."
-                                        :value="old('phone')"
-                                        :errors="$errors" />
+                                        value="{{ old('phone') }}" />
                                 </div>
                                 <div class="col-md-6">
-                                    <x-form-input 
+                                    <x-form.select 
                                         name="role_id" 
                                         label="Role"
-                                        type="select"
                                         :options="$roles->pluck('name', 'id')"
-                                        :value="old('role_id')"
-                                        :errors="$errors"
+                                        value="{{ old('role_id') }}"
                                         required />
                                 </div>
 
                                 <!-- Alamat -->
                                 <div class="col-12">
-                                    <x-form-input 
+                                    <x-form.textarea 
                                         name="address" 
                                         label="Alamat Lengkap"
-                                        type="textarea"
                                         placeholder="Alamat tempat tinggal..."
-                                        :value="old('address')"
-                                        :errors="$errors"
+                                        value="{{ old('address') }}"
                                         rows="3" />
                                 </div>
 

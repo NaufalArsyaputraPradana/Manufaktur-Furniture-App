@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderDetail;
-use App\Models\Product;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
@@ -13,53 +13,28 @@ use Illuminate\View\View;
 
 class CheckoutController extends Controller
 {
+    public function __construct(private CartService $cartService)
+    {
+    }
+
     /**
      * Menampilkan halaman checkout.
      */
     public function index(): View|RedirectResponse
     {
-        $cart = session()->get('cart', []);
+        $cart = $this->cartService->getCart();
 
         if (empty($cart)) {
             return redirect()->route('customer.cart.index')
                 ->with('error', 'Keranjang belanja Anda masih kosong.');
         }
 
-        // Enrich cart dengan data product dari database
-        $enrichedCart = [];
-        foreach ($cart as $itemKey => $item) {
-            $enrichedCart[$itemKey] = $item;
-            
-            // Ambil product dari database untuk mendapat images dan description terbaru
-            if (!empty($item['product_id'])) {
-                $product = Product::find($item['product_id']);
-                if ($product) {
-                    // Ambil images
-                    if ($product->images) {
-                        $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
-                        if (!empty($images) && isset($images[0])) {
-                            $enrichedCart[$itemKey]['image'] = $images[0];
-                        }
-                    }
-                    
-                    // Ambil description
-                    if ($product->description) {
-                        $enrichedCart[$itemKey]['description'] = $product->description;
-                    }
-                    
-                    // Ambil dimensions
-                    if ($product->dimensions) {
-                        $enrichedCart[$itemKey]['dimensions'] = $product->dimensions;
-                    }
-                }
-            }
-        }
-
-        $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
+        // Use CartService for enrichment (consistent with CartController)
+        $enrichedCart = $this->cartService->getEnrichedCart();
+        $subtotal = $this->cartService->getTotal();
         $total = $subtotal;
 
-        return view('customer.checkout.index', compact('enrichedCart', 'subtotal', 'total'))
-            ->with('cart', $enrichedCart);
+        return view('customer.checkout.index', compact('enrichedCart', 'subtotal', 'total'));
     }
 
     /**
@@ -83,7 +58,19 @@ class CheckoutController extends Controller
         DB::beginTransaction();
 
         try {
-            $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
+            $productIds = collect($cart)->pluck('product_id')->filter()->unique()->all();
+            $dbProducts = \App\Models\Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+            $subtotal = 0;
+            foreach ($cart as &$item) {
+                $dbProduct = $dbProducts[$item['product_id']] ?? null;
+                if ($dbProduct) {
+                    // Use database price for standard products; custom dimensions may keep calculated price
+                    $item['price'] = $dbProduct->base_price;
+                }
+                $subtotal += $item['price'] * $item['quantity'];
+            }
+            unset($item);
 
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),

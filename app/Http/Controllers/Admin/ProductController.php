@@ -3,46 +3,33 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Product;
 use App\Http\Requests\Admin\StoreProductRequest;
 use App\Http\Requests\Admin\UpdateProductRequest;
+use App\Services\ProductService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class ProductController extends Controller
 {
+    public function __construct(private ProductService $productService)
+    {
+    }
+
     /**
      * Display a listing of the resource.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = Product::with('category:id,name')
-            ->select('id', 'category_id', 'sku', 'name', 'base_price', 'is_active', 'images', 'created_at');
+        $products = $this->productService->getProductsWithFilters(
+            search: $request->get('search'),
+            categoryId: $request->get('category_id'),
+            isActive: $request->filled('is_active') ? (bool) $request->get('is_active') : null,
+            perPage: 10
+        );
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-
-        if ($request->filled('is_active')) {
-            $query->where('is_active', $request->is_active);
-        }
-
-        $products = $query->latest()->paginate(10)->withQueryString();
-        $categories = \Illuminate\Support\Facades\Cache::remember('admin.categories.active', 3600, fn() => Category::where('is_active', true)->orderBy('name')->get());
+        $categories = $this->productService->getActiveCategories();
 
         return view('admin.products.index', compact('products', 'categories'));
     }
@@ -50,9 +37,9 @@ class ProductController extends Controller
     /**
      * Form tambah produk.
      */
-    public function create()
+    public function create(): View
     {
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = $this->productService->getActiveCategories();
 
         return view('admin.products.create', compact('categories'));
     }
@@ -60,35 +47,18 @@ class ProductController extends Controller
     /**
      * Simpan produk baru.
      */
-    public function store(StoreProductRequest $request)
+    public function store(StoreProductRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
-        $savedImages = [];
-
         try {
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $file) {
-                    $savedImages[] = $file->store('products', 'public');
-                }
-            }
+            $validated = $request->validated();
+            $images = $request->hasFile('images') ? $request->file('images') : null;
 
-            $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(4);
-            $validated['images'] = !empty($savedImages) ? $savedImages : null;
-            $validated['is_customizable'] = $request->boolean('is_customizable');
-            $validated['is_active'] = $request->boolean('is_active');
-
-            Product::create($validated);
+            $product = $this->productService->createProduct($validated, $images);
 
             return redirect()->route('admin.products.index')
-                ->with('success', "Produk '{$validated['name']}' berhasil ditambahkan!");
+                ->with('success', "Produk '{$product->name}' berhasil ditambahkan!");
 
         } catch (\Exception $e) {
-            foreach ($savedImages as $img) {
-                if (Storage::disk('public')->exists($img)) {
-                    Storage::disk('public')->delete($img);
-                }
-            }
-
             return back()->withInput()->with('error', 'Gagal menambahkan produk: ' . $e->getMessage());
         }
     }
@@ -96,7 +66,7 @@ class ProductController extends Controller
     /**
      * Detail produk.
      */
-    public function show(Product $product)
+    public function show(Product $product): View
     {
         $product->load('category');
 
@@ -106,9 +76,9 @@ class ProductController extends Controller
     /**
      * Form edit produk.
      */
-    public function edit(Product $product)
+    public function edit(Product $product): View
     {
-        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        $categories = $this->productService->getActiveCategories();
 
         return view('admin.products.edit', compact('product', 'categories'));
     }
@@ -116,37 +86,13 @@ class ProductController extends Controller
     /**
      * Update produk.
      */
-    public function update(UpdateProductRequest $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
-        $validated = $request->validated();
-
         try {
-            $currentImages = $product->images ?? [];
+            $validated = $request->validated();
+            $newImages = $request->hasFile('images') ? $request->file('images') : null;
 
-            if ($request->hasFile('images')) {
-                foreach ($currentImages as $oldImg) {
-                    if (Storage::disk('public')->exists($oldImg)) {
-                        Storage::disk('public')->delete($oldImg);
-                    }
-                }
-
-                $newImages = [];
-                foreach ($request->file('images') as $file) {
-                    $newImages[] = $file->store('products', 'public');
-                }
-                $validated['images'] = $newImages;
-            } else {
-                $validated['images'] = $currentImages;
-            }
-
-            if ($product->name !== $validated['name']) {
-                $validated['slug'] = Str::slug($validated['name']) . '-' . Str::random(4);
-            }
-
-            $validated['is_customizable'] = $request->boolean('is_customizable');
-            $validated['is_active'] = $request->boolean('is_active');
-
-            $product->update($validated);
+            $this->productService->updateProduct($product, $validated, $newImages);
 
             return redirect()->route('admin.products.index')
                 ->with('success', 'Produk berhasil diperbarui!');
@@ -159,22 +105,14 @@ class ProductController extends Controller
     /**
      * Hapus produk.
      */
-    public function destroy(Product $product)
+    public function destroy(Product $product): RedirectResponse
     {
         if ($product->orderDetails()->exists()) {
             return back()->with('error', 'Tidak bisa menghapus produk yang sudah memiliki riwayat pesanan!');
         }
 
         try {
-            $imagesToDelete = $product->images ?? [];
-
-            $product->delete();
-
-            foreach ($imagesToDelete as $img) {
-                if (Storage::disk('public')->exists($img)) {
-                    Storage::disk('public')->delete($img);
-                }
-            }
+            $this->productService->deleteProduct($product);
 
             return redirect()->route('admin.products.index')
                 ->with('success', 'Produk berhasil dihapus!');

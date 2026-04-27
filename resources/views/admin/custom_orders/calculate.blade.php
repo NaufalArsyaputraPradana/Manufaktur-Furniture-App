@@ -17,11 +17,11 @@
         <!-- Header -->
         <div class="d-flex align-items-center justify-content-between mb-4">
             <div>
-                <h3 class="fw-bold mb-1">Kalkulator Harga Custom</h3>
+                <h3 class="fw-bold mb-1">Kalkulator Harga</h3>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.custom-orders.index') }}" class="text-decoration-none">Order Custom</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Hitung BOM</li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.custom-orders.index') }}" class="text-decoration-none">Kubikasi</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Hitung Harga</li>
                     </ol>
                 </nav>
             </div>
@@ -30,21 +30,30 @@
             </a>
         </div>
 
-        @if ($errors->any())
-            <div class="alert alert-danger mb-4 shadow-sm border-0 border-start border-4 border-danger" role="alert">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
-                    <div>
-                        <h6 class="fw-bold mb-1">Perhatian!</h6>
-                        <ul class="mb-0 small">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
+        @php
+            $tabUrlCalculate = route('admin.custom-orders.calculate', ['orderDetail' => $orderDetail, 'tab' => 'calculate']);
+            $tabUrlHistory = route('admin.custom-orders.calculate', ['orderDetail' => $orderDetail, 'tab' => 'history']);
+            $currentTab = $tab ?? 'calculate';
+        @endphp
+
+        <div class="card shadow-sm border-0 mb-4 rounded-3">
+            <div class="card-body p-2">
+                <ul class="nav nav-pills nav-fill gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link rounded-3 {{ $currentTab === 'calculate' ? 'active bg-primary' : 'text-secondary' }}"
+                            href="{{ $tabUrlCalculate }}">
+                            <i class="bi bi-calculator me-1"></i>Perhitungan BOM
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded-3 {{ $currentTab === 'history' ? 'active bg-primary' : 'text-secondary' }}"
+                            href="{{ $tabUrlHistory }}">
+                            <i class="bi bi-clock-history me-1"></i>Riwayat Perhitungan
+                        </a>
+                    </li>
+                </ul>
             </div>
-        @endif
+        </div>
 
         <div class="row g-4">
             <!-- Sidebar: Detail Permintaan -->
@@ -97,8 +106,65 @@
                 </div>
             </div>
 
-            <!-- Main Area: Calculator -->
+            <!-- Main Area: Calculator atau Riwayat -->
             <div class="col-lg-8">
+                @if (($tab ?? 'calculate') === 'history')
+                    <div class="card border-0 shadow-sm rounded-3 mb-4">
+                        <div class="card-header bg-white py-3 border-bottom">
+                            <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-clock-history me-2"></i>Riwayat Perhitungan (arsip BOM)</h6>
+                            <small class="text-muted">Versi perhitungan sebelumnya disimpan otomatis saat Anda menyimpan perhitungan baru.</small>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (empty($bomHistory))
+                                <div class="text-center text-muted py-5 px-4">
+                                    <i class="bi bi-inbox display-4 d-block mb-3 opacity-50"></i>
+                                    <p class="mb-0">Belum ada riwayat. Riwayat akan muncul setelah Anda mengubah perhitungan dan menyimpan lagi.</p>
+                                </div>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="bg-light">
+                                            <tr>
+                                                <th class="ps-4 py-3">Diarsipkan</th>
+                                                <th>Oleh</th>
+                                                <th>Grade</th>
+                                                <th class="text-end">HPP</th>
+                                                <th class="text-end">Harga / unit (snapshot)</th>
+                                                <th class="text-end pe-4">Subtotal (snapshot)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($bomHistory as $entry)
+                                                @php
+                                                    $bom = $entry['bom_data'] ?? [];
+                                                    $uid = $entry['archived_by'] ?? null;
+                                                    $archName = $uid && isset($historyUserNames[$uid]) ? $historyUserNames[$uid] : '—';
+                                                    $archDate = $entry['archived_at'] ?? null;
+                                                    $archLabel = $archDate ? \Carbon\Carbon::parse($archDate)->format('d M Y H:i') : '—';
+                                                @endphp
+                                                <tr>
+                                                    <td class="ps-4"><small>{{ $archLabel }}</small></td>
+                                                    <td class="small">{{ $archName }}</td>
+                                                    <td><span class="badge bg-secondary">{{ $bom['grade'] ?? '—' }}</span></td>
+                                                    <td class="text-end small">Rp {{ number_format($bom['hpp'] ?? 0, 0, ',', '.') }}</td>
+                                                    <td class="text-end fw-bold">Rp {{ number_format($entry['unit_price_snapshot'] ?? 0, 0, ',', '.') }}</td>
+                                                    <td class="text-end pe-4">
+                                                        Rp {{ number_format($entry['subtotal_snapshot'] ?? 0, 0, ',', '.') }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ $tabUrlCalculate }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-calculator me-1"></i>Kembali ke perhitungan
+                        </a>
+                    </div>
+                @else
                 <form action="{{ route('admin.custom-orders.store', $orderDetail->id) }}" method="POST" id="calculatorForm">
                     @csrf
 
@@ -116,9 +182,11 @@
                                     <label for="grade" class="form-label fw-bold small text-secondary">Grade Kayu & Harga per m³</label>
                                     <select name="grade" id="grade" class="form-select border-success-subtle" required onchange="calculateAll()">
                                         <option value="">-- Pilih Kualitas Kayu --</option>
-                                        <option value="A" data-price="50000000" {{ ($existingBom['grade'] ?? '') == 'A' ? 'selected' : '' }}>Grade A (Premium - Rp 50jt/m³)</option>
-                                        <option value="B" data-price="30000000" {{ ($existingBom['grade'] ?? '') == 'B' ? 'selected' : '' }}>Grade B (Standar - Rp 30jt/m³)</option>
-                                        <option value="C" data-price="12000000" {{ ($existingBom['grade'] ?? '') == 'C' ? 'selected' : '' }}>Grade C (Ekonomis - Rp 12jt/m³)</option>
+                                        @foreach($woodPrices as $grade => $price)
+                                            <option value="{{ $grade }}" data-price="{{ $price }}" {{ ($existingBom['grade'] ?? '') == $grade ? 'selected' : '' }}>
+                                                Grade {{ $grade }} (Rp {{ number_format($price, 0, ',', '.') }}/m³)
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -214,7 +282,7 @@
                     </div>
 
                     <!-- Section 3: Profit & Final Price -->
-                    <div class="card border-0 shadow-lg rounded-3 mb-4 bg-primary bg-opacity-10 border-start border-4 border-primary">
+                    <div class="card shadow-lg rounded-3 mb-4 bg-primary bg-opacity-10 border-start border-4 border-primary">
                         <div class="card-body p-4">
                             <div class="row align-items-center">
                                 <div class="col-md-5">
@@ -243,6 +311,7 @@
                         </button>
                     </div>
                 </form>
+                @endif
             </div>
         </div>
     </div>
@@ -271,6 +340,7 @@
 @endsection
 
 @push('scripts')
+    @if (($tab ?? 'calculate') === 'calculate')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let rowIndex = 0;
@@ -401,4 +471,5 @@
             }
         });
     </script>
+    @endif
 @endpush

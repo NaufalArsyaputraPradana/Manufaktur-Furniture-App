@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,10 +15,25 @@ use Illuminate\View\View;
 class CustomOrderController extends Controller
 {
     /**
+     * Single source of truth untuk harga kayu per grade.
+     */
+    private function getWoodPrices(): array
+    {
+        return [
+            'A' => 50000000, // Rp 50jt/m3
+            'B' => 30000000, // Rp 30jt/m3
+            'C' => 12000000, // Rp 12jt/m3
+        ];
+    }
+
+    /**
      * Menampilkan daftar item order yang bersifat custom.
      */
     public function index(Request $request): View
     {
+        $currentTab = $request->query('tab', 'orders');
+
+        // Query berdasarkan tab
         $query = OrderDetail::with(['order.user'])
             ->where('is_custom', true);
 
@@ -26,7 +42,7 @@ class CustomOrderController extends Controller
             $query->where('order_id', $request->order_id);
         }
 
-        // Statistik (berdasarkan query setelah filter)
+        // Statistik total (sebelum filter tab)
         $statsQuery = clone $query;
         $totalCount = $statsQuery->count();
         $pendingCount = (clone $statsQuery)->where('unit_price', 0)->count();
@@ -44,19 +60,20 @@ class CustomOrderController extends Controller
             });
         }
 
-        // Filter Status Perhitungan
-        if ($request->filled('status')) {
-            if ($request->status === 'pending') {
-                $query->where('unit_price', 0);
-            } elseif ($request->status === 'processed') {
-                $query->where('unit_price', '>', 0);
-            }
+        // Filter berdasarkan tab
+        if ($currentTab === 'history') {
+            // Tab Riwayat: hanya yang sudah dihitung
+            $query->where('unit_price', '>', 0);
+        } else {
+            // Tab Orders (Default): hanya yang belum dihitung
+            $query->where('unit_price', 0);
         }
 
         $customOrders = $query->latest()->paginate(10)->withQueryString();
 
         return view('admin.custom_orders.index', compact(
             'customOrders',
+            'currentTab',
             'totalCount',
             'pendingCount',
             'processedCount'
@@ -64,15 +81,14 @@ class CustomOrderController extends Controller
     }
 
     /**
-     * Tampilkan form kalkulator harga (BOM).
+     * Tampilkan form kalkulator harga (BOM) atau tab riwayat perhitungan (?tab=history).
      */
-    public function calculate(OrderDetail $orderDetail): View|RedirectResponse
+    public function calculate(Request $request, OrderDetail $orderDetail): View|RedirectResponse
     {
-        if (!$orderDetail->is_custom) {
+        if (! $orderDetail->is_custom) {
             return back()->with('error', 'Item ini bukan merupakan produk custom.');
         }
 
-        // Cek apakah order terkait sudah dibatalkan
         if ($orderDetail->order && $orderDetail->order->status === 'cancelled') {
             return back()->with('error', 'Tidak dapat menghitung harga untuk pesanan yang sudah dibatalkan.');
         }
@@ -81,7 +97,35 @@ class CustomOrderController extends Controller
         $specs = $orderDetail->custom_specifications ?? [];
         $existingBom = $specs['bom'] ?? null;
 
-        return view('admin.custom_orders.calculate', compact('orderDetail', 'existingBom'));
+        $tab = $request->query('tab', 'calculate');
+        if (! in_array($tab, ['calculate', 'history'], true)) {
+            $tab = 'calculate';
+        }
+
+        $bomHistoryRaw = $specs['bom_history'] ?? [];
+        $bomHistory = collect($bomHistoryRaw)
+            ->sortByDesc(fn ($entry) => $entry['archived_at'] ?? '')
+            ->values()
+            ->all();
+
+        $historyUserNames = [];
+        foreach ($bomHistory as $entry) {
+            $uid = $entry['archived_by'] ?? null;
+            if ($uid && ! isset($historyUserNames[$uid])) {
+                $historyUserNames[$uid] = User::query()->whereKey($uid)->value('name') ?? '—';
+            }
+        }
+
+        $woodPrices = $this->getWoodPrices();
+
+        return view('admin.custom_orders.calculate', compact(
+            'orderDetail',
+            'existingBom',
+            'tab',
+            'bomHistory',
+            'historyUserNames',
+            'woodPrices'
+        ));
     }
 
     /**
@@ -130,11 +174,7 @@ class CustomOrderController extends Controller
             }
 
             // 2. Tentukan Biaya Kayu per Grade (Mapping)
-            $woodPrices = [
-                'A' => 12000000, // Rp 12jt/m3
-                'B' => 10000000, // Rp 10jt/m3
-                'C' => 8000000,  // Rp 8jt/m3
-            ];
+            $woodPrices = $this->getWoodPrices();
 
             $woodPricePerM3 = $woodPrices[$validated['grade']];
             $woodCostTotal = $totalVolume * $woodPricePerM3;
@@ -177,11 +217,23 @@ class CustomOrderController extends Controller
 
             // 6. Update Database (OrderDetail)
             $specs = $orderDetail->custom_specifications ?? [];
+            $previousBom = $specs['bom'] ?? null;
+            if ($previousBom) {
+                $history = $specs['bom_history'] ?? [];
+                $history[] = [
+                    'bom_data'            => $previousBom,
+                    'unit_price_snapshot' => (float) $orderDetail->unit_price,
+                    'subtotal_snapshot'   => (float) $orderDetail->subtotal,
+                    'archived_at'         => now()->toIso8601String(),
+                    'archived_by'         => auth()->id(),
+                ];
+                $specs['bom_history'] = array_slice($history, -50);
+            }
             $specs['bom'] = $bomData;
 
             $orderDetail->update([
-                'unit_price'           => $sellingPrice,
-                'subtotal'             => $sellingPrice * $orderDetail->quantity,
+                'unit_price'           => (float) $sellingPrice,
+                'subtotal'             => (float) ($sellingPrice * $orderDetail->quantity),
                 'custom_specifications' => $specs,
             ]);
 
@@ -191,7 +243,7 @@ class CustomOrderController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('admin.custom-orders.index')
+                ->route('admin.custom-orders.index', ['tab' => 'history'])
                 ->with('success', 'Harga berhasil dihitung! Harga jual: Rp ' . number_format($sellingPrice, 0, ',', '.'));
 
         } catch (\Exception $e) {
@@ -213,7 +265,7 @@ class CustomOrderController extends Controller
     private function recalculateOrderTotal(Order $order): void
     {
         // Hitung ulang jumlah subtotal dari semua item di dalam order tersebut
-        $subtotal = $order->orderDetails()->sum('subtotal');
+        $subtotal = (float) $order->orderDetails()->sum('subtotal');
 
         // Total = Subtotal (Karena tidak ada pajak/biaya tambahan di level order)
         $order->update([

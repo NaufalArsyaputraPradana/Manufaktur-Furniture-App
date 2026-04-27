@@ -19,13 +19,6 @@
             </a>
         </div>
 
-        @if (session('error'))
-            <div class="alert alert-danger alert-dismissible fade show">
-                <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
         @php
             $isFullPending = $payment->payment_status === \App\Models\Payment::STATUS_FULL_PENDING;
             $isDpPaid = $payment->payment_status === \App\Models\Payment::STATUS_DP_PAID;
@@ -88,7 +81,7 @@
                 {{-- Proof Images --}}
                 @if ($isFullPending)
                     {{-- Show both DP and Pelunasan proofs for FULL_PENDING --}}
-                    <div class="card shadow-sm border-0 rounded-3 mb-4 border-success border-3">
+                    <div class="card shadow-sm rounded-3 mb-4 border-success border-3">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold">
                                 <span class="badge bg-success me-2"><i class="bi bi-check-circle me-1"></i>TERVERIFIKASI</span>
@@ -124,7 +117,7 @@
                         </div>
                     </div>
 
-                    <div class="card shadow-sm border-0 rounded-3 mb-4 border-warning border-3">
+                    <div class="card shadow-sm rounded-3 mb-4 border-warning border-3">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold">
                                 <span class="badge bg-warning text-dark me-2"><i class="bi bi-hourglass-split me-1"></i>PENDING VERIFIKASI</span>
@@ -170,7 +163,7 @@
                     </div>
                 @elseif ($isPending && $isDP)
                     {{-- DP Proof for PENDING (DP Mode) --}}
-                    <div class="card shadow-sm border-0 rounded-3 mb-4 border-info border-3">
+                    <div class="card shadow-sm rounded-3 mb-4 border-info border-3">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold">
                                 <span class="badge bg-info me-2"><i class="bi bi-hourglass-split me-1"></i>PENDING VERIFIKASI</span>
@@ -195,7 +188,7 @@
                     </div>
                 @elseif ($isDpPaid)
                     {{-- Show DP Proof (Verified) for DP_PAID --}}
-                    <div class="card shadow-sm border-0 rounded-3 mb-4 border-success border-3">
+                    <div class="card shadow-sm rounded-3 mb-4 border-success border-3">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold">
                                 <span class="badge bg-success me-2"><i class="bi bi-check-circle me-1"></i>TERVERIFIKASI</span>
@@ -238,7 +231,7 @@
                     </div>
                 @else
                     {{-- Regular full payment proof display --}}
-                    <div class="card shadow-sm border-0 rounded-3 mb-4 border-info border-3">
+                    <div class="card shadow-sm rounded-3 mb-4 border-info border-3">
                         <div class="card-header bg-white py-3 border-bottom">
                             <h6 class="mb-0 fw-bold">
                                 <span class="badge bg-info me-2"><i class="bi bi-hourglass-split me-1"></i>PENDING VERIFIKASI</span>

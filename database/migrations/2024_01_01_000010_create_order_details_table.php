@@ -19,6 +19,10 @@ return new class extends Migration {
             $table->decimal('subtotal', 15, 2)->comment('quantity * unit_price');
             $table->text('notes')->nullable();
             $table->timestamps();
+            
+            // Performance indexes (avoid duplicates from constrained())
+            $table->index('created_at');
+            $table->index(['order_id', 'product_id']); // Composite index for filtering
         });
     }
 

@@ -27,7 +27,6 @@ class Report extends Model
         'data' => 'array',
         'start_date' => 'date',
         'end_date' => 'date',
-        'generated_at' => 'datetime',
     ];
 
     public function generatedBy(): BelongsTo

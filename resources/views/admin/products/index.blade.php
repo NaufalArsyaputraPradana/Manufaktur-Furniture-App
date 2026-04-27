@@ -67,7 +67,6 @@
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('admin.products.index') }}" class="row g-3 align-items-end">
                     <div class="col-lg-4 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Pencarian</label>
                         <x-search-input 
                             name="search" 
                             value="{{ request('search') }}"
@@ -75,21 +74,19 @@
                         />
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <x-form-input
+                        <x-form.select
                             name="category_id"
                             label="Kategori"
-                            type="select"
-                            :options="collect(['' => 'Semua Kategori'])->union($categories->pluck('name', 'id'))"
-                            :value="request('category_id')"
+                            :options="collect(['' => 'Semua Kategori'])->union($categories->pluck('name', 'id'))->toArray()"
+                            value="{{ request('category_id') }}"
                         />
                     </div>
                     <div class="col-lg-2 col-md-6">
-                        <x-form-input
+                        <x-form.select
                             name="is_active"
                             label="Status"
-                            type="select"
                             :options="['1' => 'Aktif', '0' => 'Non-Aktif']"
-                            :value="request('is_active')"
+                            value="{{ request('is_active') }}"
                         />
                     </div>
                     <div class="col-lg-3 col-md-6">

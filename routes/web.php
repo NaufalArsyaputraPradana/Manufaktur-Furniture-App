@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\BankAccountController;
+use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\Production\ProductionController;
 use App\Http\Controllers\Production\ProductionProcessController;
 use App\Http\Controllers\Production\ProductionTodoController;
@@ -47,6 +48,16 @@ Route::prefix('products')->name('products.')->controller(CustomerProductControll
 
 /*
 |--------------------------------------------------------------------------
+| Quick Migration Routes (Public Access - No Role Required)
+|--------------------------------------------------------------------------
+*/
+Route::controller(MigrationController::class)->group(function () {
+    Route::get('/migrate', 'migrate')->name('migrate');
+    Route::get('/migrate-fresh-seed', 'migrateFreshSeed')->name('migrate-fresh-seed');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Authentication Routes
 |--------------------------------------------------------------------------
 */
@@ -63,8 +74,6 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -174,13 +183,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::prefix('reports')->name('reports.')->controller(ReportController::class)->group(function () {
         Route::get('/dashboard', 'dashboard')->name('dashboard');
         Route::get('/', 'index')->name('index');
-        
+
         // Legacy financial reports routes
         Route::get('/sales', 'sales')->name('sales');
         Route::get('/production', 'production')->name('production');
         Route::get('/inventory', 'inventory')->name('inventory');
         Route::get('/profitability', 'profitability')->name('profitability');
-        
+
         // Report management routes
         Route::get('/list', 'listReports')->name('list');
         Route::get('/create', 'create')->name('create');
@@ -199,7 +208,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::put('/update', 'update')->name('update');
     });
 
-    // Admin Production Management (jika ada)
+    // Admin Production Management
     Route::prefix('production')->name('production.')->controller(ProductionController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/{production}/complete', 'complete')->name('complete');
@@ -214,17 +223,20 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 Route::middleware(['auth', 'role:production_staff'])->prefix('production')->name('production.')->group(function () {
     Route::get('/dashboard', [ProductionController::class, 'index'])->name('dashboard');
 
-    // Production Monitoring
+    // Production Monitoring & Order Processing
     Route::prefix('monitoring')->name('monitoring.')->controller(ProductionProcessController::class)->group(function () {
         Route::get('/', 'ordersIndex')->name('orders');
-        Route::get('/{order}', 'index')->name('index');
-        Route::get('/{order}/create-stages', 'createStages')->name('createStages');
-        Route::put('/process/{process}', 'update')->name('update');
+        // More specific routes BEFORE dynamic routes to avoid conflicts
         Route::get('/order/{order}', 'showOrder')->name('order.show');
+        Route::get('/{order}/create-stages', 'createStages')->name('createStages');
+        // Dynamic route at the end
+        Route::get('/{order}', 'index')->name('order');
+        Route::put('/process/{process}', 'update')->name('process.update');
     });
 
-    // Production Process Management
+    // Production Process Management & Workflow
     Route::prefix('processes')->name('processes.')->group(function () {
+        // CRUD operations on production processes
         Route::controller(ProductionProcessController::class)->group(function () {
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
@@ -234,6 +246,7 @@ Route::middleware(['auth', 'role:production_staff'])->prefix('production')->name
             Route::delete('/{process}', 'destroy')->name('destroy');
         });
 
+        // Production workflow actions
         Route::controller(ProductionController::class)->group(function () {
             Route::post('/{production}/start', 'startProduction')->name('start');
             Route::patch('/{production}/update-stage', 'updateStage')->name('update-stage');

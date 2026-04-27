@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\ProcessOrderPaymentRequest;
+use App\Http\Requests\Customer\StoreCustomOrderRequest;
 use App\Models\Order;
 use App\Models\Category;
 use App\Models\Product;
@@ -92,37 +93,11 @@ class OrderTrackingController extends Controller
         return view('customer.orders.custom', compact('categories', 'products'));
     }
 
-    public function storeCustomOrder(Request $request): RedirectResponse
+    public function storeCustomOrder(StoreCustomOrderRequest $request): RedirectResponse
     {
-        $rules = [
-            'products' => 'required|array|min:1',
-            'products.*.product_id' => ['nullable'],
-            'products.*.product_name' => 'required|string|max:255',
-            'products.*.quantity' => 'required|integer|min:1',
-            'products.*.is_custom' => 'nullable|boolean',
-            'products.*.customizations' => 'nullable|array',
-            'products.*.customizations.description' => 'nullable|string',
-            'products.*.customizations.dimensions' => 'nullable|string|max:255',
-            'products.*.customizations.material_type' => 'nullable|string|max:255',
-            'products.*.customizations.color_finishing' => 'nullable|string|max:255',
-            'shipping_address' => 'required|string',
-            'notes' => 'nullable|string',
-        ];
+        $validated = $request->validated();
 
-        $productsInput = $request->input('products', []);
-        foreach ($productsInput as $idx => $item) {
-            $isCatalogCustom = ($item['product_id'] ?? null) === 'custom';
-            $rules["products.$idx.unit_price"] = (!empty($item['is_custom']) || $isCatalogCustom)
-                ? 'nullable|numeric|min:0'
-                : 'required|numeric|min:0';
-
-            if ($request->hasFile("products.$idx.customizations.design_image")) {
-                $rules["products.$idx.customizations.design_image"] = 'file|mimes:jpg,jpeg,png,pdf,webp|max:2048';
-            }
-        }
-
-        $validated = $request->validate($rules);
-
+        // Validate product IDs exist in database (if not custom)
         foreach ($validated['products'] as $idx => $item) {
             $pid = $item['product_id'] ?? null;
             if ($pid !== null && $pid !== '' && $pid !== 'custom' && is_numeric($pid)) {
@@ -148,8 +123,9 @@ class OrderTrackingController extends Controller
 
                 $subtotal += $itemSubtotal;
 
-                $customSpecs = $item['customizations'] ?? null;
+                $customSpecs = $item['customizations'] ?? [];
 
+                // Handle design image file upload
                 if ($isCustom && $request->hasFile("products.$idx.customizations.design_image")) {
                     $customSpecs['design_image'] = $request->file("products.$idx.customizations.design_image")
                         ->store('custom_designs', 'public');
@@ -173,7 +149,9 @@ class OrderTrackingController extends Controller
                 'subtotal' => $subtotal,
                 'total' => $subtotal,
                 'shipping_address' => $validated['shipping_address'],
+                'phone' => $validated['phone'] ?? null,
                 'customer_notes' => $validated['notes'] ?? null,
+                'expected_completion_date' => now()->addDays(14),
             ]);
 
             foreach ($orderItems as $item) {
@@ -202,14 +180,13 @@ class OrderTrackingController extends Controller
             DB::commit();
 
             return redirect()->route('customer.orders.show', $order)
-                ->with('success', 'Pesanan custom berhasil dibuat! Tim kami akan segera meninjau estimasi harga.');
+                ->with('success', "🎉 Pesanan custom berhasil dibuat! Nomor order: {$order->order_number}");
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return back()
-                ->with('error', 'Gagal membuat pesanan custom: ' . $e->getMessage())
-                ->withInput();
+            return back()->withInput()
+                ->with('error', 'Gagal membuat pesanan custom: ' . $e->getMessage());
         }
     }
 

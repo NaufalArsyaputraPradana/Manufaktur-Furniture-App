@@ -33,7 +33,7 @@
         <a href="{{ route('admin.custom-orders.index') }}"
             class="nav-link text-white d-flex align-items-center p-3 rounded transition-all {{ request()->routeIs('admin.custom-orders.*') ? 'bg-white bg-opacity-25 fw-bold shadow-sm' : 'opacity-75 hover-opacity-100' }}">
             <i class="bi bi-pencil-square me-3 fs-5"></i>
-            <span>Custom Order</span>
+            <span>Kubikasi</span>
         </a>
 
         <a href="{{ route('admin.products.index') }}"

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     public function up(): void
@@ -23,6 +24,17 @@ return new class extends Migration {
             $table->boolean('is_customizable')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('category_id');
+            $table->index('is_active');
+            $table->index('slug');
+            $table->index('created_at');
+            
+            // Full-text search untuk name dan description (MySQL only)
+            if (DB::connection()->getDriverName() === 'mysql') {
+                $table->fullText(['name', 'description']);
+            }
         });
     }
 

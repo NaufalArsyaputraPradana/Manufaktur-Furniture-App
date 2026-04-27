@@ -39,6 +39,10 @@ class DashboardController extends Controller
             $revenueCurrentMonth = $orderStats->revenue_current_month ?? 0;
             $revenueLastMonth = $orderStats->revenue_last_month ?? 0;
 
+            // Calculate growth percentage with proper handling of edge cases
+            // - If last month had revenue: calculate percentage change
+            // - If only current month has revenue (first time): 100% growth
+            // - If both are zero: 0% growth
             $growthPercentage = 0;
             if ($revenueLastMonth > 0) {
                 $growthPercentage = (($revenueCurrentMonth - $revenueLastMonth) / $revenueLastMonth) * 100;
@@ -63,13 +67,14 @@ class DashboardController extends Controller
         $chartData = Cache::remember('dashboard.chart.revenue', 1800, function () use ($currentYear) {
             $revenueData = Order::select(
                 DB::raw('MONTH(created_at) as month'),
-                DB::raw('SUM(total) as total')
+                DB::raw('CAST(SUM(total) as DECIMAL(15,2)) as total')
             )
                 ->where('status', 'completed')
                 ->whereYear('created_at', $currentYear)
                 ->groupBy('month')
                 ->orderBy('month')
                 ->pluck('total', 'month')
+                ->mapWithKeys(fn($v, $k) => [$k => (float)$v])  // Ensure numeric type
                 ->toArray();
 
             $labels = [];
@@ -91,7 +96,9 @@ class DashboardController extends Controller
         $topProducts = Cache::remember('dashboard.top.products', 3600, function () {
             return DB::table('order_details')
                 ->join('products', 'order_details.product_id', '=', 'products.id')
+                ->join('orders', 'order_details.order_id', '=', 'orders.id')
                 ->select('products.name', DB::raw('SUM(order_details.quantity) as total_sold'))
+                ->where('orders.status', 'completed')  // Only count items from completed orders
                 ->groupBy('products.id', 'products.name')
                 ->orderByDesc('total_sold')
                 ->limit(5)

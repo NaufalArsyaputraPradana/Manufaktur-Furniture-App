@@ -102,7 +102,7 @@
         <div class="card shadow-sm mb-4 border-0 rounded-3">
             <div class="card-body py-3">
                 <form method="GET" action="{{ route('admin.categories.index') }}" class="row g-3 align-items-end">
-                    <div class="col-lg-5 col-md-6">
+                    <div class="col-lg-4 col-md-6">
                         <label class="form-label fw-semibold small text-uppercase text-muted">Pencarian</label>
                         <x-search-input 
                             name="search" 
@@ -110,21 +110,36 @@
                             placeholder="Cari nama atau deskripsi..."
                         />
                     </div>
-                    <div class="col-lg-3 col-md-6">
-                        <x-form-input
-                            name="is_active"
-                            label="Status"
-                            type="select"
-                            :options="['1' => 'Aktif', '0' => 'Tidak Aktif']"
-                            :value="request('is_active')"
-                        />
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">Status</label>
+                        <select name="is_active" class="form-select form-select-sm shadow-sm">
+                            <option value="">Semua Status</option>
+                            <option value="1" {{ request('is_active') == '1' ? 'selected' : '' }}>Aktif</option>
+                            <option value="0" {{ request('is_active') == '0' ? 'selected' : '' }}>Tidak Aktif</option>
+                        </select>
                     </div>
-                    <div class="col-lg-4 col-md-12">
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">Urutkan Berdasarkan</label>
+                        <select name="sort_by" class="form-select form-select-sm shadow-sm">
+                            <option value="latest" {{ request('sort_by') == 'latest' ? 'selected' : '' }}>Terbaru</option>
+                            <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Nama</option>
+                            <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>Tanggal</option>
+                            <option value="products" {{ request('sort_by') == 'products' ? 'selected' : '' }}>Jumlah Produk</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <label class="form-label fw-semibold small text-uppercase text-muted">Urutan</label>
+                        <select name="sort_order" class="form-select form-select-sm shadow-sm">
+                            <option value="desc" {{ request('sort_order') == 'desc' ? 'selected' : '' }}>Menurun</option>
+                            <option value="asc" {{ request('sort_order') == 'asc' ? 'selected' : '' }}>Menaik</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-12">
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary flex-grow-1 shadow-sm">
+                            <button type="submit" class="btn btn-primary flex-grow-1 shadow-sm btn-sm">
                                 <i class="bi bi-funnel me-1"></i>Filter
                             </button>
-                            <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary shadow-sm">
+                            <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary shadow-sm btn-sm">
                                 <i class="bi bi-arrow-clockwise"></i>
                             </a>
                         </div>
@@ -265,6 +280,22 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // Helper function untuk generate sort URL
+        function getSortUrl(sortBy) {
+            const currentSort = new URLSearchParams(window.location.search).get('sort_by');
+            const currentOrder = new URLSearchParams(window.location.search).get('sort_order');
+            let newOrder = 'desc';
+            
+            if (sortBy === currentSort && currentOrder === 'desc') {
+                newOrder = 'asc';
+            }
+            
+            const params = new URLSearchParams(window.location.search);
+            params.set('sort_by', sortBy);
+            params.set('sort_order', newOrder);
+            return window.location.pathname + '?' + params.toString();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
 

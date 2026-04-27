@@ -700,7 +700,6 @@
             document.addEventListener('DOMContentLoaded', function() {
                 initScrollAnimations();
                 initFormValidation();
-                showSessionMessages();
             });
 
             // ============================================
@@ -720,38 +719,6 @@
                 });
 
                 document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
-            }
-
-            // ============================================
-            // SESSION MESSAGES
-            // ============================================
-            function showSessionMessages() {
-                @if (session('success'))
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: '{{ session('success') }}',
-                        confirmButtonColor: '#667eea',
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                @endif
-                @if (session('error'))
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: '{{ session('error') }}',
-                        confirmButtonColor: '#dc3545'
-                    });
-                @endif
-                @if (session('warning'))
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Perhatian!',
-                        text: '{{ session('warning') }}',
-                        confirmButtonColor: '#f59e0b'
-                    });
-                @endif
             }
 
             // ============================================

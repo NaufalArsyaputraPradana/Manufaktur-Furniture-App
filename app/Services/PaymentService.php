@@ -29,38 +29,124 @@ class PaymentService
 
     /**
      * Create Midtrans transaction and return snap token.
+     *
+     * @param  string  $phase  full | dp | remainder — dp = uang muka 50%, remainder = sisa setelah dp_paid
      */
-    public function createMidtransTransaction(Order $order, array $customer = []): array
+    public function createMidtransTransaction(Order $order, array $customer = [], string $phase = 'full'): array
     {
         $midtrans = new MidtransService();
+        $order->loadMissing(['orderDetails', 'user']);
 
-        $payment = $this->createOrUpdatePayment($order, [
-            'payment_method'   => Payment::METHOD_MIDTRANS,
-            'payment_channel'  => Payment::CHANNEL_MIDTRANS,
-            'amount'           => $order->total,
-            'amount_paid'      => 0,
-            'expected_dp_amount' => null,
-        ]);
+        $phase = in_array($phase, ['full', 'dp', 'remainder'], true) ? $phase : 'full';
 
-        $transactionId = $payment->transaction_id;
+        $total = (float) $order->total;
+        $dpAmount = round($total * 0.5, 2);
 
-        $items = [];
-        foreach ($order->orderDetails as $detail) {
-            $items[] = [
-                'id'       => $detail->id,
-                'price'    => (int) round($detail->unit_price),
-                'quantity' => (int) $detail->quantity,
-                'name'     => substr($detail->product_name ?? 'Item', 0, 50),
+        $payment = $order->payment;
+
+        if ($phase === 'remainder') {
+            if (!$payment || !$payment->isDpPaid()) {
+                throw new \InvalidArgumentException('Pelunasan tidak tersedia.');
+            }
+            if ($payment->payment_status === Payment::STATUS_FULL_PENDING) {
+                throw new \InvalidArgumentException('Pelunasan sedang diverifikasi admin.');
+            }
+            $remaining = $order->remainingPayableAmount();
+            if ($remaining <= 0) {
+                throw new \InvalidArgumentException('Pelunasan sudah dibayar.');
+            }
+            $grossAmount = (int) round($remaining);
+            $transactionId = Payment::generateTransactionId() . '-FULL';
+            $payment->update([
+                'payment_method'  => Payment::METHOD_MIDTRANS,
+                'payment_channel' => Payment::CHANNEL_MIDTRANS,
+                'transaction_id'  => $transactionId,
+            ]);
+            $items = [
+                [
+                    'id'       => 'REM-' . $order->id,
+                    'price'    => $grossAmount,
+                    'quantity' => 1,
+                    'name'     => substr('Pelunasan ' . $order->order_number, 0, 50),
+                ],
             ];
+        } elseif ($phase === 'dp') {
+            if ($payment && $payment->payment_status === Payment::STATUS_PAID) {
+                throw new \InvalidArgumentException('Pesanan sudah lunas.');
+            }
+            if ($payment && $payment->isDpPaid()) {
+                throw new \InvalidArgumentException('DP sudah dibayar. Gunakan menu pelunasan.');
+            }
+            if ($payment && $payment->payment_status === Payment::STATUS_FULL_PENDING) {
+                throw new \InvalidArgumentException('Pembayaran sedang diverifikasi.');
+            }
+            $grossAmount = (int) round($dpAmount);
+            $transactionId = Payment::generateTransactionId() . '-DP';
+            $payment = $this->createOrUpdatePayment($order, [
+                'payment_method'     => Payment::METHOD_MIDTRANS,
+                'payment_channel'    => Payment::CHANNEL_MIDTRANS,
+                'amount'             => $total,
+                'amount_paid'        => 0,
+                'expected_dp_amount' => $dpAmount,
+                'transaction_id'     => $transactionId,
+            ]);
+            $items = [
+                [
+                    'id'       => 'DP-' . $order->id,
+                    'price'    => $grossAmount,
+                    'quantity' => 1,
+                    'name'     => substr('DP ' . $order->order_number, 0, 50),
+                ],
+            ];
+        } else {
+            if ($payment && $payment->payment_status === Payment::STATUS_PAID) {
+                throw new \InvalidArgumentException('Pesanan sudah lunas.');
+            }
+            if ($payment && $payment->isDpPaid()) {
+                throw new \InvalidArgumentException('Gunakan pembayaran pelunasan untuk sisa tagihan.');
+            }
+            if ($payment && $payment->payment_status === Payment::STATUS_FULL_PENDING) {
+                throw new \InvalidArgumentException('Pembayaran sedang diverifikasi.');
+            }
+            $grossAmount = (int) round($total);
+            $transactionId = Payment::generateTransactionId() . '-FULL';
+            $payment = $this->createOrUpdatePayment($order, [
+                'payment_method'     => Payment::METHOD_MIDTRANS,
+                'payment_channel'    => Payment::CHANNEL_MIDTRANS,
+                'amount'             => $total,
+                'amount_paid'        => 0,
+                'expected_dp_amount' => null,
+                'transaction_id'     => $transactionId,
+            ]);
+            $items = [];
+            foreach ($order->orderDetails as $detail) {
+                $items[] = [
+                    'id'       => $detail->id,
+                    'price'    => (int) round($detail->unit_price),
+                    'quantity' => (int) $detail->quantity,
+                    'name'     => substr($detail->product_name ?? 'Item', 0, 50),
+                ];
+            }
+            $itemsSum = array_sum(array_map(static fn (array $i) => $i['price'] * $i['quantity'], $items));
+            if (abs($itemsSum - $grossAmount) > 1) {
+                $items = [
+                    [
+                        'id'       => 'ORDER-' . $order->id,
+                        'price'    => $grossAmount,
+                        'quantity' => 1,
+                        'name'     => substr($order->order_number, 0, 50),
+                    ],
+                ];
+            }
         }
 
         $params = [
             'transaction_details' => [
-                'order_id'     => $transactionId,
-                'gross_amount' => (int) round($order->total),
+                'order_id'     => $payment->transaction_id,
+                'gross_amount' => $grossAmount,
             ],
-            'item_details'       => $items,
-            'customer_details'   => [
+            'item_details'     => $items,
+            'customer_details' => [
                 'first_name' => $customer['first_name'] ?? $order->user->name ?? 'Customer',
                 'email'      => $customer['email'] ?? $order->user->email ?? null,
                 'phone'      => $customer['phone'] ?? $order->user->phone ?? null,
@@ -70,10 +156,11 @@ class PaymentService
         $snapToken = $midtrans->createSnapToken($params);
 
         return [
-            'snap_token'       => $snapToken,
-            'client_key'       => config('midtrans.client_key'),
-            'script_url'       => $midtrans->getSnapScriptUrl(),
-            'transaction_id'   => $transactionId,
+            'snap_token'     => $snapToken,
+            'client_key'     => config('midtrans.client_key'),
+            'script_url'     => $midtrans->getSnapScriptUrl(),
+            'transaction_id' => $payment->transaction_id,
+            'phase'          => $phase,
         ];
     }
 
@@ -101,22 +188,76 @@ class PaymentService
             }
 
             $transactionStatus = $notification['transaction_status'] ?? null;
+            $gross = (float) $grossAmount;
+            $epsilon = 1.0;
+
+            if ($payment->payment_status === Payment::STATUS_PAID) {
+                return true;
+            }
 
             if (in_array($transactionStatus, ['capture', 'settlement'], true)) {
                 $order = $payment->order;
-                $total = (float) ($order?->total ?? $payment->amount ?? 0);
-                $payment->update([
-                    'payment_status' => Payment::STATUS_PAID,
-                    'amount_paid'    => $total,
-                    'payment_date'   => now(),
-                    'payment_channel'=> Payment::CHANNEL_MIDTRANS,
-                ]);
-                if ($order && $order->status === 'pending') {
-                    $order->update(['status' => 'confirmed']);
+                if (!$order) {
+                    return false;
+                }
+                $total = (float) ($order->total ?? $payment->amount ?? 0);
+                $remaining = $order->remainingPayableAmount();
+
+                if ($payment->payment_status === Payment::STATUS_PENDING) {
+                    $expectedDp = (float) ($payment->expected_dp_amount ?? 0);
+                    if ($expectedDp > 0 && abs($gross - $expectedDp) <= $epsilon) {
+                        $payment->update([
+                            'payment_status' => Payment::STATUS_DP_PAID,
+                            'amount_paid'    => $expectedDp,
+                            'payment_date'   => null,
+                            'payment_channel'=> Payment::CHANNEL_MIDTRANS,
+                        ]);
+                    } elseif (abs($gross - $total) <= $epsilon) {
+                        $payment->update([
+                            'payment_status' => Payment::STATUS_PAID,
+                            'amount_paid'    => $total,
+                            'payment_date'   => now(),
+                            'payment_channel'=> Payment::CHANNEL_MIDTRANS,
+                            'expected_dp_amount' => null,
+                        ]);
+                        if ($order->status === 'pending') {
+                            $order->update(['status' => 'confirmed']);
+                        }
+                    } else {
+                        Log::warning('Midtrans gross amount mismatch (pending)', [
+                            'order_id' => $orderId,
+                            'gross' => $gross,
+                            'expected_dp' => $expectedDp,
+                            'total' => $total,
+                        ]);
+                    }
+                } elseif ($payment->payment_status === Payment::STATUS_DP_PAID) {
+                    if (abs($gross - $remaining) <= $epsilon) {
+                        $payment->update([
+                            'payment_status' => Payment::STATUS_PAID,
+                            'amount_paid'    => $total,
+                            'payment_date'   => now(),
+                            'payment_channel'=> Payment::CHANNEL_MIDTRANS,
+                        ]);
+                        if ($order->status === 'pending') {
+                            $order->update(['status' => 'confirmed']);
+                        }
+                    } else {
+                        Log::warning('Midtrans gross amount mismatch (remainder)', [
+                            'order_id' => $orderId,
+                            'gross' => $gross,
+                            'remaining' => $remaining,
+                        ]);
+                    }
                 }
             } elseif ($transactionStatus === 'pending') {
-                $payment->update(['payment_status' => Payment::STATUS_PENDING]);
+                if (! in_array($payment->payment_status, [Payment::STATUS_DP_PAID, Payment::STATUS_FULL_PENDING], true)) {
+                    $payment->update(['payment_status' => Payment::STATUS_PENDING]);
+                }
             } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire'], true)) {
+                if (in_array($payment->payment_status, [Payment::STATUS_DP_PAID, Payment::STATUS_FULL_PENDING], true)) {
+                    return true;
+                }
                 $payment->markAsFailed();
             }
 

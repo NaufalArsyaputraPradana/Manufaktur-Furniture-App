@@ -79,8 +79,6 @@
                                     :value="old('address')"
                                     :errors="$errors" />
                             </div>
-                                @enderror
-                            </div>
 
                             <!-- Password Section -->
                             <div class="row">
@@ -116,8 +114,19 @@
                                     <label for="password_confirmation"
                                         class="form-label fw-bold small text-muted text-uppercase">Konfirmasi Password <span
                                             class="text-danger">*</span></label>
-                                    <input type="password" class="form-control form-control-lg" id="password_confirmation"
-                                        name="password_confirmation" placeholder="Ulangi password" required>
+                                    <div class="input-group has-validation">
+                                        <input type="password" 
+                                            class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror" 
+                                            id="password_confirmation" name="password_confirmation" 
+                                            placeholder="Ulangi password" required>
+                                        <button class="btn btn-outline-secondary border-start-0" type="button"
+                                            id="toggleRegPasswordConfirm" aria-label="Tampilkan Password">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        @error('password_confirmation')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
 
@@ -153,7 +162,7 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Password Toggle
+            // Password Toggle - Password Field
             const toggleBtn = document.querySelector('#toggleRegPassword');
             const passwordInput = document.querySelector('#password');
 
@@ -161,6 +170,21 @@
                 toggleBtn.addEventListener('click', function() {
                     const isPassword = passwordInput.getAttribute('type') === 'password';
                     passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+
+                    const icon = this.querySelector('i');
+                    icon.classList.toggle('bi-eye');
+                    icon.classList.toggle('bi-eye-slash');
+                });
+            }
+
+            // Password Toggle - Confirm Password Field
+            const toggleConfirmBtn = document.querySelector('#toggleRegPasswordConfirm');
+            const passwordConfirmInput = document.querySelector('#password_confirmation');
+
+            if (toggleConfirmBtn && passwordConfirmInput) {
+                toggleConfirmBtn.addEventListener('click', function() {
+                    const isPassword = passwordConfirmInput.getAttribute('type') === 'password';
+                    passwordConfirmInput.setAttribute('type', isPassword ? 'text' : 'password');
 
                     const icon = this.querySelector('i');
                     icon.classList.toggle('bi-eye');

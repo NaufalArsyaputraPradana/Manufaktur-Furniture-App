@@ -34,6 +34,13 @@ return new class extends Migration {
             $table->timestamp('shipped_at')->nullable()->comment('When order was shipped');
             $table->timestamp('delivered_at')->nullable()->comment('When order was delivered');
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('status');
+            $table->index('user_id');
+            $table->index('order_date');
+            $table->index('created_at');
+            $table->index(['user_id', 'status']); // Composite index untuk filter user + status
         });
     }
 

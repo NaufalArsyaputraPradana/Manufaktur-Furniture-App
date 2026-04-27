@@ -3,67 +3,71 @@
 namespace App\Observers;
 
 use App\Models\Product;
-use Illuminate\Support\Facades\Cache;
+use App\Services\CacheService;
 
 /**
- * Product Observer
+ * ProductObserver
  * 
- * Automatically clears relevant caches when products are created, updated, or deleted
+ * Automatically invalidates product and category caches when products change.
+ * This ensures cached data stays fresh without manual cache management.
+ * 
+ * Events Triggered:
+ * - created: New product added
+ * - updated: Existing product modified
+ * - deleted: Product removed
+ * - restored: Soft-deleted product restored (if using soft deletes)
+ * - forceDeleted: Product permanently deleted
  */
 class ProductObserver
 {
     /**
      * Handle the Product "created" event.
+     * Clear all product caches when new product is added.
      */
     public function created(Product $product): void
     {
-        $this->clearProductCaches($product);
+        CacheService::clearProductCaches($product->category_id);
     }
 
     /**
      * Handle the Product "updated" event.
+     * Clear caches when product details change.
      */
     public function updated(Product $product): void
     {
-        $this->clearProductCaches($product);
+        CacheService::clearProductCaches($product->category_id);
+
+        // If category changed, also clear old category cache
+        if ($product->isDirty('category_id')) {
+            CacheService::clearProductCaches($product->getOriginal('category_id'));
+        }
     }
 
     /**
      * Handle the Product "deleted" event.
+     * Clear caches when product is removed.
      */
     public function deleted(Product $product): void
     {
-        $this->clearProductCaches($product);
+        CacheService::clearProductCaches($product->category_id);
     }
 
     /**
-     * Clear all product-related caches
+     * Handle the Product "restored" event.
+     * Clear caches when soft-deleted product is restored.
      */
-    private function clearProductCaches(Product $product): void
+    public function restored(Product $product): void
     {
-        // Clear product list caches
-        Cache::forget('active_products');
-        
-        // Clear category product count
-        Cache::forget('active_categories_with_count');
-        
-    // Clear related products cache for this category (tanpa tagging)
-    Cache::forget("products_category_{$product->category_id}");
-        
-        // Pattern matching to clear related product caches
-        $this->forgetPattern("related_products_{$product->category_id}_*");
+        CacheService::clearProductCaches($product->category_id);
     }
 
     /**
-     * Forget cache keys matching a pattern
-     * 
-     * Note: Uses simple loop for file-based cache. 
-     * For production with Redis, use Cache::tags() or scan() method.
+     * Handle the Product "force deleted" event.
+     * Clear caches when product is permanently deleted.
      */
-    private function forgetPattern(string $pattern): void
+    public function forceDeleted(Product $product): void
     {
-        for ($i = 1; $i <= 100; $i++) {
-            Cache::forget(str_replace('*', $i, $pattern));
-        }
+        CacheService::clearProductCaches($product->category_id);
     }
 }
+

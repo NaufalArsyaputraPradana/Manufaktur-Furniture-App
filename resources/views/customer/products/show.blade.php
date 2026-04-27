@@ -292,7 +292,10 @@
                                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                                         <input type="hidden" name="product_name" value="{{ $product->name }}">
                                         <input type="hidden" name="price" value="{{ $product->base_price }}">
-                                        <input type="hidden" name="image" value="{{ $product->images[0] ?? '' }}">
+                                        @php
+                                            $firstImagePath = is_array($product->images ?? null) && count($product->images) > 0 && is_string($product->images[0]) ? $product->images[0] : '';
+                                        @endphp
+                                        <input type="hidden" name="image" value="{{ $firstImagePath }}">
 
                                         {{-- Quantity --}}
                                         <div class="mb-4">

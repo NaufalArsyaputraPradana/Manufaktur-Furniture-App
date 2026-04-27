@@ -44,74 +44,64 @@
                         <div class="card-body p-4">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="name" 
                                         label="Nama Produk"
                                         type="text"
                                         placeholder="Contoh: Kursi Jati Minimalis"
-                                        :value="old('name')"
-                                        :errors="$errors"
-                                        required
-                                        autofocus />
+                                        value="{{ old('name') }}"
+                                        required />
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="sku" 
                                         label="SKU (Kode Unik)"
                                         type="text"
                                         placeholder="Contoh: KJM-001"
-                                        :value="old('sku')"
-                                        :errors="$errors"
+                                        value="{{ old('sku') }}"
                                         required />
                                 </div>
                             </div>
 
-                            <x-form-input 
+                            <x-form.select 
                                 name="category_id" 
                                 label="Kategori"
-                                type="select"
-                                :options="collect(['' => '-- Pilih Kategori --'])->union($categories->pluck('name', 'id'))"
-                                :value="old('category_id')"
-                                :errors="$errors"
+                                :options="collect(['' => '-- Pilih Kategori --'])->union($categories->pluck('name', 'id'))->toArray()"
+                                value="{{ old('category_id') }}"
                                 required />
 
-                            <x-form-input 
+                            <x-form.textarea 
                                 name="description" 
                                 label="Deskripsi"
-                                type="textarea"
                                 rows="5"
                                 placeholder="Jelaskan detail produk..."
-                                :value="old('description')"
-                                :errors="$errors" />
+                                value="{{ old('description') }}" />
 
                             <h6 class="fw-bold mt-4 mb-3 text-success"><i class="bi bi-rulers me-2"></i>Spesifikasi</h6>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="dimensions" 
                                         label="Dimensi (PxLxT)"
                                         type="text"
                                         placeholder="e.g. 120x60x75 cm"
-                                        :value="old('dimensions')"
-                                        :errors="$errors" />
+                                        value="{{ old('dimensions') }}" />
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="wood_type" 
                                         label="Jenis Kayu"
                                         type="text"
                                         placeholder="e.g. Jati Grade A"
-                                        :value="old('wood_type')"
-                                        :errors="$errors" />
+                                        value="{{ old('wood_type') }}" />
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="finishing_type" 
                                         label="Finishing"
                                         type="text"
                                         placeholder="e.g. Melamine Natural"
-                                        :value="old('finishing_type')"
-                                        :errors="$errors" />
+                                        value="{{ old('finishing_type') }}" />
                                 </div>
                             </div>
                         </div>
@@ -144,19 +134,14 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="estimated_production_days" class="form-label fw-bold">Estimasi Produksi</label>
-                                <div class="input-group">
-                                    <input type="number"
-                                        class="form-control @error('estimated_production_days') is-invalid @enderror"
-                                        id="estimated_production_days" name="estimated_production_days"
-                                        value="{{ old('estimated_production_days', 7) }}" min="1" required>
-                                    <span class="input-group-text bg-light">Hari</span>
-                                </div>
-                                @error('estimated_production_days')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            <x-form.input 
+                                name="estimated_production_days" 
+                                label="Estimasi Produksi"
+                                type="number"
+                                value="{{ old('estimated_production_days', 7) }}"
+                                min="1"
+                                hint="dalam hari"
+                                required />
                         </div>
                     </div>
 

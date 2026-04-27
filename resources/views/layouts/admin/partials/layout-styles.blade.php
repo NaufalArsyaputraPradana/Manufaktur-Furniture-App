@@ -1,22 +1,15 @@
+/* Admin-specific color overrides (inherits from global) */
 :root {
-    --primary-color: #4e73df;
-    --secondary-color: #858796;
-    --success-color: #1cc88a;
-    --info-color: #36b9cc;
-    --warning-color: #f6c23e;
-    --danger-color: #e74a3b;
-    --light-bg: #f8f9fc;
-    --dark-text: #5a5c69;
-    --sidebar-width: 250px;
-    --header-height: 70px;
-    --transition-speed: 0.3s;
-    --box-shadow: 0 .15rem 1.75rem 0 rgba(58, 59, 69, .15);
+    --admin-primary: #4e73df;
+    --admin-secondary: #224abe;
 }
 
 body {
-    font-family: 'Nunito', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: var(--light-bg);
-    color: var(--dark-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-dark);
     overflow-x: hidden;
     margin: 0;
 }
@@ -49,12 +42,12 @@ a {
     left: 0;
     width: var(--sidebar-width);
     height: 100vh;
-    background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
+    background: linear-gradient(180deg, var(--admin-primary) 10%, var(--admin-secondary) 100%);
     color: #fff;
-    z-index: 1040;
-    transition: transform var(--transition-speed) ease-in-out;
+    z-index: var(--z-modal);
+    transition: transform var(--transition) ease-in-out;
     overflow-y: auto;
-    box-shadow: var(--box-shadow);
+    box-shadow: var(--shadow-xl);
 }
 
 .main-wrapper {
@@ -62,7 +55,7 @@ a {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    transition: margin-left var(--transition-speed) ease-in-out;
+    transition: margin-left var(--transition) ease-in-out;
 }
 
 .main-header {
@@ -75,7 +68,7 @@ a {
     justify-content: space-between;
     padding: 0 1.5rem;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    z-index: 1030;
+    z-index: var(--z-fixed);
 }
 
 .main-content {
@@ -90,15 +83,17 @@ a {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 1035;
+    z-index: var(--z-modal-backdrop);
     opacity: 0;
     visibility: hidden;
-    transition: all var(--transition-speed);
+    pointer-events: none;
+    transition: all var(--transition);
 }
 
 .sidebar-backdrop.show {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 @media (max-width: 991.98px) {

@@ -27,10 +27,10 @@ return new class extends Migration
             $table->integer('attachments_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
-            $table->index('user_id');
             $table->index('status');
             $table->index('priority');
             $table->index('ticket_number');
+            $table->index(['status', 'priority']); // Composite index for urgent tickets
         });
     }
 

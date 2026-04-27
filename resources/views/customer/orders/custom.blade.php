@@ -203,7 +203,7 @@
                             <option value="custom">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}" data-name="{{ $product->name }}"
-                                    data-price="{{ $product->base_price ?? '' }}">
+                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $product->thumbnail }}">
                                     {{ $product->name }}{{ $product->base_price !== null ? ' – Rp ' . number_format($product->base_price, 0, ',', '.') : ' – Tanya Harga' }}
                                 </option>
                             @endforeach
@@ -215,6 +215,24 @@
                                 class="text-danger" aria-hidden="true">*</span></label>
                         <input type="text" class="form-control form-control-lg product-name"
                             name="products[INDEX][product_name]" placeholder="Nama produk yang diinginkan" required>
+                    </div>
+
+                    <!-- Product Image Preview -->
+                    <div class="col-12">
+                        <div class="product-image-preview-INDEX" style="display: none;">
+                            <div class="card border-info bg-info bg-opacity-10 rounded-4 border-2 shadow-sm overflow-hidden">
+                                <div class="card-body p-4">
+                                    <label class="form-label small fw-bold text-muted text-uppercase mb-3 d-block">
+                                        <i class="bi bi-image me-2" aria-hidden="true"></i>Preview Produk Katalog
+                                    </label>
+                                    <div class="d-flex justify-content-center">
+                                        <img id="product_image_INDEX" src="" alt="Produk Preview"
+                                            class="img-fluid rounded-3"
+                                            style="max-width: 100%; max-height: 300px; object-fit: contain; border: 2px solid #0d6efd; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="col-md-6">
@@ -669,20 +687,47 @@
                     nameInput.value = opt.dataset.name || '';
                     priceInput.value = opt.dataset.price || 0;
                     customCheck.checked = false;
+                    
+                    // Display product image
+                    displayProductImage(item, opt.dataset.image);
                 } else if (select.value === 'custom') {
                     nameInput.value = '';
                     priceInput.value = 0;
                     customCheck.checked = true;
+                    
+                    // Hide product image
+                    hideProductImage(item);
                 } else {
                     // Default empty
                     nameInput.value = '';
                     priceInput.value = 0;
                     customCheck.checked = false;
+                    
+                    // Hide product image
+                    hideProductImage(item);
                 }
 
                 toggleCustomSpecs(customCheck);
                 calculateItemTotal(select);
             };
+
+            function displayProductImage(item, imageUrl) {
+                const previewContainer = item.querySelector('[class*="product-image-preview-"]');
+                if (previewContainer && imageUrl) {
+                    const img = previewContainer.querySelector('img');
+                    if (img) {
+                        img.src = imageUrl;
+                        previewContainer.style.display = 'block';
+                    }
+                }
+            }
+
+            function hideProductImage(item) {
+                const previewContainer = item.querySelector('[class*="product-image-preview-"]');
+                if (previewContainer) {
+                    previewContainer.style.display = 'none';
+                }
+            }
 
             // ===== CUSTOM SPECS TOGGLE =====
             window.toggleCustomSpecs = function(checkbox) {

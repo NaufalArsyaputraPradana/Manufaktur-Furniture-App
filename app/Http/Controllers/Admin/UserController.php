@@ -92,11 +92,13 @@ class UserController extends Controller
 
         $stats = [];
         if ($user->isCustomer()) {
+            // Use raw counts to avoid additional queries
+            $allOrders = $user->orders()->get();
             $stats = [
-                'total_orders'    => $user->orders()->count(),
-                'pending_orders'  => $user->orders()->where('status', 'pending')->count(),
-                'completed_orders' => $user->orders()->where('status', 'completed')->count(),
-                'total_spent'      => $user->orders()->where('status', 'completed')->sum('total'),
+                'total_orders'    => $allOrders->count(),
+                'pending_orders'  => $allOrders->where('status', 'pending')->count(),
+                'completed_orders' => $allOrders->where('status', 'completed')->count(),
+                'total_spent'      => $allOrders->where('status', 'completed')->sum('total'),
             ];
         }
 

@@ -68,21 +68,19 @@
                         />
                     </div>
                     <div class="col-md-3">
-                        <x-form-input
+                        <x-form.select
                             name="role_id"
                             label="Role"
-                            type="select"
                             :options="collect(['' => 'Semua Role'])->union($roles->pluck('name', 'id')->map(fn($name) => ucfirst($name)))"
-                            :value="request('role_id')"
+                            value="{{ request('role_id') }}"
                         />
                     </div>
                     <div class="col-md-2">
-                        <x-form-input
+                        <x-form.select
                             name="is_active"
                             label="Status"
-                            type="select"
                             :options="['1' => 'Aktif', '0' => 'Nonaktif']"
-                            :value="request('is_active')"
+                            value="{{ request('is_active') }}"
                         />
                     </div>
                     <div class="col-md-3">

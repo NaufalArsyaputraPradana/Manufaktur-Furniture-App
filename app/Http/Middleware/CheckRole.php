@@ -12,8 +12,10 @@ class CheckRole
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     * @param  string  ...$roles  The allowed roles for this route
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  mixed  ...$roles
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
@@ -27,14 +29,21 @@ class CheckRole
         $user = auth()->user();
         $userRole = $user->role->name;
 
+        // Ensure roles are strings (convert any non-string values)
+        $rolesArray = array_filter(array_map(function($role) {
+            return is_string($role) ? trim($role) : null;
+        }, $roles), function($role) {
+            return $role !== null && $role !== '';
+        });
+
         // Check if user's role is in the allowed roles
-        if (!in_array($userRole, $roles)) {
+        if (!empty($rolesArray) && !in_array($userRole, $rolesArray)) {
             // Log unauthorized access attempt
             Log::warning('Unauthorized access attempt', [
                 'user_id' => $user->id,
                 'user_email' => $user->email,
                 'user_role' => $userRole,
-                'required_roles' => $roles,
+                'required_roles' => array_values($rolesArray),
                 'requested_url' => $request->fullUrl(),
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),

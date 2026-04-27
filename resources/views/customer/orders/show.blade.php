@@ -38,16 +38,16 @@
                                   !empty($order->payment->payment_proof);
 
         $statusBadge = match (true) {
-            $order->status === 'pending' && $isPaid => ['bg-info', 'bi-cash-coin', 'Sudah Bayar'],
-            $order->status === 'pending' && $isFullPending => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
-            $order->status === 'pending' && $isDpPaid => ['bg-info text-dark', 'bi-piggy-bank', 'DP diverifikasi'],
-            $order->status === 'pending' && $hasPendingPaymentProof => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
-            $order->status === 'pending' => ['bg-warning text-dark', 'bi-clock-history', 'Menunggu Pembayaran'],
-            $order->status === 'confirmed' => ['bg-info', 'bi-check-circle', 'Dikonfirmasi'],
-            $order->status === 'in_production' => ['bg-light text-dark', 'bi-gear', 'Dalam Produksi'],
-            $order->status === 'completed' => ['bg-success', 'bi-check-all', 'Selesai'],
-            $order->status === 'cancelled' => ['bg-danger', 'bi-x-circle', 'Dibatalkan'],
-            default => ['bg-secondary', 'bi-circle', ucfirst($order->status)],
+            $order->status === \App\Enums\OrderStatus::PENDING && $isPaid => ['bg-info', 'bi-cash-coin', 'Sudah Bayar'],
+            $order->status === \App\Enums\OrderStatus::PENDING && $isFullPending => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
+            $order->status === \App\Enums\OrderStatus::PENDING && $isDpPaid => ['bg-info text-dark', 'bi-piggy-bank', 'DP diverifikasi'],
+            $order->status === \App\Enums\OrderStatus::PENDING && $hasPendingPaymentProof => ['bg-warning text-dark', 'bi-hourglass-split', 'Tunggu Konfirmasi'],
+            $order->status === \App\Enums\OrderStatus::PENDING => ['bg-warning text-dark', 'bi-clock-history', 'Menunggu Pembayaran'],
+            $order->status === \App\Enums\OrderStatus::CONFIRMED => ['bg-info', 'bi-check-circle', 'Dikonfirmasi'],
+            $order->status === \App\Enums\OrderStatus::IN_PRODUCTION => ['bg-light text-dark', 'bi-gear', 'Dalam Produksi'],
+            $order->status === \App\Enums\OrderStatus::COMPLETED => ['bg-success', 'bi-check-all', 'Selesai'],
+            $order->status === \App\Enums\OrderStatus::CANCELLED => ['bg-danger', 'bi-x-circle', 'Dibatalkan'],
+            default => ['bg-secondary', 'bi-circle', $order->status->label() ?? $order->status->value],
         };
     @endphp
 

@@ -30,7 +30,18 @@
                     </ol>
                 </nav>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
+                @if ($order->payment)
+                    @php
+                        $paySt = $order->payment->payment_status;
+                        $payNeedsAction = in_array($paySt, [\App\Models\Payment::STATUS_PENDING, \App\Models\Payment::STATUS_FULL_PENDING], true);
+                    @endphp
+                    <a href="{{ route('admin.payments.show', $order->payment) }}"
+                        class="btn {{ $payNeedsAction ? 'btn-warning' : 'btn-outline-primary' }} shadow-sm">
+                        <i class="bi bi-shield-check me-1"></i>{{ $payNeedsAction ? 'Verifikasi Pembayaran' : 'Detail Pembayaran' }}
+                    </a>
+                @endif
+
                 @if ($order->status == 'pending')
                     <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="d-inline">
                         @csrf
@@ -204,7 +215,10 @@
                                 $dpAmount = round($totalOrder * $dpPercent / 100, 2);
                                 $remainingAmount = $totalOrder - $dpAmount;
                                 
-                                $needsVerify = in_array($payStatus, [\App\Models\Payment::STATUS_PENDING], true) && ($dpProofToShow || $fullProofToShow);
+                                $needsVerify = in_array($payStatus, [
+                                    \App\Models\Payment::STATUS_PENDING,
+                                    \App\Models\Payment::STATUS_FULL_PENDING,
+                                ], true) && ($dpProofToShow || $fullProofToShow || $legacyProof);
                             @endphp
                             
                             <!-- Status Section -->

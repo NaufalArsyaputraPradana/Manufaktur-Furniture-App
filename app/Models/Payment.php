@@ -71,6 +71,51 @@ class Payment extends Model
         });
     }
 
+    /**
+     * Check if payment has already been verified/processed
+     * Prevents duplicate verification
+     */
+    public function hasBeenVerified(): bool
+    {
+        return in_array($this->payment_status, [
+            self::STATUS_DP_PAID,
+            self::STATUS_PAID,
+            self::STATUS_FAILED,
+        ]);
+    }
+
+    /**
+     * Get lock key for preventing race conditions
+     */
+    public function getLockKey(): string
+    {
+        return "payment:verify:{$this->id}";
+    }
+
+    /**
+     * Verify payment with race condition prevention
+     */
+    public function verifyWithLock(callable $callback): mixed
+    {
+        $lock = \Illuminate\Support\Facades\Cache::lock($this->getLockKey(), 10);
+
+        if (!$lock->get()) {
+            throw new \Exception('Pembayaran sedang diproses. Silakan tunggu.');
+        }
+
+        try {
+            // Refresh to check if already verified
+            $this->refresh();
+            if ($this->hasBeenVerified()) {
+                throw new \Exception('Pembayaran sudah diverifikasi sebelumnya.');
+            }
+
+            return $callback($this);
+        } finally {
+            $lock->release();
+        }
+    }
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
@@ -120,6 +165,12 @@ class Payment extends Model
     {
         return $this->payment_status === self::STATUS_FAILED;
     }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === self::STATUS_PAID;
+    }
+
 
     public function markAsPaid(?float $amountPaid = null): bool
     {

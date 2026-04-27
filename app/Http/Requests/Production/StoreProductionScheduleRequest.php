@@ -16,8 +16,8 @@ class StoreProductionScheduleRequest extends FormRequest
         return [
             'title'           => ['required', 'string', 'max:191'],
             'description'     => ['nullable', 'string'],
-            'start_datetime'  => ['required', 'date'],
-            'end_datetime'    => ['required', 'date', 'after_or_equal:start_datetime'],
+            'start_datetime'  => ['required', 'date_format:Y-m-d\TH:i'],
+            'end_datetime'    => ['required', 'date_format:Y-m-d\TH:i', 'after_or_equal:start_datetime'],
             'location'        => ['nullable', 'string', 'max:255'],
         ];
     }

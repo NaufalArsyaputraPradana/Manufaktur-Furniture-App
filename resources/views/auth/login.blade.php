@@ -43,24 +43,39 @@
                         <form action="{{ route('login.submit') }}" method="POST" id="loginForm">
                             @csrf
 
-                            <x-form-input 
-                                name="email" 
-                                label="Alamat Email"
-                                type="email"
-                                placeholder="contoh@email.com"
-                                :value="old('email')"
-                                :errors="$errors"
-                                required
-                                autofocus />
+                            <!-- Email -->
+                            <div class="mb-3">
+                                <label for="email"
+                                    class="form-label fw-bold small text-muted text-uppercase">Alamat Email <span
+                                        class="text-danger">*</span></label>
+                                <input type="email"
+                                    class="form-control form-control-lg @error('email') is-invalid @enderror"
+                                    id="email" name="email" placeholder="contoh@email.com" 
+                                    value="{{ old('email') }}" required autofocus>
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                            <x-form-input 
-                                name="password" 
-                                label="Password"
-                                type="password"
-                                placeholder="Masukkan password"
-                                :errors="$errors"
-                                required />
-
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label for="password"
+                                    class="form-label fw-bold small text-muted text-uppercase">Password <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group has-validation">
+                                    <input type="password"
+                                        class="form-control form-control-lg @error('password') is-invalid @enderror"
+                                        id="password" name="password" placeholder="Masukkan password" required>
+                                    <button class="btn btn-outline-secondary border-start-0" type="button"
+                                        id="toggleLoginPassword" aria-label="Tampilkan Password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <!-- Remember & Submit -->
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="remember" name="remember">
@@ -121,12 +136,12 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Toggle Password Visibility
-            const toggleBtn = document.querySelector('#togglePassword');
+            // Toggle Password Visibility - Login
+            const toggleLoginBtn = document.querySelector('#toggleLoginPassword');
             const passwordInput = document.querySelector('#password');
 
-            if (toggleBtn && passwordInput) {
-                toggleBtn.addEventListener('click', function() {
+            if (toggleLoginBtn && passwordInput) {
+                toggleLoginBtn.addEventListener('click', function() {
                     const isPassword = passwordInput.getAttribute('type') === 'password';
                     passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
 

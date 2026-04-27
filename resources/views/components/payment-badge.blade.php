@@ -15,8 +15,11 @@
         $amount = null;
         $channel = null;
     } else {
+        // Convert Enum to string if needed
+        $paymentStatusValue = ($payment->payment_status instanceof \BackedEnum ? $payment->payment_status->value : (string) ($payment->payment_status ?? ''));
+        
         // Determine badge styling based on payment status
-        $badgeClass = match ($payment->payment_status ?? null) {
+        $badgeClass = match ($paymentStatusValue) {
             'paid' => 'bg-success',
             'dp_paid' => 'bg-warning text-dark',
             'pending' => 'bg-info',
@@ -26,7 +29,7 @@
         };
 
         // Icon and status text
-        $statusDisplay = match ($payment->payment_status ?? null) {
+        $statusDisplay = match ($paymentStatusValue) {
             'paid' => [
                 'icon' => 'bi-check-circle-fill',
                 'text' => 'Pembayaran Penuh',
@@ -49,7 +52,7 @@
             ],
             default => [
                 'icon' => 'bi-question-circle',
-                'text' => ucfirst($payment->payment_status ?? 'unknown'),
+                'text' => ucfirst($paymentStatusValue),
             ],
         };
 

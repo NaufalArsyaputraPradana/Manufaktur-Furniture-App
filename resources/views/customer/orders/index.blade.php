@@ -2,6 +2,24 @@
 
 @section('title', 'Pesanan Saya')
 
+@push('styles')
+    <style>
+        @media (min-width: 992px) {
+            .border-lg-end {
+                border-right: 1px solid var(--border-color) !important;
+                padding-bottom: 0 !important;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .border-lg-end {
+                border-right: none !important;
+                padding-bottom: 1rem !important;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
 
     {{-- ===== HERO SECTION ===== --}}
@@ -75,7 +93,7 @@
                                     <div class="row g-4">
 
                                         {{-- Items --}}
-                                        <div class="col-md-8 border-end border-light">
+                                        <div class="col-lg-8 col-xl-8 border-lg-end border-light pb-4 pb-lg-0">
                                             <h6 class="text-muted mb-3 fw-bold text-uppercase small">
                                                 <i class="bi bi-cart3 me-2" aria-hidden="true"></i>Daftar Produk:
                                             </h6>
@@ -102,7 +120,7 @@
                                         </div>
 
                                         {{-- Summary & Actions --}}
-                                        <div class="col-md-4">
+                                        <div class="col-lg-4 col-xl-4">
                                             <div
                                                 class="bg-light border border-light p-4 rounded-4 mb-3 h-100 d-flex flex-column">
                                                 <h6 class="mb-3 fw-bold text-uppercase small text-muted">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProductionStage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,6 +33,7 @@ class ProductionProcess extends Model
     protected function casts(): array
     {
         return [
+            'stage' => ProductionStage::class,
             'progress_percentage' => 'integer',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -49,20 +51,19 @@ class ProductionProcess extends Model
     ];
 
     const STAGE_LABELS = [
-        'cutting' => 'Pemotongan Bahan',
+        'pending' => 'Menunggu',
+        'cutting' => 'Pemotongan',
         'assembly' => 'Perakitan',
         'sanding' => 'Penghalusan',
         'finishing' => 'Finishing',
         'quality_control' => 'Quality Control',
+        'completed' => 'Selesai',
     ];
 
     const IN_PROGRESS_STATUSES = [
-        'cutting',
-        'assembly',
-        'sanding',
-        'finishing',
-        'quality_control',
         'in_progress',
+        'paused',
+        'issue',
     ];
 
     public static function generateProductionCode(): string
@@ -89,11 +90,6 @@ class ProductionProcess extends Model
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
-    public function assignedUser(): BelongsTo
-    {
-        return $this->assignedTo();
-    }
-
     public function logs(): HasMany
     {
         return $this->hasMany(ProductionLog::class, 'production_process_id')
@@ -112,9 +108,7 @@ class ProductionProcess extends Model
         return Attribute::make(
             get: fn() => match ($this->status) {
                 'pending' => 'secondary',
-                'cutting', 'assembly' => 'info',
-                'sanding', 'finishing', 'in_progress' => 'primary',
-                'quality_control' => 'warning',
+                'in_progress' => 'primary',
                 'completed' => 'success',
                 'paused' => 'secondary',
                 'issue' => 'danger',
@@ -128,11 +122,6 @@ class ProductionProcess extends Model
         return Attribute::make(
             get: fn() => match ($this->status) {
                 'pending' => 'Menunggu',
-                'cutting' => 'Pemotongan',
-                'assembly' => 'Perakitan',
-                'sanding' => 'Penghalusan',
-                'finishing' => 'Finishing',
-                'quality_control' => 'Quality Control',
                 'in_progress' => 'Sedang Dikerjakan',
                 'completed' => 'Selesai',
                 'paused' => 'Dijeda',
@@ -145,21 +134,22 @@ class ProductionProcess extends Model
     protected function stageLabel(): Attribute
     {
         return Attribute::make(
-            get: fn() => self::STAGE_LABELS[$this->stage] ?? ucfirst(str_replace('_', ' ', $this->stage ?? '')),
+            get: fn() => $this->stage?->label() ?? 'Unknown',
         );
     }
 
     public function updateProgress(): void
     {
-        if (isset(self::STAGES[$this->status])) {
-            $this->update(['progress_percentage' => self::STAGES[$this->status]]);
+        if ($this->stage) {
+            $this->update(['progress_percentage' => $this->stage->progressPercentage()]);
         }
     }
 
     public function getNextStage(): ?string
     {
         $stages = array_keys(self::STAGES);
-        $currentIndex = array_search($this->status, $stages);
+        $currentStage = $this->stage instanceof ProductionStage ? $this->stage->value : $this->stage;
+        $currentIndex = array_search($currentStage, $stages);
 
         if ($currentIndex === false || $currentIndex >= count($stages) - 1) {
             return null;

@@ -5,9 +5,11 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\ProductionProcess;
 use App\Observers\OrderObserver;
 use App\Observers\ProductObserver;
+use App\Observers\CategoryObserver;
 use App\Observers\ProductionProcessObserver;
 use Illuminate\Pagination\Paginator;
 
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         // Register model observers for automatic cache invalidation
         Order::observe(OrderObserver::class);
         Product::observe(ProductObserver::class);
+        Category::observe(CategoryObserver::class);
         ProductionProcess::observe(ProductionProcessObserver::class);
     }
 }

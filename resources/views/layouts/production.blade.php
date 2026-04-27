@@ -17,6 +17,7 @@
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
+        @include('layouts.css.global-styles')
         @include('layouts.production.partials.layout-styles')
     </style>
 
@@ -158,6 +159,7 @@
 
         <!-- Content -->
         <main class="main-content">
+            <x-alerts :include-session="false" container="container-fluid" class="pt-3 px-4" />
             @yield('content')
         </main>
 

@@ -4,33 +4,30 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Services\CategoryService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    public function __construct(private CategoryService $categoryService)
+    {
+    }
+
     /**
      * Menampilkan daftar kategori.
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
-        $query = Category::with(['parent'])->withCount(['products', 'children']);
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('is_active')) {
-            $query->where('is_active', $request->is_active);
-        }
-
-        $categories = $query->latest()->paginate(10)->withQueryString();
+        $categories = $this->categoryService->getCategoriesWithFilters(
+            search: $request->get('search'),
+            isActive: $request->filled('is_active') ? (bool) $request->get('is_active') : null,
+            sortBy: $request->get('sort_by', 'latest'),
+            sortOrder: $request->get('sort_order', 'desc'),
+            perPage: 10
+        );
 
         return view('admin.categories.index', compact('categories'));
     }
@@ -38,9 +35,9 @@ class CategoryController extends Controller
     /**
      * Form tambah kategori baru.
      */
-    public function create()
+    public function create(): View
     {
-        $parents = Category::active()->root()->orderBy('name')->get();
+        $parents = $this->categoryService->getActiveRootCategories();
 
         return view('admin.categories.create', compact('parents'));
     }
@@ -48,7 +45,7 @@ class CategoryController extends Controller
     /**
      * Simpan kategori baru ke database.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:100', 'unique:categories,name'],
@@ -59,23 +56,13 @@ class CategoryController extends Controller
         ]);
 
         try {
-            if ($request->hasFile('image')) {
-                $validated['image'] = $request->file('image')->store('categories', 'public');
-            }
-
-            $validated['slug'] = Str::slug($validated['name']);
-            $validated['is_active'] = $request->boolean('is_active');
-
-            Category::create($validated);
+            $image = $request->hasFile('image') ? $request->file('image') : null;
+            $category = $this->categoryService->createCategory($validated, $image);
 
             return redirect()->route('admin.categories.index')
                 ->with('success', 'Kategori berhasil ditambahkan!');
 
         } catch (\Exception $e) {
-            if (isset($validated['image']) && Storage::disk('public')->exists($validated['image'])) {
-                Storage::disk('public')->delete($validated['image']);
-            }
-
             return back()->withInput()->with('error', 'Gagal menambahkan kategori: ' . $e->getMessage());
         }
     }
@@ -83,7 +70,7 @@ class CategoryController extends Controller
     /**
      * Tampilkan detail kategori.
      */
-    public function show(Category $category)
+    public function show(Category $category): View
     {
         $category->load(['parent', 'children'])->loadCount('products');
         $products = $category->products()->latest()->paginate(10);
@@ -94,7 +81,7 @@ class CategoryController extends Controller
     /**
      * Form edit kategori.
      */
-    public function edit(Category $category)
+    public function edit(Category $category): View
     {
         $parents = Category::active()
             ->root()
@@ -108,7 +95,7 @@ class CategoryController extends Controller
     /**
      * Update kategori di database.
      */
-    public function update(Request $request, Category $category)
+    public function update(Request $request, Category $category): RedirectResponse
     {
         $validated = $request->validate([
             'name'        => ['required', 'string', 'max:100', Rule::unique('categories')->ignore($category->id)],
@@ -119,20 +106,8 @@ class CategoryController extends Controller
         ]);
 
         try {
-            if ($request->hasFile('image')) {
-                if ($category->image && Storage::disk('public')->exists($category->image)) {
-                    Storage::disk('public')->delete($category->image);
-                }
-                $validated['image'] = $request->file('image')->store('categories', 'public');
-            }
-
-            if ($category->name !== $validated['name']) {
-                $validated['slug'] = Str::slug($validated['name']);
-            }
-
-            $validated['is_active'] = $request->boolean('is_active');
-
-            $category->update($validated);
+            $newImage = $request->hasFile('image') ? $request->file('image') : null;
+            $this->categoryService->updateCategory($category, $validated, $newImage);
 
             return redirect()->route('admin.categories.index')
                 ->with('success', 'Kategori berhasil diperbarui!');
@@ -145,7 +120,7 @@ class CategoryController extends Controller
     /**
      * Hapus kategori dari database.
      */
-    public function destroy(Category $category)
+    public function destroy(Category $category): RedirectResponse
     {
         if ($category->products()->exists()) {
             return back()->with('error', 'Tidak bisa menghapus kategori yang masih memiliki produk! Silakan hapus atau pindahkan produk terlebih dahulu.');
@@ -156,11 +131,7 @@ class CategoryController extends Controller
         }
 
         try {
-            if ($category->image && Storage::disk('public')->exists($category->image)) {
-                Storage::disk('public')->delete($category->image);
-            }
-
-            $category->delete();
+            $this->categoryService->deleteCategory($category);
 
             return redirect()->route('admin.categories.index')
                 ->with('success', 'Kategori berhasil dihapus!');

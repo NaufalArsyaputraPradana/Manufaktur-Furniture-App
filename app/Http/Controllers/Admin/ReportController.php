@@ -3,20 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderDetail;
-use App\Models\ProductionProcess;
 use App\Models\Report;
+use App\Models\ProductionProcess;
+use App\Services\ReportService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Carbon\CarbonPeriod;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\DB;
+use Carbon\CarbonPeriod;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportController extends Controller
 {
+    public function __construct(private ReportService $reportService)
+    {
+    }
+
     /**
      * Laporan Utama (Keuangan Bulanan)
      */
@@ -25,47 +31,11 @@ class ReportController extends Controller
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
 
-        $ordersQuery = Order::whereMonth('created_at', $month)->whereYear('created_at', $year);
+        $data = $this->reportService->getMonthlyReport($month, $year);
 
-        $jumlahPesanan = (clone $ordersQuery)->count();
-        $totalTransaksi = (clone $ordersQuery)->sum('total');
-
-        $pembayaranSukses = (clone $ordersQuery)->whereHas('payment', fn($q) => $q->where('payment_status', 'paid'))->count();
-        $pembayaranGagal = (clone $ordersQuery)->whereHas('payment', fn($q) => $q->where('payment_status', 'failed'))->count();
-        $belumDibayar = $jumlahPesanan - $pembayaranSukses - $pembayaranGagal;
-
-        $monthlyRevenue = Order::select(
-            DB::raw('MONTH(created_at) as bulan'),
-            DB::raw('SUM(total) as total')
-        )
-            ->whereYear('created_at', $year)
-            ->where('status', '!=', 'cancelled')
-            ->groupBy('bulan')
-            ->pluck('total', 'bulan')
-            ->toArray();
-
-        $chartData = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $chartData[$i] = $monthlyRevenue[$i] ?? 0;
-        }
-
-        $orders = Order::with(['user', 'payment'])
-            ->whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('admin.reports.index', compact(
-            'orders',
-            'month',
-            'year',
-            'totalTransaksi',
-            'jumlahPesanan',
-            'pembayaranSukses',
-            'pembayaranGagal',
-            'belumDibayar',
-            'chartData'
+        return view('admin.reports.index', array_merge(
+            $data,
+            compact('month', 'year')
         ));
     }
 
@@ -77,68 +47,17 @@ class ReportController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
 
-        $query = Order::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-
-        $totalOrders = (clone $query)->count();
-        $completedOrders = (clone $query)->where('status', 'completed')->count();
-        $pendingOrders = (clone $query)->where('status', 'pending')->count();
-        $cancelledOrders = (clone $query)->where('status', 'cancelled')->count();
-        $totalRevenue = (clone $query)->where('status', '!=', 'cancelled')->sum('total');
-        $averageOrder = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
-
-        $topProducts = OrderDetail::select('product_name', DB::raw('SUM(quantity) as total_qty'))
-            ->whereHas('order', function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-                    ->where('status', '!=', 'cancelled');
-            })
-            ->groupBy('product_name')
-            ->orderByDesc('total_qty')
-            ->limit(5)
-            ->get();
-
-        $topProductLabels = $topProducts->pluck('product_name');
-        $topProductData = $topProducts->pluck('total_qty');
-
-        $dailySales = (clone $query)
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as total'))
-            ->where('status', '!=', 'cancelled')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->pluck('total', 'date')
-            ->toArray();
-
-        $salesChartLabels = [];
-        $salesChartData = [];
-        foreach (CarbonPeriod::create($startDate, $endDate) as $date) {
-            $dateStr = $date->format('Y-m-d');
-            $salesChartLabels[] = $date->format('d M');
-            $salesChartData[] = $dailySales[$dateStr] ?? 0;
+        if (strtotime($startDate) > strtotime($endDate)) {
+            return back()->with('error', 'Tanggal awal harus lebih kecil dari tanggal akhir.');
         }
 
-        if ($request->has('generate')) {
-            $this->saveReport('sales', 'Laporan Penjualan', $startDate, $endDate, [
-                'total_revenue' => $totalRevenue,
-                'total_orders' => $totalOrders,
-            ]);
-            return back()->with('success', 'Laporan hasil komputasi berhasil disimpan ke arsip.');
-        }
+        $categoryId = $request->get('category_id');
+        $data = $this->reportService->getSalesReport($startDate, $endDate, $categoryId ? (int) $categoryId : null);
+        $categories = Category::active()->orderBy('name')->get();
 
-        $sales = (clone $query)->with(['user', 'orderDetails'])->latest()->get();
-
-        return view('admin.reports.sales', compact(
-            'startDate',
-            'endDate',
-            'totalOrders',
-            'completedOrders',
-            'pendingOrders',
-            'cancelledOrders',
-            'totalRevenue',
-            'averageOrder',
-            'sales',
-            'topProductLabels',
-            'topProductData',
-            'salesChartLabels',
-            'salesChartData'
+        return view('admin.reports.sales', array_merge(
+            $data,
+            compact('startDate', 'endDate', 'categories', 'categoryId')
         ));
     }
 
@@ -150,29 +69,38 @@ class ReportController extends Controller
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
 
-        $query = ProductionProcess::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        if (strtotime($startDate) > strtotime($endDate)) {
+            return back()->with('error', 'Tanggal awal harus lebih kecil dari tanggal akhir.');
+        }
 
-        $totalProcesses = (clone $query)->count();
-        $completed = (clone $query)->where('status', 'completed')->count();
-        $inProgress = (clone $query)->where('status', 'in_progress')->count();
-        $pending = (clone $query)->where('status', 'pending')->count();
-        $efficiency = $totalProcesses > 0 ? round(($completed / $totalProcesses) * 100, 1) : 0;
+        $statusFilter = $request->get('status');
+        $data = $this->reportService->getProductionReport($startDate, $endDate, $statusFilter);
 
-        $processes = (clone $query)->with(['order.orderDetails.product'])->latest()->limit(50)->get();
-        $chartLabels = ['Pending', 'In Progress', 'Completed'];
-        $chartData = [$pending, $inProgress, $completed];
+        $productionStatuses = ['pending', 'in_progress', 'completed', 'on_hold'];
 
-        return view('admin.reports.production', compact(
-            'startDate',
-            'endDate',
-            'totalProcesses',
-            'completed',
-            'inProgress',
-            'pending',
-            'efficiency',
-            'processes',
-            'chartLabels',
-            'chartData'
+        return view('admin.reports.production', array_merge(
+            $data,
+            compact('startDate', 'endDate', 'productionStatuses', 'statusFilter')
+        ));
+    }
+
+    /**
+     * Laporan Pelanggan
+     */
+    public function customer(Request $request): View
+    {
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+        if (strtotime($startDate) > strtotime($endDate)) {
+            return back()->with('error', 'Tanggal awal harus lebih kecil dari tanggal akhir.');
+        }
+
+        $data = $this->reportService->getCustomerReport($startDate, $endDate);
+
+        return view('admin.reports.customer', array_merge(
+            $data,
+            compact('startDate', 'endDate')
         ));
     }
 
@@ -388,8 +316,8 @@ class ReportController extends Controller
             $query->where('status', $request->status);
         }
 
-        // For backward compatibility, use 'orders' key
-        $orders = $query->latest()->paginate(15)->withQueryString();
+        // For backward compatibility, use 'reports' key
+        $reports = $query->latest()->paginate(15)->withQueryString();
         
         // Get financial data for the selected month/year
         $ordersQuery = Order::whereMonth('created_at', $month)->whereYear('created_at', $year);
@@ -417,8 +345,8 @@ class ReportController extends Controller
             $chartData[$i] = $monthlyRevenue[$i] ?? 0;
         }
 
-        return view('admin.reports.index', compact(
-            'orders',
+        return view('admin.reports.reports-list', compact(
+            'reports',
             'month',
             'year',
             'totalTransaksi',
@@ -435,7 +363,9 @@ class ReportController extends Controller
      */
     public function create(): View
     {
-        return view('admin.reports.create');
+        $categories = Category::orderBy('name')->get();
+
+        return view('admin.reports.create', compact('categories'));
     }
 
     /**
@@ -472,7 +402,9 @@ class ReportController extends Controller
      */
     public function edit(Report $report): View
     {
-        return view('admin.reports.edit', compact('report'));
+        $categories = Category::orderBy('name')->get();
+
+        return view('admin.reports.edit', compact('report', 'categories'));
     }
 
     /**
@@ -536,7 +468,7 @@ class ReportController extends Controller
             fputcsv($handle, [$report->title]);
             fputcsv($handle, ["Periode: {$report->start_date} s/d {$report->end_date}"]);
             fputcsv($handle, ["Tipe: " . ucfirst($report->report_type)]);
-            fputcsv($handle, ["Dibuat: " . $report->generated_at->format('Y-m-d H:i')]);
+            fputcsv($handle, ["Dibuat: " . $report->created_at->format('Y-m-d H:i')]);
             fputcsv($handle, []);
 
             if ($report->data) {
@@ -562,7 +494,7 @@ class ReportController extends Controller
             'report' => $report,
         ])->render();
 
-        return \PDF::loadHTML($html)->download($filename);
+        return Pdf::loadHTML($html)->download($filename);
     }
 
     /**

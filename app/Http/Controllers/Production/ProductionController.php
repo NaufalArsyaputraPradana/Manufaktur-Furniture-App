@@ -119,7 +119,10 @@ class ProductionController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $process) {
-            $process->update(['status' => $validated['stage']]);
+            $process->update([
+                'stage' => $validated['stage'],
+                'status' => $validated['action'] === 'completed' ? 'completed' : 'in_progress',
+            ]);
 
             if ($validated['action'] === 'started' && !$process->started_at) {
                 $process->update(['started_at' => now()]);

@@ -101,11 +101,11 @@
                             </div>
                             <hr>
                             @php
-                                $calculatedTotal = $order->orderDetails->sum(fn($d) => $d->unit_price * $d->quantity);
+                                $calculatedTotal = (float) $order->total;
                                 $pct = (float) 50;
                                 $dpAmt = round($calculatedTotal * $pct / 100, 2);
-                                $remainingPayment = $calculatedTotal - $dpAmt;
-                                $dueNow = $isBalanceUi ? $remainingPayment : $dpAmt;
+                                $remainingPayment = max(0, round($calculatedTotal - $dpAmt, 2));
+                                $dueNow = $isBalanceUi ? $order->remainingPayableAmount() : $dpAmt;
                                 $dueLabel = $isBalanceUi ? 'Sisa pelunasan' : 'Jumlah transfer sekarang (DP ' . $pct . '%)';
                             @endphp
                             <div class="bg-light p-4 rounded-4 text-center border-2 border-success border-opacity-25">
@@ -156,6 +156,15 @@
                                     </div>
                                     <div class="col-12">
                                         <div class="form-check payment-choice border rounded-4 p-3 h-100">
+                                            <input class="form-check-input" type="radio" name="pay_mode" id="payMidtransDp" value="midtrans_dp">
+                                            <label class="form-check-label w-100 ms-2" for="payMidtransDp">
+                                                <strong>Uang muka (DP) via Midtrans</strong>
+                                                <small class="d-block text-muted">Ditagih {{ $pct }}% dari total · status <strong>dp_paid</strong> setelah settlement</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check payment-choice border rounded-4 p-3 h-100">
                                             <input class="form-check-input" type="radio" name="pay_mode" id="payDp" value="manual_dp">
                                             <label class="form-check-label w-100 ms-2" for="payDp">
                                                 <strong>Transfer manual — Uang muka (DP)</strong>
@@ -174,9 +183,27 @@
                                     </div>
                                 </div>
                             @else
-                                {{-- BALANCE PAGE - Only manual transfer option --}}
-                                <div class="info-box info-box-blue border-0 rounded-4 mb-0 small mb-3">
-                                    <i class="bi bi-info-circle me-2"></i>Selesaikan <strong>pelunasan</strong> dengan transfer manual.
+                                {{-- BALANCE PAGE — pelunasan: Midtrans atau manual --}}
+                                <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 me-2 text-primary"></i>Pilih metode pelunasan</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-check payment-choice border rounded-4 p-3 h-100">
+                                            <input class="form-check-input" type="radio" name="pay_balance" id="payBalanceMidtrans" value="midtrans" checked>
+                                            <label class="form-check-label w-100 ms-2" for="payBalanceMidtrans">
+                                                <strong>Pelunasan via Midtrans</strong>
+                                                <small class="d-block text-muted">VA, e-wallet, kartu, QRIS — senilai sisa tagihan</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check payment-choice border rounded-4 p-3 h-100">
+                                            <input class="form-check-input" type="radio" name="pay_balance" id="payBalanceManual" value="manual_full">
+                                            <label class="form-check-label w-100 ms-2" for="payBalanceManual">
+                                                <strong>Transfer manual — Pelunasan</strong>
+                                                <small class="d-block text-muted">Unggah bukti · verifikasi admin</small>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                                 <input type="hidden" name="pay_mode" id="payFullManual" value="manual_full">
                             @endif
@@ -212,6 +239,15 @@
                                     SECTION 1: BANK DETAILS
                                     =================================== --}}
                                 @if($isBalanceUi)
+                                <div id="balanceMidtransActions" class="d-grid gap-3 mb-4">
+                                    <button type="button" class="btn btn-success btn-lg rounded-pill fw-bold" id="submitBtnBalance">
+                                        <i class="bi bi-credit-card-fill me-2" aria-hidden="true"></i>Lanjutkan ke pembayaran Midtrans (pelunasan)
+                                    </button>
+                                    <a href="{{ route('customer.orders.show', $order) }}" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
+                                        <i class="bi bi-arrow-left me-2"></i>Kembali ke Pesanan
+                                    </a>
+                                </div>
+                                <div id="balanceManualFields" class="d-none">
                                 <div class="bank-details-section mb-4">
                                     <div class="d-flex align-items-center mb-3">
                                         <i class="bi bi-bank me-2 text-primary" style="font-size: 1.5rem;"></i>
@@ -343,6 +379,7 @@
                                         <i class="bi bi-arrow-left me-2"></i>Kembali ke Pesanan
                                     </a>
                                 </div>
+                                </div>{{-- /balanceManualFields --}}
                             @else
                                 {{-- NON-BALANCE PAGE: Manual fields with separate sections --}}
                                 <div id="manualFields" class="d-none">
@@ -977,9 +1014,21 @@
                 const midBtn = document.getElementById('submitBtn');
                 const manBtn = document.getElementById('manualSubmitBtn');
 
-                // Skip radio logic if on balance page
                 if (isBalancePage) {
-                    console.log('✅ Balance page detected - using manual_full mode');
+                    function syncBalance() {
+                        const balanceMode = document.querySelector('input[name="pay_balance"]:checked')?.value;
+                        const midWrap = document.getElementById('balanceMidtransActions');
+                        const manWrap = document.getElementById('balanceManualFields');
+                        if (balanceMode === 'midtrans') {
+                            midWrap?.classList.remove('d-none');
+                            manWrap?.classList.add('d-none');
+                        } else {
+                            midWrap?.classList.add('d-none');
+                            manWrap?.classList.remove('d-none');
+                        }
+                    }
+                    document.querySelectorAll('input[name="pay_balance"]').forEach(r => r.addEventListener('change', syncBalance));
+                    syncBalance();
                     return;
                 }
 
@@ -1127,16 +1176,30 @@
             // ============================================
             // FORM SUBMISSION
             // ============================================
+            function getMidtransPhase() {
+                if (isBalancePage) {
+                    const pay = document.querySelector('input[name="pay_balance"]:checked')?.value;
+                    return pay === 'midtrans' ? 'remainder' : null;
+                }
+                const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
+                if (mode === 'midtrans_dp') return 'dp';
+                return 'full';
+            }
+
             function initFormSubmission() {
                 const form = document.getElementById('paymentFormManual');
                 const submitBtn = document.getElementById('submitBtn');
+                const submitBtnBalance = document.getElementById('submitBtnBalance');
                 const manualBtn = document.getElementById('manualSubmitBtn');
                 const orderId = '{{ $order->id }}';
                 const orderShowUrl = '{{ route('customer.orders.show', $order) }}';
                 const csrfToken = '{{ csrf_token() }}';
 
-                if (submitBtn && !isBalancePage) {
-                    submitBtn.addEventListener('click', function() {
+                function wireMidtransButton(btn) {
+                    if (!btn) return;
+                    btn.addEventListener('click', function() {
+                        const phase = getMidtransPhase();
+                        if (!phase) return;
                         Swal.fire({
                             title: 'Memproses Pembayaran',
                             text: 'Mohon tunggu sebentar...',
@@ -1145,18 +1208,28 @@
                             showConfirmButton: false,
                             didOpen: () => Swal.showLoading()
                         });
-                        submitBtn.disabled = true;
-                        submitBtn.innerHTML =
+                        btn.disabled = true;
+                        const label = btn.innerHTML;
+                        btn.innerHTML =
                             '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Memproses...';
-                        handleMidtransPayment(orderId, orderShowUrl, csrfToken);
+                        handleMidtransPayment(orderId, orderShowUrl, csrfToken, phase, btn, label);
                     });
                 }
+
+                wireMidtransButton(submitBtn && !isBalancePage ? submitBtn : null);
+                wireMidtransButton(isBalancePage ? submitBtnBalance : null);
 
                 if (form && manualBtn) {
                     form.addEventListener('submit', function(e) {
                         if (!isBalancePage) {
                             const mode = document.querySelector('input[name="pay_mode"]:checked')?.value;
-                            if (mode === 'midtrans') {
+                            if (mode === 'midtrans' || mode === 'midtrans_dp') {
+                                e.preventDefault();
+                                return false;
+                            }
+                        } else {
+                            const bal = document.querySelector('input[name="pay_balance"]:checked')?.value;
+                            if (bal === 'midtrans') {
                                 e.preventDefault();
                                 return false;
                             }
@@ -1178,7 +1251,7 @@
                 });
             }
 
-            function handleMidtransPayment(orderId, orderShowUrl, csrfToken) {
+            function handleMidtransPayment(orderId, orderShowUrl, csrfToken, phase, triggerBtn, triggerLabel) {
                 
                 // Request snap token
                 fetch(`/api/payment/midtrans/token/${orderId}`, {
@@ -1189,7 +1262,7 @@
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({}),
+                    body: JSON.stringify({ phase: phase || 'full' }),
                     credentials: 'include'  // Include cookies for authentication
                 }).then(r => {
                     console.log('✅ Response Status:', r.status);
@@ -1321,12 +1394,20 @@
                         confirmButtonColor: '#667eea'
                     });
                     
-                    // Re-enable submit button
                     const submitBtn = document.getElementById('submitBtn');
-                    if (submitBtn) {
+                    const submitBtnBalance = document.getElementById('submitBtnBalance');
+                    const b = triggerBtn || submitBtn || submitBtnBalance;
+                    if (b && triggerLabel) {
+                        b.disabled = false;
+                        b.innerHTML = triggerLabel;
+                    } else if (submitBtn) {
                         submitBtn.disabled = false;
                         submitBtn.innerHTML =
                             '<i class="bi bi-credit-card-fill me-2" aria-hidden="true"></i>Lanjutkan ke pembayaran Midtrans';
+                    } else if (submitBtnBalance) {
+                        submitBtnBalance.disabled = false;
+                        submitBtnBalance.innerHTML =
+                            '<i class="bi bi-credit-card-fill me-2" aria-hidden="true"></i>Lanjutkan ke pembayaran Midtrans (pelunasan)';
                     }
                 });
             }

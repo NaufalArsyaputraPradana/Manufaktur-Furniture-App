@@ -40,8 +40,13 @@ class PaymentController extends Controller
         $year = $request->get('year', now()->year);
 
         // Build base query with date filtering and eager loading
+        // Sertakan baris yang punya salah satu bukti (legacy / DP / pelunasan)
         $query = Payment::with(['order.user', 'order.orderDetails.product'])
-            ->whereNotNull('payment_proof')
+            ->where(function ($q) {
+                $q->whereNotNull('payment_proof')
+                    ->orWhereNotNull('payment_proof_dp')
+                    ->orWhereNotNull('payment_proof_full');
+            })
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month);
 
@@ -92,6 +97,8 @@ class PaymentController extends Controller
      */
     public function verify(Request $request, Payment $payment): RedirectResponse
     {
+        $this->authorize('verify', $payment);
+
         try {
             $this->paymentService->verifyManualTransfer($payment);
             
@@ -122,6 +129,8 @@ class PaymentController extends Controller
      */
     public function reject(Request $request, Payment $payment): RedirectResponse
     {
+        $this->authorize('reject', $payment);
+
         $validated = $request->validate([
             'notes' => ['required', 'string', 'max:500'],
         ], [
@@ -159,6 +168,8 @@ class PaymentController extends Controller
      */
     public function confirmFinalPayment(Request $request, Payment $payment): RedirectResponse
     {
+        $this->authorize('confirmFinal', $payment);
+
         try {
             // Validate payment is in correct status
             if ($payment->payment_status !== Payment::STATUS_FULL_PENDING) {

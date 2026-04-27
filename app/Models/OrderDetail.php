@@ -26,8 +26,8 @@ class OrderDetail extends Model
     protected function casts(): array
     {
         return [
-            'unit_price' => 'decimal:2',
-            'subtotal' => 'decimal:2',
+            'unit_price' => 'float',  // ✅ Fixed: Changed from decimal:2 to float
+            'subtotal' => 'float',    // ✅ Fixed: Changed from decimal:2 to float
             'is_custom' => 'boolean',
             'custom_specifications' => 'array',
             'quantity' => 'integer',

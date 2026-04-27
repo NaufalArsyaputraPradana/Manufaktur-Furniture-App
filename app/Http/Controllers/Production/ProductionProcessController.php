@@ -19,10 +19,11 @@ class ProductionProcessController extends Controller
                 'user:id,name,email',
                 'orderDetails:id,order_id,product_name,quantity',
                 'productionProcesses:id,order_id,status,progress_percentage,stage',
+                'payment:id,order_id,payment_status',
             ])
-            ->select('id', 'order_number', 'user_id', 'status', 'total', 'created_at')
-            ->orderByDesc('id')
-            ->get();
+            ->select('id', 'order_number', 'user_id', 'status', 'total', 'created_at', 'expected_completion_date')
+            ->latest()
+            ->paginate(15);
 
         return view('production.orders.index', compact('orders'));
     }
@@ -85,20 +86,20 @@ class ProductionProcessController extends Controller
         }
 
         return redirect()
-            ->route('production.monitoring.index', $process->order_id)
+            ->route('production.monitoring.order', $process->order_id)
             ->with('success', 'Proses produksi berhasil ditambahkan ke antrean.');
     }
 
     public function show(ProductionProcess $process): View
     {
-        $process->load(['order.user:id,name,email', 'orderDetails.product:id,name,sku', 'assignedTo:id,name', 'logs.user:id,name']);
+        $process->load(['order.user:id,name,email', 'orderDetail.product:id,name,sku', 'assignedTo:id,name', 'logs.user:id,name']);
 
         return view('production.process.show', compact('process'));
     }
 
     public function edit(ProductionProcess $process): View
     {
-        $process->load(['order.user:id,name', 'orderDetails:id,order_id,product_name']);
+        $process->load(['order.user:id,name', 'orderDetail:id,order_id,product_name']);
 
         return view('production.process.edit', compact('process'));
     }
@@ -133,7 +134,7 @@ class ProductionProcessController extends Controller
             ->with('success', 'Detail proses produksi berhasil diperbarui.');
     }
 
-    public function showOrder(Order $order)
+    public function showOrder(Order $order): View
     {
         $order->load(['user:id,name,email', 'orderDetails.product:id,name,sku', 'payment:id,order_id,payment_status', 'productionProcesses:id,order_id,stage,status']);
         return view('production.orders.show', compact('order'));
@@ -150,7 +151,7 @@ class ProductionProcessController extends Controller
         $process->delete();
 
         return redirect()
-            ->route('production.monitoring.index', $orderId)
+            ->route('production.monitoring.order', $orderId)
             ->with('success', 'Data proses produksi berhasil dihapus secara permanen.');
     }
 }

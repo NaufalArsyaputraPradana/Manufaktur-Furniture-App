@@ -18,6 +18,9 @@ return new class extends Migration {
             $table->string('tracking_note', 120)->nullable();
             $table->foreignId('recorded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('created_at'); // For recent shipping updates
         });
     }
 

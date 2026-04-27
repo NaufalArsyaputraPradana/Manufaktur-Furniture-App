@@ -13,7 +13,9 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
     background-color: var(--bg-light);
     color: var(--text-dark);
     display: flex;
@@ -21,7 +23,6 @@ body {
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
-    top: 0 !important;
 }
 
 main {
@@ -80,7 +81,6 @@ body {
     margin-top: 0 !important;
 }
 
-/* Kiri bawah agar tidak bertabrakan dengan tombol "kembali ke atas" (kanan bawah) */
 .whatsapp-float {
     position: fixed;
     bottom: 30px;
@@ -109,7 +109,7 @@ body {
 
 @media (max-width: 576px) {
     .whatsapp-float {
-        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        bottom: max(20px, calc(20px + env(safe-area-inset-bottom, 0px)));
         left: 20px;
         width: 48px;
         height: 48px;

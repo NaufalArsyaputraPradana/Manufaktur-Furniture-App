@@ -8,9 +8,10 @@
 @php
     // Determine product image
     $productImage = null;
-    if (is_array($product->images ?? null) && count($product->images) > 0) {
-        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($product->images[0])) {
-            $productImage = asset('storage/' . $product->images[0]);
+    $productImages = is_array($product->images ?? null) ? $product->images : (is_string($product->images ?? null) ? json_decode($product->images, true) : []);
+    if (!empty($productImages) && is_array($productImages) && count($productImages) > 0 && is_string($productImages[0])) {
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($productImages[0])) {
+            $productImage = asset('storage/' . $productImages[0]);
         }
     } elseif (!empty($product->image)) {
         $productImage = asset('storage/' . $product->image);
@@ -124,7 +125,7 @@
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="product_name" value="{{ $product->name }}">
                             <input type="hidden" name="price" value="{{ $product->base_price }}">
-                            <input type="hidden" name="image" value="{{ $product->images[0] ?? '' }}">
+                            <input type="hidden" name="image" value="{{ $productImages[0] ?? '' }}">
                             <input type="hidden" name="quantity" value="1">
                             <button type="submit"
                                 class="btn btn-primary w-100 rounded-3 shadow-sm fw-bold"

@@ -7,15 +7,18 @@
 ])
 
 @php
+    // Convert Enum to string if needed
+    $statusValue = $status instanceof \BackedEnum ? $status->value : (string) $status;
+    
     // Determine badge styling based on status and payment state
     $badgeClass = match (true) {
-        $status === 'pending' && $isPaid => 'bg-info',
-        $status === 'pending' && $isDpPaid => 'bg-warning text-dark',
-        $status === 'pending' => 'bg-warning text-dark',
-        $status === 'confirmed' => 'bg-info text-dark',
-        $status === 'in_production' => 'bg-primary',
-        $status === 'completed' => 'bg-success',
-        $status === 'cancelled' => 'bg-danger',
+        $statusValue === 'pending' && $isPaid => 'bg-info',
+        $statusValue === 'pending' && $isDpPaid => 'bg-warning text-dark',
+        $statusValue === 'pending' => 'bg-warning text-dark',
+        $statusValue === 'confirmed' => 'bg-info text-dark',
+        $statusValue === 'in_production' => 'bg-primary',
+        $statusValue === 'completed' => 'bg-success',
+        $statusValue === 'cancelled' => 'bg-danger',
         default => 'bg-secondary',
     };
 
@@ -28,7 +31,7 @@
     };
 
     // Determine status icon and text
-    $statusDisplay = match ($status) {
+    $statusDisplay = match ($statusValue) {
         'pending' => [
             'icon' => $isPaid ? 'bi-cash-coin' : ($isDpPaid ? 'bi-piggy-bank' : 'bi-clock-history'),
             'text' => $isPaid ? 'Menunggu Verifikasi Pembayaran' : ($isDpPaid ? 'DP terverifikasi' : 'Menunggu Pembayaran'),
@@ -51,7 +54,7 @@
         ],
         default => [
             'icon' => 'bi-question-circle',
-            'text' => ucfirst($status),
+            'text' => ucfirst($statusValue),
         ],
     };
 @endphp

@@ -147,7 +147,7 @@
                             <option value="">-- Produk Custom --</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}" data-price="{{ $product->base_price }}"
-                                    data-name="{{ $product->name }}">
+                                    data-name="{{ $product->name }}" data-image="{{ $product->thumbnail }}">
                                     {{ $product->name }} ({{ $product->sku }})
                                 </option>
                             @endforeach
@@ -160,6 +160,21 @@
                                 class="text-danger">*</span></label>
                         <input type="text" class="form-control item-name" id="product_name_INDEX"
                             name="products[INDEX][product_name]" placeholder="Nama item..." required>
+                    </div>
+                    <!-- Product Image Display -->
+                    <div class="col-12">
+                        <div class="product-image-preview-INDEX" style="display: none;">
+                            <div class="card border-light bg-light">
+                                <div class="card-body p-3">
+                                    <label class="form-label small fw-bold text-muted text-uppercase mb-2">Preview Produk</label>
+                                    <div class="position-relative d-inline-block w-100">
+                                        <img id="product_image_INDEX" src="" alt="Produk Preview"
+                                            class="img-fluid rounded border border-light"
+                                            style="max-width: 250px; max-height: 250px; object-fit: contain;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-4">
                         <label for="unit_price_INDEX" class="form-label small fw-bold text-uppercase">Harga Satuan <span
@@ -326,14 +341,50 @@
                 nameInput.readOnly = true; // Kunci nama jika dari katalog
                 priceInput.value = selected.dataset.price;
                 customInput.value = "0"; // Bukan custom murni
+                
+                // Display product image
+                displayProductImage(row, selected.dataset.image);
             } else {
                 // Produk Custom
                 nameInput.value = "";
                 nameInput.readOnly = false;
                 priceInput.value = 0;
                 customInput.value = "1"; // Custom murni
+                
+                // Hide product image
+                hideProductImage(row);
             }
             calculateTotal();
+        }
+
+        function displayProductImage(row, imageUrl) {
+            // Get the index from row's element
+            let className = row.className;
+            let index = '';
+            const classes = row.classList;
+            for (let cls of classes) {
+                if (cls.includes('product-image-preview-')) {
+                    index = cls.replace('product-image-preview-', '');
+                    break;
+                }
+            }
+
+            // Find the preview container
+            const previewContainer = row.querySelector('[class*="product-image-preview-"]');
+            if (previewContainer && imageUrl) {
+                const img = previewContainer.querySelector('img');
+                if (img) {
+                    img.src = imageUrl;
+                    previewContainer.style.display = 'block';
+                }
+            }
+        }
+
+        function hideProductImage(row) {
+            const previewContainer = row.querySelector('[class*="product-image-preview-"]');
+            if (previewContainer) {
+                previewContainer.style.display = 'none';
+            }
         }
 
         function calculateTotal() {

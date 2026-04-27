@@ -17,7 +17,7 @@ class StoreProductionTodoRequest extends FormRequest
         return [
             'title'       => ['required', 'string', 'max:191'],
             'description' => ['nullable', 'string'],
-            'deadline'    => ['nullable', 'date'],
+            'deadline'    => ['nullable', 'date_format:Y-m-d\TH:i'],
             'status'      => ['nullable', 'in:' . implode(',', ProductionTodo::statuses())],
         ];
     }

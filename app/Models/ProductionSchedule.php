@@ -54,11 +54,7 @@ class ProductionSchedule extends Model
 
     public function scopeSearchTitle(Builder $query, ?string $search): Builder
     {
-        if (!$search) {
-            return $query;
-        }
-
-        return $query->where('title', 'like', '%' . $search . '%');
+        return $search ? $query->where('title', 'like', "%{$search}%") : $query;
     }
 
     public function scopeOrderDefault(Builder $query): Builder
@@ -130,5 +126,56 @@ class ProductionSchedule extends Model
         $text = preg_replace('/\R/', '\n', $text);
 
         return $text ?? '';
+    }
+
+    /**
+     * Check if schedule has conflict with other schedules for the same user
+     * Two schedules conflict if their time ranges overlap
+     */
+    public function hasConflict(): bool
+    {
+        return self::where('user_id', $this->user_id)
+            ->where('id', '!=', $this->id)
+            ->where(function (Builder $query) {
+                // Check for any overlap
+                $query->where(function (Builder $q) {
+                    $q->where('start_datetime', '<', $this->end_datetime)
+                        ->where('end_datetime', '>', $this->start_datetime);
+                });
+            })
+            ->whereNull('deleted_at')
+            ->exists();
+    }
+
+    /**
+     * Get conflicting schedules
+     */
+    public function getConflicts()
+    {
+        return self::where('user_id', $this->user_id)
+            ->where('id', '!=', $this->id)
+            ->where(function (Builder $query) {
+                $query->where(function (Builder $q) {
+                    $q->where('start_datetime', '<', $this->end_datetime)
+                        ->where('end_datetime', '>', $this->start_datetime);
+                });
+            })
+            ->whereNull('deleted_at')
+            ->get();
+    }
+
+    /**
+     * Check conflict before saving
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (ProductionSchedule $schedule) {
+            if ($schedule->hasConflict()) {
+                throw new \Exception(
+                    'Jadwal bertabrakan dengan jadwal lain untuk pengguna ini. ' .
+                    'Silakan pilih waktu yang berbeda.'
+                );
+            }
+        });
     }
 }

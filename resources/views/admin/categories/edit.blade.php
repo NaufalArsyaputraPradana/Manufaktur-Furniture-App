@@ -83,30 +83,25 @@
                             <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-info-circle me-2"></i>Informasi Utama</h6>
                         </div>
                         <div class="card-body p-4">
-                            <x-form-input 
+                            <x-form.input 
                                 name="name" 
                                 label="Nama Kategori"
                                 type="text"
-                                :value="old('name', $category->name)"
-                                :errors="$errors"
+                                value="{{ old('name', $category->name) }}"
                                 required />
 
-                            <x-form-input 
+                            <x-form.select 
                                 name="parent_id" 
                                 label="Induk Kategori"
-                                type="select"
                                 :options="collect(['' => '-- Kategori Utama (Root) --'])->union($parents->pluck('name', 'id'))"
-                                :value="old('parent_id', $category->parent_id)"
-                                :errors="$errors"
+                                value="{{ old('parent_id', $category->parent_id) }}"
                                 help="Ubah jika ingin memindahkan kategori ini ke bawah kategori lain." />
 
-                            <x-form-input 
+                            <x-form.textarea 
                                 name="description" 
                                 label="Deskripsi"
-                                type="textarea"
                                 rows="4"
-                                :value="old('description', $category->description)"
-                                :errors="$errors" />
+                                value="{{ old('description', $category->description) }}" />
                         </div>
                     </div>
                 </div>

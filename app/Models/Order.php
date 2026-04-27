@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
+use App\Enums\ShippingStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,11 +37,13 @@ class Order extends Model
     protected function casts(): array
     {
         return [
+            'status' => OrderStatus::class,
+            'shipping_status' => ShippingStatus::class,
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
-            'order_date' => 'datetime',
-            'expected_completion_date' => 'datetime',
-            'actual_completion_date' => 'datetime',
+            'order_date' => 'date',
+            'expected_completion_date' => 'date',
+            'actual_completion_date' => 'date',
             'shipped_at' => 'datetime',
             'delivered_at' => 'datetime',
         ];
@@ -55,50 +59,17 @@ class Order extends Model
 
     public function getShippingStatusLabelAttribute(): string
     {
-        return match ($this->shipping_status) {
-            'processing' => 'Diproses',
-            'shipped' => 'Dikirim',
-            'delivered' => 'Sampai',
-            default => $this->shipping_status ? ucfirst(str_replace('_', ' ', $this->shipping_status)) : 'Belum diperbarui',
-        };
-    }
-
-    public static function generateOrderNumber(): string
-    {
-        $prefix = 'ORD-' . now()->format('Ymd') . '-';
-        $lastOrder = self::where('order_number', 'like', $prefix . '%')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $newNumber = $lastOrder ? intval(substr($lastOrder->order_number, -4)) + 1 : 1;
-
-        return $prefix . str_pad((string) $newNumber, 4, '0', STR_PAD_LEFT);
+        return $this->shipping_status?->label() ?? 'Belum diperbarui';
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'Menunggu Pembayaran',
-            'confirmed' => 'Dikonfirmasi',
-            'in_production' => 'Dalam Produksi',
-            'completed' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
-            'on_hold' => 'Ditahan',
-            default => ucfirst($this->status ?? 'Unknown'),
-        };
+        return $this->status?->label() ?? 'Unknown';
     }
 
     public function getStatusColorAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'warning',
-            'confirmed' => 'info',
-            'in_production' => 'primary',
-            'completed' => 'success',
-            'cancelled' => 'danger',
-            'on_hold' => 'secondary',
-            default => 'light',
-        };
+        return $this->status?->color() ?? 'light';
     }
 
     public function user(): BelongsTo
@@ -124,5 +95,61 @@ class Order extends Model
     public function shippingLogs(): HasMany
     {
         return $this->hasMany(OrderShippingLog::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * Generate unique order number with database-level safety
+     */
+    public static function generateOrderNumber(): string
+    {
+        $prefix = 'ORD';
+        $date = now()->format('Ymd');
+        
+        // Use database lock to prevent race conditions
+        $maxOrder = static::whereDate('created_at', today())
+            ->lockForUpdate()
+            ->orderByDesc('id')
+            ->value('order_number');
+        
+        if ($maxOrder && str_contains($maxOrder, $date)) {
+            // Extract counter from existing order (e.g., ORD-20260427-00012 -> 12)
+            $parts = explode('-', $maxOrder);
+            $counter = (int) end($parts) + 1;
+        } else {
+            // No orders today yet, start from 1
+            $counter = 1;
+        }
+        
+        // Ensure counter doesn't exceed 5 digits (99999 orders per day max)
+        if ($counter > 99999) {
+            throw new \Exception('Order number counter exceeded maximum for today (99999)');
+        }
+        
+        return $prefix . '-' . $date . '-' . str_pad($counter, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Check if order can transition to a specific status
+     */
+    public function canTransitionTo(OrderStatus $newStatus): bool
+    {
+        if (!$this->status) {
+            return false;
+        }
+
+        return in_array($newStatus, $this->status->allowedTransitions());
+    }
+
+    /**
+     * Validate status transition before updating
+     */
+    public function transitionTo(OrderStatus $newStatus): bool
+    {
+        if (!$this->canTransitionTo($newStatus)) {
+            return false;
+        }
+
+        $this->update(['status' => $newStatus]);
+        return true;
     }
 }

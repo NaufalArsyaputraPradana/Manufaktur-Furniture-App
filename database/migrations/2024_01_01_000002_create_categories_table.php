@@ -15,11 +15,18 @@ return new class extends Migration {
             $table->string('image')->nullable()->comment('Path gambar kategori');
             $table->foreignId('parent_id')
                 ->nullable()
-                ->constrained('categories')
+                ->references('id')
+                ->on('categories')
                 ->nullOnDelete()
                 ->comment('Induk kategori jika ada');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('parent_id');
+            $table->index('is_active');
+            $table->index('slug');
+            $table->index('created_at');
         });
     }
 

@@ -2,108 +2,94 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderShippingRequest;
 use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
-use App\Models\OrderDetail;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private OrderService $orderService)
     {
-        $query = Order::with(['user', 'orderDetails.product', 'payment']);
+    }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($u) use ($search) {
-                        $u->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
+    public function index(Request $request): View
+    {
+        $orders = $this->orderService->getOrdersWithFilters(
+            status: $request->get('status'),
+            search: $request->get('search'),
+            perPage: 15
+        );
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('order_date', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('order_date', '<=', $request->date_to);
-        }
-
-        $orders = $query->latest()->paginate(10)->withQueryString();
-
-        $orderStatuses = ['pending', 'confirmed', 'in_production', 'completed', 'cancelled', 'on_hold'];
+        $orderStatuses = OrderStatus::cases();
 
         return view('admin.orders.index', compact('orders', 'orderStatuses'));
     }
 
-    public function create()
+    public function create(): View
     {
-        $products = Product::where('is_active', true)->select('id', 'name', 'base_price', 'sku')->orderBy('name')->get();
-        $customers = User::whereHas('role', fn($q) => $q->where('name', 'customer'))->orderBy('name')->get();
+        $products = Product::where('is_active', true)
+            ->select('id', 'name', 'base_price', 'sku')
+            ->orderBy('name')
+            ->get();
+        $customers = User::with('role:id,name')
+            ->whereHas('role', fn($q) => $q->where('name', 'customer'))
+            ->orderBy('name')
+            ->select('id', 'name', 'email', 'phone')
+            ->get();
 
         return view('admin.orders.create', compact('products', 'customers'));
     }
 
-    public function store(StoreOrderRequest $request)
+    public function store(StoreOrderRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
         DB::beginTransaction();
         try {
-            $subtotal = 0;
-            foreach ($validated['products'] as $item) {
-                $unitPrice = (float) ($item['unit_price'] ?? 0);
-                $subtotal += ($unitPrice * (int) $item['quantity']);
+            // Prepare items with file uploads
+            $items = [];
+            $uploadedFiles = [];
+            foreach ($validated['products'] as $index => $item) {
+                $items[$index] = [
+                    'product_id' => $item['product_id'] ?? null,
+                    'product_name' => $item['product_name'],
+                    'quantity' => (int) $item['quantity'],
+                    'unit_price' => (float) $item['unit_price'],
+                    'is_custom' => filter_var($item['is_custom'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'custom_specifications' => $item['customizations'] ?? null,
+                ];
+
+                // Collect file uploads
+                if ($request->hasFile("products.{$index}.customizations.design_image")) {
+                    $uploadedFiles[$index] = $request->file("products.{$index}.customizations.design_image");
+                }
             }
 
+            // Create order through service
             $order = Order::create([
-                'order_number'             => Order::generateOrderNumber(),
-                'user_id'                  => $validated['user_id'],
-                'order_date'                => $validated['order_date'],
-                'expected_completion_date'  => $validated['estimated_delivery_date'] ?? null,
-                'shipping_address'          => $validated['shipping_address'],
-                'customer_notes'            => $validated['notes'] ?? null,
-                'status'                    => 'pending',
-                'subtotal'                   => $subtotal,
-                'total'                      => $subtotal,
+                'order_number' => Order::generateOrderNumber(),
+                'user_id' => $validated['user_id'],
+                'order_date' => $validated['order_date'],
+                'expected_completion_date' => $validated['estimated_delivery_date'] ?? null,
+                'shipping_address' => $validated['shipping_address'],
+                'customer_notes' => $validated['notes'] ?? null,
+                'status' => 'pending',
             ]);
 
-            foreach ($validated['products'] as $index => $item) {
-                $isCustom = filter_var($item['is_custom'] ?? false, FILTER_VALIDATE_BOOLEAN);
-                $customSpecs = $item['customizations'] ?? null;
-                $unitPrice = (float) ($item['unit_price'] ?? 0);
-                $quantity = (int) $item['quantity'];
-
-                if ($isCustom && $request->hasFile("products.{$index}.customizations.design_image")) {
-                    $file = $request->file("products.{$index}.customizations.design_image");
-                    $path = $file->store('custom_designs', 'public');
-                    $customSpecs['design_image'] = $path;
-                }
-
-                OrderDetail::create([
-                    'order_id'               => $order->id,
-                    'product_id'             => $isCustom ? null : ($item['product_id'] ?? null),
-                    'product_name'           => $item['product_name'],
-                    'quantity'               => $quantity,
-                    'unit_price'             => $unitPrice,
-                    'subtotal'                => $unitPrice * $quantity,
-                    'is_custom'               => $isCustom,
-                    'custom_specifications'   => $customSpecs,
-                ]);
-            }
+            // Add order details with file uploads via service
+            $this->orderService->addOrderDetails($order, $items, !empty($uploadedFiles) ? $uploadedFiles : null);
 
             DB::commit();
 
@@ -116,22 +102,32 @@ class OrderController extends Controller
         }
     }
 
-    public function show(Order $order)
+    public function show(Order $order): View
     {
+        $this->authorize('view', $order);
+        
         $order->load(['user', 'orderDetails.product', 'payment']);
 
         return view('admin.orders.show', compact('order'));
     }
 
-    public function edit(Order $order)
+    public function edit(Order $order): View
     {
-        $customers = User::whereHas('role', fn($q) => $q->where('name', 'customer'))->orderBy('name')->get();
+        $this->authorize('update', $order);
+        
+        $customers = User::with('role:id,name')
+            ->whereHas('role', fn($q) => $q->where('name', 'customer'))
+            ->orderBy('name')
+            ->select('id', 'name', 'email', 'phone')
+            ->get();
 
         return view('admin.orders.edit', compact('order', 'customers'));
     }
 
-    public function update(UpdateOrderRequest $request, Order $order)
+    public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
     {
+        $this->authorize('update', $order);
+        
         $validated = $request->validated();
 
         $order->update([
@@ -145,33 +141,25 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.show', $order)->with('success', 'Update berhasil.');
     }
 
-    public function updateStatus(UpdateOrderStatusRequest $request, Order $order)
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
     {
+        $this->authorize('updateStatus', $order);
+        
         $validated = $request->validated();
-
-        $order->status = $validated['status'];
-
-        if (!empty($validated['notes'])) {
-            $ts = now()->format('d/m/Y H:i');
-            $order->admin_notes .= "\n[{$ts} - {$validated['status']}] {$validated['notes']}";
-        }
-
-        if ($validated['status'] === 'completed') {
-            $order->actual_completion_date = now();
-        }
-
-        $order->save();
+        $this->orderService->updateOrderStatus($order, $validated['status'], $validated['notes'] ?? null);
 
         return redirect()->route('admin.orders.show', $order)->with('success', 'Status diubah.');
     }
 
-    public function cancel(Request $request, Order $order)
+    public function cancel(Request $request, Order $order): RedirectResponse
     {
-        if (in_array($order->status, ['completed', 'cancelled'])) {
+        $this->authorize('cancel', $order);
+        
+        if (in_array($order->status, [OrderStatus::COMPLETED, OrderStatus::CANCELLED])) {
             return back()->with('error', 'Gagal membatalkan. Status pesanan sudah Selesai atau Dibatalkan.');
         }
 
-        $order->status = 'cancelled';
+        $order->status = OrderStatus::CANCELLED;
 
         if ($request->filled('reason')) {
             $order->admin_notes .= "\n[Cancelled] Reason: " . $request->reason;
@@ -182,38 +170,20 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.show', $order)->with('success', 'Pesanan dibatalkan.');
     }
 
-    public function updateShipping(UpdateOrderShippingRequest $request, Order $order)
+    public function updateShipping(UpdateOrderShippingRequest $request, Order $order): RedirectResponse
     {
-        $v = $request->validated();
-
-        if (array_key_exists('shipping_status', $v)) {
-            $order->shipping_status = $v['shipping_status'] ?: null;
-            if ($order->shipping_status === 'shipped' && !$order->shipped_at) {
-                $order->shipped_at = now();
-            }
-            if ($order->shipping_status === 'delivered' && !$order->delivered_at) {
-                $order->delivered_at = now();
-            }
-        }
-
-        if (array_key_exists('courier', $v)) {
-            $c = $v['courier'] !== null ? trim((string) $v['courier']) : '';
-            $order->courier = $c !== '' ? $c : null;
-        }
-
-        if (array_key_exists('tracking_number', $v)) {
-            $t = $v['tracking_number'] !== null ? trim((string) $v['tracking_number']) : '';
-            $order->tracking_number = $t !== '' ? $t : null;
-        }
-
-        $order->save();
+        $this->authorize('updateShipping', $order);
+        
+        $this->orderService->updateShipping($order, $request->validated());
 
         return redirect()->route('admin.orders.show', $order)->with('success', 'Data pengiriman diperbarui.');
     }
 
-    public function destroy(Order $order)
+    public function destroy(Order $order): RedirectResponse
     {
-        if (!in_array($order->status, ['pending', 'cancelled'], true)) {
+        $this->authorize('delete', $order);
+        
+        if (!in_array($order->status, [OrderStatus::PENDING, OrderStatus::CANCELLED], true)) {
             return back()->with('error', 'Hanya pesanan berstatus pending atau cancelled yang dapat dihapus.');
         }
 

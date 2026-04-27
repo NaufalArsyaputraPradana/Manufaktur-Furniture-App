@@ -47,67 +47,58 @@
                         <div class="card-body p-4">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="name" 
                                         label="Nama Produk"
                                         type="text"
-                                        :value="old('name', $product->name)"
-                                        :errors="$errors"
+                                        value="{{ old('name', $product->name) }}"
                                         required />
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="sku" 
                                         label="SKU"
                                         type="text"
-                                        :value="old('sku', $product->sku)"
-                                        :errors="$errors"
+                                        value="{{ old('sku', $product->sku) }}"
                                         required />
                                 </div>
                             </div>
 
-                            <x-form-input 
+                            <x-form.select 
                                 name="category_id" 
                                 label="Kategori"
-                                type="select"
-                                :options="collect(['' => '-- Pilih --'])->union($categories->pluck('name', 'id'))"
-                                :value="old('category_id', $product->category_id)"
-                                :errors="$errors"
+                                :options="collect(['' => '-- Pilih --'])->union($categories->pluck('name', 'id'))->toArray()"
+                                value="{{ old('category_id', $product->category_id) }}"
                                 required />
 
-                            <x-form-input 
+                            <x-form.textarea 
                                 name="description" 
                                 label="Deskripsi"
-                                type="textarea"
                                 rows="5"
-                                :value="old('description', $product->description)"
-                                :errors="$errors" />
+                                value="{{ old('description', $product->description) }}" />
 
                             <h6 class="fw-bold mt-4 mb-3 text-success"><i class="bi bi-rulers me-2"></i>Spesifikasi</h6>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="dimensions" 
                                         label="Dimensi"
                                         type="text"
-                                        :value="old('dimensions', $product->dimensions)"
-                                        :errors="$errors" />
+                                        value="{{ old('dimensions', $product->dimensions) }}" />
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="wood_type" 
                                         label="Jenis Kayu"
                                         type="text"
-                                        :value="old('wood_type', $product->wood_type)"
-                                        :errors="$errors" />
+                                        value="{{ old('wood_type', $product->wood_type) }}" />
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    <x-form-input 
+                                    <x-form.input 
                                         name="finishing_type" 
                                         label="Finishing"
                                         type="text"
-                                        :value="old('finishing_type', $product->finishing_type)"
-                                        :errors="$errors" />
+                                        value="{{ old('finishing_type', $product->finishing_type) }}" />
                                 </div>
                             </div>
                         </div>

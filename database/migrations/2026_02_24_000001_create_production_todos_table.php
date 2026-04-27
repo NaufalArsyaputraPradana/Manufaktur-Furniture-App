@@ -19,9 +19,9 @@ return new class extends Migration {
                 ->default('pending');
             $table->timestamps();
             $table->softDeletes();
-            $table->index('user_id');
             $table->index('status');
             $table->index('deadline');
+            $table->index(['user_id', 'status']); // Composite index for user tasks by status
         });
     }
 

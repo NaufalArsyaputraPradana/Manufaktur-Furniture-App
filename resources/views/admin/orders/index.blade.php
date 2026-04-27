@@ -50,41 +50,59 @@
 
         <!-- Filters -->
         <div class="card shadow-sm mb-4 border-0 rounded-3">
-            <div class="card-body py-3">
-                <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3 align-items-end">
+            <div class="card-body p-4">
+                <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3">
+                    <!-- Status Filter -->
                     <div class="col-lg-3 col-md-6">
-                        <x-form-input
+                        <x-form.select
                             name="status"
                             label="Status"
-                            type="select"
-                            :options="collect(['' => 'Semua Status'])->union(collect($orderStatuses)->flip()->flip()->mapWithKeys(fn($status) => [$status => ucfirst(str_replace('_', ' ', $status))]))"
+                            :options="collect(['' => 'Semua Status'])
+                                ->union(collect($orderStatuses)->mapWithKeys(fn($status) => [$status->value => $status->label()]))
+                                ->toArray()"
                             :value="request('status')"
                         />
                     </div>
+
+                    <!-- Date From Filter -->
                     <div class="col-lg-3 col-md-6">
-                        <x-form-input
+                        <x-form.input
                             name="date_from"
                             label="Dari Tanggal"
                             type="date"
                             :value="request('date_from')"
                         />
                     </div>
+
+                    <!-- Date To Filter -->
                     <div class="col-lg-3 col-md-6">
-                        <x-form-input
+                        <x-form.input
                             name="date_to"
                             label="Sampai Tanggal"
                             type="date"
                             :value="request('date_to')"
                         />
                     </div>
+
+                    <!-- Search Filter -->
                     <div class="col-lg-3 col-md-6">
-                        <label class="form-label fw-bold small text-uppercase text-muted d-block">Pencarian</label>
+                        <label class="form-label fw-bold small text-uppercase text-muted">Pencarian</label>
                         <x-search-input 
                             name="search" 
                             value="{{ request('search') }}" 
                             placeholder="No. Order / Nama..." 
                             icon="bi-search"
                         />
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary shadow-sm">
+                            <i class="bi bi-funnel me-2"></i>Terapkan Filter
+                        </button>
+                        <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary shadow-sm ms-2">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Reset
+                        </a>
                     </div>
                 </form>
             </div>
@@ -101,74 +119,71 @@
             <div class="card-body p-0">
                 @if ($orders->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 modern-table">
-                            <thead class="bg-light">
+                        <table class="table table-hover table-striped modern-table mb-0">
+                            <thead class="table-light border-bottom">
                                 <tr>
-                                    <th class="ps-4 py-3 border-bottom-0 fw-bold text-secondary text-uppercase small" width="56"></th>
-                                    <th class="ps-4 py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">No. Order</th>
-                                    <th class="py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">Pelanggan</th>
-                                    <th class="py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">Tanggal</th>
-                                    <th class="py-3 border-bottom-0 fw-bold text-secondary text-uppercase small">Total</th>
-                                    <th class="py-3 border-bottom-0 fw-bold text-secondary text-uppercase small text-center">Status</th>
-                                    <th class="pe-4 py-3 border-bottom-0 fw-bold text-secondary text-uppercase small text-end">Aksi</th>
+                                    <th style="width: 56px;"></th>
+                                    <th>No. Order</th>
+                                    <th>Pelanggan</th>
+                                    <th>Tanggal</th>
+                                    <th>Total</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-end">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($orders as $order)
+                                @foreach($orders as $row)
                                     @php
-                                        $d0 = $order->orderDetails->first();
+                                        $d0 = $row->orderDetails->first();
                                         $thumb = $d0 ? ($d0->customDesignImageUrl() ?: ($d0->product ? $d0->product->thumbnail : null)) : null;
                                     @endphp
                                     <tr>
-                                        <td class="ps-4">
+                                        <td>
                                             @if ($thumb)
                                                 <img src="{{ $thumb }}" alt="" class="rounded border" width="40" height="40" style="object-fit:cover;">
                                             @else
                                                 <span class="d-inline-flex rounded bg-light border align-items-center justify-content-center text-muted small" style="width:40px;height:40px;">—</span>
                                             @endif
                                         </td>
-                                        <td class="ps-2">
-                                            <a href="{{ route('admin.orders.show', $order) }}"
-                                                class="fw-bold text-primary text-decoration-none">
-                                                #{{ $order->order_number }}
+                                        <td>
+                                            <a href="{{ route('admin.orders.show', $row) }}" class="fw-bold text-primary text-decoration-none">
+                                                #{{ $row->order_number }}
                                             </a>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2 border"
                                                     style="width: 35px; height: 35px;">
-                                                    <span class="fw-bold text-secondary small">{{ strtoupper(substr($order->user->name ?? 'G', 0, 1)) }}</span>
+                                                    <span class="fw-bold text-secondary small">{{ strtoupper(substr($row->user->name ?? 'G', 0, 1)) }}</span>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold text-dark small">{{ Str::limit($order->user->name ?? 'Guest', 20) }}</div>
-                                                    <div class="text-muted small" style="font-size: 0.75rem;">{{ $order->user->email ?? '-' }}</div>
+                                                    <div class="fw-bold text-dark small">{{ Str::limit($row->user->name ?? 'Guest', 20) }}</div>
+                                                    <div class="text-muted small" style="font-size: 0.75rem;">{{ $row->user->email ?? '-' }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="text-dark small">{{ $order->order_date ? $order->order_date->format('d M Y') : '-' }}</span>
+                                            <span class="text-dark small">{{ $row->order_date ? $row->order_date->format('d M Y') : '-' }}</span>
                                         </td>
                                         <td>
-                                            <span class="fw-bold text-success">Rp {{ number_format($order->total, 0, ',', '.') }}</span>
+                                            <span class="fw-bold text-success">Rp {{ number_format($row->total, 0, ',', '.') }}</span>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-{{ $order->status_color }} bg-opacity-10 text-{{ $order->status_color }} border border-{{ $order->status_color }} rounded-pill px-3">
-                                                {{ $order->status_label }}
-                                            </span>
+                                            <x-order-status-badge :status="$row->status" />
                                         </td>
-                                        <td class="pe-4 text-end">
-                                            <a href="{{ route('admin.orders.show', $order) }}"
+                                        <td class="text-end">
+                                            <a href="{{ route('admin.orders.show', $row) }}"
                                                 class="btn btn-sm btn-info text-white shadow-sm" data-bs-toggle="tooltip" title="Lihat Detail">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            @if (!in_array($order->status, ['cancelled', 'completed'], true))
-                                                <a href="{{ route('admin.orders.edit', $order) }}"
+                                            @if (!in_array($row->status, ['cancelled', 'completed'], true))
+                                                <a href="{{ route('admin.orders.edit', $row) }}"
                                                     class="btn btn-sm btn-warning text-white shadow-sm" data-bs-toggle="tooltip" title="Edit">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
                                             @endif
-                                            @if (in_array($order->status, ['pending', 'cancelled'], true) && !in_array($order->payment?->payment_status, [\App\Models\Payment::STATUS_PAID, \App\Models\Payment::STATUS_DP_PAID], true))
-                                                <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus pesanan ini?');">
+                                            @if (in_array($row->status, ['pending', 'cancelled'], true) && !in_array($row->payment?->payment_status, [\App\Models\Payment::STATUS_PAID, \App\Models\Payment::STATUS_DP_PAID], true))
+                                                <form action="{{ route('admin.orders.destroy', $row) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus pesanan ini?');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm" data-bs-toggle="tooltip" title="Hapus"><i class="bi bi-trash"></i></button>
@@ -184,16 +199,12 @@
                         {{ $orders->links('pagination::bootstrap-5') }}
                     </div>
                 @else
-                    <div class="text-center py-5">
-                        <div class="mb-3 text-muted opacity-25">
-                            <i class="bi bi-inbox" style="font-size: 4rem;"></i>
-                        </div>
-                        <h5 class="text-muted fw-bold">Belum ada pesanan</h5>
-                        <p class="text-muted mb-4">Pesanan yang dibuat akan muncul di sini.</p>
-                        <a href="{{ route('admin.orders.create') }}" class="btn btn-primary px-4 shadow-sm">
-                            <i class="bi bi-plus-lg me-2"></i>Buat Pesanan
-                        </a>
-                    </div>
+                    <x-empty-state
+                        title="Belum ada pesanan"
+                        message="Pesanan yang dibuat akan muncul di sini."
+                        icon="bi-inbox"
+                        :action="['label' => 'Buat Pesanan', 'url' => route('admin.orders.create')]"
+                    />
                 @endif
             </div>
         </div>

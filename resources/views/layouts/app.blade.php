@@ -47,6 +47,7 @@
     <x-layouts.customer-navbar />
 
     <main id="main-content">
+        <x-alerts container="container" class="pt-3" />
         @yield('content')
     </main>
 

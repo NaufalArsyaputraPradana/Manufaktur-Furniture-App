@@ -41,20 +41,12 @@ class ProductionTodo extends Model
 
     public function scopeStatus(Builder $query, ?string $status): Builder
     {
-        if (!$status) {
-            return $query;
-        }
-
-        return $query->where('status', $status);
+        return $status ? $query->where('status', $status) : $query;
     }
 
     public function scopeSearchTitle(Builder $query, ?string $search): Builder
     {
-        if (!$search) {
-            return $query;
-        }
-
-        return $query->where('title', 'like', '%' . $search . '%');
+        return $search ? $query->where('title', 'like', "%{$search}%") : $query;
     }
 
     public function scopeOrderDefault(Builder $query): Builder

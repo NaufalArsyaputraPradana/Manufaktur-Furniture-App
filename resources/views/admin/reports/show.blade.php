@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Report: ' . $report->name ?? 'Report')
+@section('title', 'Report: ' . $report->title)
 
 @section('content')
 <div class="container-fluid py-4">
@@ -10,10 +10,10 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="h3 mb-1">
-                        <i class="bi bi-file-earmark-text"></i> {{ $report->name ?? 'Report' }}
+                        <i class="bi bi-file-earmark-text"></i> {{ $report->title }}
                     </h1>
-                    @if($report->description)
-                        <p class="text-muted mb-0">{{ $report->description }}</p>
+                    @if($report->title)
+                        <p class="text-muted mb-0">{{ $report->title }} — {{ ucfirst($report->report_type) }}</p>
                     @endif
                 </div>
                 <div>
@@ -32,7 +32,7 @@
                 <div class="card-body">
                     <p class="text-muted small mb-1">Report Type</p>
                     <h6 class="mb-0">
-                        <span class="badge bg-info">{{ ucfirst($report->type) }}</span>
+                        <span class="badge bg-info">{{ ucfirst($report->report_type) }}</span>
                     </h6>
                 </div>
             </div>
@@ -51,7 +51,7 @@
             <div class="card">
                 <div class="card-body">
                     <p class="text-muted small mb-1">Created By</p>
-                    <h6 class="mb-0">{{ $report->user->name ?? 'Unknown' }}</h6>
+                        <h6 class="mb-0">{{ $report->generatedBy?->name ?? 'Unknown' }}</h6>
                 </div>
             </div>
         </div>
@@ -59,7 +59,7 @@
             <div class="card">
                 <div class="card-body">
                     <p class="text-muted small mb-1">Generated Date</p>
-                    <h6 class="mb-0">{{ $report->generated_at ? $report->generated_at->format('d M Y H:i') : 'Not generated' }}</h6>
+                        <h6 class="mb-0">{{ $report->created_at->format('d M Y H:i') }}</h6>
                 </div>
             </div>
         </div>
@@ -161,7 +161,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const reportId = {{ $report->id }};
-    const reportType = '{{ $report->type }}';
+    const reportType = '{{ $report->report_type }}';
 
     document.getElementById('regenerateBtn')?.addEventListener('click', regenerateReport);
     document.getElementById('generateBtn')?.addEventListener('click', generateReport);

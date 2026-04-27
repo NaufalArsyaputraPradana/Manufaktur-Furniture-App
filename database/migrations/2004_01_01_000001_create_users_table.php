@@ -21,6 +21,12 @@ return new class extends Migration {
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('role_id');
+            $table->index('is_active');
+            $table->index('email');
+            $table->index('created_at');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

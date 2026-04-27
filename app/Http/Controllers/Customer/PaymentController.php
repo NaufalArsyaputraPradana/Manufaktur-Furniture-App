@@ -89,13 +89,18 @@ class PaymentController extends Controller
             }
 
             // Eager load required relationships
-            $order->loadMissing(['orderDetails', 'user']);
-            
-            $result = $this->paymentService->createMidtransTransaction($order);
+            $order->loadMissing(['orderDetails', 'user', 'payment']);
+
+            $phase = $request->input('phase', 'full');
+            if (! is_string($phase) || ! in_array($phase, ['full', 'dp', 'remainder'], true)) {
+                $phase = 'full';
+            }
+
+            $result = $this->paymentService->createMidtransTransaction($order, [], $phase);
 
             return response()->json([
                 'status' => 'success',
-                'data' => $result
+                'data' => $result,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to generate snap token', ['error' => $e->getMessage()]);

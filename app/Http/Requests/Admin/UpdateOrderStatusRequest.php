@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\OrderStatus;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Enum;
 
 /**
  * Update Order Status Request
@@ -29,8 +30,8 @@ class UpdateOrderStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|in:pending,confirmed,in_production,completed,cancelled',
-            'notes'  => 'nullable|string',
+            'status' => ['required', new Enum(OrderStatus::class)],
+            'notes'  => 'nullable|string|max:500',
         ];
     }
 

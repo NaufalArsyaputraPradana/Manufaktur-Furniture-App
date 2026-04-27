@@ -14,10 +14,13 @@ return new class extends Migration {
             $table->date('start_date')->index();
             $table->date('end_date')->index();
             $table->json('data')->comment('Snapshot of report data at the time of generation');
+            $table->json('filters')->nullable()->comment('Filters used to generate this report');
+            $table->string('status', 30)->default('completed')->comment('completed, pending, failed');
             $table->foreignId('generated_by')
                 ->constrained('users')
                 ->onDelete('cascade');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

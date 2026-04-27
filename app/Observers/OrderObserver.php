@@ -51,7 +51,7 @@ class OrderObserver
         Cache::forget('dashboard.chart.revenue');
         Cache::forget('dashboard.top.products');
 
-        // Order statistics (dipakai QueryOptimizationService)
+        // Order statistics
         Cache::forget('order.statistics');
     }
 }

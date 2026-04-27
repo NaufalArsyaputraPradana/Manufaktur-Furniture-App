@@ -24,6 +24,10 @@ return new class extends Migration {
             $table->json('material_used')->nullable()->comment('Daftar material yang dikonsumsi dalam aksi ini');
             $table->json('documentation_images')->nullable()->comment('Array berisi path foto bukti pengerjaan');
             $table->timestamps();
+            
+            // Performance indexes
+            $table->index('production_process_id');
+            $table->index('user_id');
         });
     }
 

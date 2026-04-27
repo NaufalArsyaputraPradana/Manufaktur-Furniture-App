@@ -817,6 +817,181 @@ footer .footer-links li:hover {
 }
 
 /* ===================================
+   PRODUCTION DASHBOARD STYLING
+   =================================== */
+
+/* Production container enhanced spacing */
+.production-dashboard {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+}
+
+/* Enhanced card styling for production */
+.production-dashboard .card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.production-dashboard .card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* Stats card styling */
+.production-stats-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.production-stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+.production-stats-card .fs-4 {
+    transition: transform 0.3s ease;
+}
+
+.production-stats-card:hover .fs-4 {
+    transform: scale(1.1);
+}
+
+/* Table improvements */
+.production-dashboard .table-responsive {
+    border-radius: 0 0 0.75rem 0.75rem;
+    overflow: hidden;
+}
+
+.production-dashboard .table {
+    margin: 0;
+}
+
+.production-dashboard .table thead {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: var(--gray-700);
+    border-bottom: 2px solid var(--gray-300);
+}
+
+.production-dashboard .table tbody tr {
+    border-bottom: 1px solid var(--gray-200);
+    transition: background-color 0.2s ease;
+}
+
+.production-dashboard .table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.production-dashboard .table tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* List group improvements */
+.production-dashboard .list-group-item {
+    border: none;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.production-dashboard .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.production-dashboard .list-group-item:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Button improvements */
+.production-dashboard .btn-outline-primary,
+.production-dashboard .btn-outline-info,
+.production-dashboard .btn-outline-success {
+    transition: all 0.2s ease;
+    border-width: 1.5px;
+    font-weight: 500;
+}
+
+.production-dashboard .btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    transform: translateX(2px);
+}
+
+.production-dashboard .btn-outline-info:hover {
+    background-color: var(--info);
+    border-color: var(--info);
+    transform: translateX(2px);
+}
+
+.production-dashboard .btn-outline-success:hover {
+    background-color: var(--success);
+    border-color: var(--success);
+    transform: translateX(2px);
+}
+
+/* Badge improvements */
+.production-dashboard .badge {
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+    font-size: 0.8rem;
+    letter-spacing: 0.3px;
+}
+
+/* Progress bar improvements */
+.production-dashboard .progress {
+    background-color: var(--gray-200);
+    border-radius: 0.5rem;
+    height: 6px;
+    overflow: hidden;
+}
+
+.production-dashboard .progress-bar {
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    border-radius: 0.5rem;
+    transition: width 0.3s ease;
+}
+
+/* Responsive improvements */
+@media (max-width: 1399px) {
+    .production-dashboard .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .production-dashboard .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .production-dashboard .card {
+        margin-bottom: 1rem;
+    }
+    
+    .production-dashboard .table {
+        font-size: 0.875rem;
+    }
+    
+    .production-dashboard .btn-sm {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* ===================================
    PRINT STYLES
    =================================== */
 
