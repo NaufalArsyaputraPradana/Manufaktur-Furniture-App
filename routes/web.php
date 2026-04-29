@@ -316,3 +316,11 @@ Route::get('/system-reset-database-99', function () {
         return "Terjadi kesalahan: " . $e->getMessage();
     }
 });
+
+// Tambahkan di routes/web.php
+Route::get('/clean-all', function() {
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+    Artisan::call('view:clear');
+    return "Semua cache berhasil dibersihkan!";
+});
