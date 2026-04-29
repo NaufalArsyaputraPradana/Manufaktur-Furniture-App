@@ -292,37 +292,16 @@ Route::middleware(['auth', 'role:production_staff'])
             ->name('schedules.export-ics');
     });
 
-Route::get('/buat-symlink-pasti', function () {
-    // 1. Folder ASLI tempat Laravel menyimpan gambar
-    $targetFolder = storage_path('app/public');
+Route::get('/db-command', function () {
+    $token = request()->query('token');
 
-    // 2. Folder TUJUAN di cPanel (menggunakan variabel server agar 100% akurat)
-    // $_SERVER['DOCUMENT_ROOT'] biasanya otomatis mengarah ke /home/user/public_html
-    $linkFolder = $_SERVER['DOCUMENT_ROOT'] . '/storage';
-
-    try {
-        symlink($targetFolder, $linkFolder);
-        return "BERHASIL!<br>
-                Target asli: " . $targetFolder . "<br>
-                Symlink di: " . $linkFolder;
-    } catch (\Exception $e) {
-        return "GAGAL. Pesan Error: " . $e->getMessage();
+    // Hanya jalan jika aksesnya: domain.com/db-command?token=arsya123
+    if ($token !== 'arsya123') {
+        abort(403, 'Akses ditolak.');
     }
-});
 
-Route::get('/system-reset-database-99', function () {
-    try {
-        // 1. Jalankan migrate:fresh untuk hapus semua tabel dan buat ulang
-        // 2. Jalankan db:seed untuk mengisi data awal/dummy
-        Artisan::call('migrate:fresh', [
-            '--force' => true, // Wajib di production agar tidak minta konfirmasi
-            '--seed' => true
-        ]);
-
-        return "Database berhasil di-reset (Fresh) dan di-seed!";
-    } catch (\Exception $e) {
-        return "Terjadi kesalahan: " . $e->getMessage();
-    }
+    Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
+    return "Migrasi dan Seeding Selesai!";
 });
 
 // Tambahkan di routes/web.php
