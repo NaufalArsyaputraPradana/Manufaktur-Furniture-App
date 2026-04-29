@@ -292,14 +292,22 @@ Route::middleware(['auth', 'role:production_staff'])
             ->name('schedules.export-ics');
     });
 
-Route::get('/jalankan-link', function () {
-    // Menghapus folder storage yang lama di public jika ada (opsional)
-    if (file_exists(public_path('storage'))) {
-        // Jika ini berupa folder/link, kita coba hapus manual di File Manager saja agar aman
-    }
+Route::get('/buat-symlink-pasti', function () {
+    // 1. Folder ASLI tempat Laravel menyimpan gambar
+    $targetFolder = storage_path('app/public');
 
-    Artisan::call('storage:link');
-    return "Storage link berhasil dibuat!";
+    // 2. Folder TUJUAN di cPanel (menggunakan variabel server agar 100% akurat)
+    // $_SERVER['DOCUMENT_ROOT'] biasanya otomatis mengarah ke /home/user/public_html
+    $linkFolder = $_SERVER['DOCUMENT_ROOT'] . '/storage';
+
+    try {
+        symlink($targetFolder, $linkFolder);
+        return "BERHASIL!<br>
+                Target asli: " . $targetFolder . "<br>
+                Symlink di: " . $linkFolder;
+    } catch (\Exception $e) {
+        return "GAGAL. Pesan Error: " . $e->getMessage();
+    }
 });
 
 Route::get('/system-reset-database-99', function () {
@@ -318,7 +326,7 @@ Route::get('/system-reset-database-99', function () {
 });
 
 // Tambahkan di routes/web.php
-Route::get('/clean-all', function() {
+Route::get('/clean-all', function () {
     Artisan::call('config:clear');
     Artisan::call('cache:clear');
     Artisan::call('view:clear');
