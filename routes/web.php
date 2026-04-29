@@ -22,7 +22,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\BankAccountController;
-use App\Http\Controllers\Admin\MigrationController;
+
 use App\Http\Controllers\Production\ProductionController;
 use App\Http\Controllers\Production\ProductionProcessController;
 use App\Http\Controllers\Production\ProductionTodoController;
@@ -52,10 +52,6 @@ Route::prefix('products')->name('products.')->controller(CustomerProductControll
 | Quick Migration Routes (Public Access - No Role Required)
 |--------------------------------------------------------------------------
 */
-Route::controller(MigrationController::class)->group(function () {
-    Route::get('/migrate', 'migrate')->name('migrate');
-    Route::get('/migrate-fresh-seed', 'migrateFreshSeed')->name('migrate-fresh-seed');
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -304,4 +300,19 @@ Route::get('/jalankan-link', function () {
 
     Artisan::call('storage:link');
     return "Storage link berhasil dibuat!";
+});
+
+Route::get('/system-reset-database-99', function () {
+    try {
+        // 1. Jalankan migrate:fresh untuk hapus semua tabel dan buat ulang
+        // 2. Jalankan db:seed untuk mengisi data awal/dummy
+        Artisan::call('migrate:fresh', [
+            '--force' => true, // Wajib di production agar tidak minta konfirmasi
+            '--seed' => true
+        ]);
+
+        return "Database berhasil di-reset (Fresh) dan di-seed!";
+    } catch (\Exception $e) {
+        return "Terjadi kesalahan: " . $e->getMessage();
+    }
 });
