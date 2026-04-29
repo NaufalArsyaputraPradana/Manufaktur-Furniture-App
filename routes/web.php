@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Customer\InvoiceController;
@@ -294,3 +295,13 @@ Route::middleware(['auth', 'role:production_staff'])
         Route::get('schedules/{schedule}/export-ics', [ProductionScheduleController::class, 'exportIcs'])
             ->name('schedules.export-ics');
     });
+
+Route::get('/jalankan-link', function () {
+    // Menghapus folder storage yang lama di public jika ada (opsional)
+    if (file_exists(public_path('storage'))) {
+        // Jika ini berupa folder/link, kita coba hapus manual di File Manager saja agar aman
+    }
+
+    Artisan::call('storage:link');
+    return "Storage link berhasil dibuat!";
+});
