@@ -47,7 +47,7 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'shipping_address' => 'required|string|max:500',
-            'phone' => 'required|regex:/^(\+62|0)[0-9]{9,12}$/',
+            'phone' => ['required', 'regex:/^(\+62|0)[0-9]{9,12}$/'],
             'customer_notes' => 'nullable|string|max:1000',
         ], [
             'phone.regex' => 'Nomor telepon harus format Indonesia (cth: 0812345678 atau +6212345678).',
