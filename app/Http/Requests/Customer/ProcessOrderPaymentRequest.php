@@ -19,8 +19,13 @@ class ProcessOrderPaymentRequest extends FormRequest
         // Customer can only pay for their own orders
         // Admin can pay for any order
         $user = $this->user();
+        if (!$user || !$user->role) {
+            return false;
+        }
+
         if ($user->role->name === 'customer') {
-            return $order->user_id === $user->id && in_array($order->status, ['pending', 'confirmed']);
+            return $order->user_id === $user->id
+                && !in_array($order->status, ['completed', 'cancelled']);
         }
         
         return $user->role->name === 'admin';
