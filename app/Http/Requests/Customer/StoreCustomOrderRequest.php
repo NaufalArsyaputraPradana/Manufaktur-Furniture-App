@@ -14,6 +14,9 @@ class StoreCustomOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        // Only authenticated users can create custom orders
+        // Customer can create their own custom orders
+        // Admin can create custom orders for any customer
         return (bool) $this->user();
     }
 

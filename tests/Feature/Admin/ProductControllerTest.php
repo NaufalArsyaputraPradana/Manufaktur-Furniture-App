@@ -101,7 +101,10 @@ class ProductControllerTest extends TestCase
             ->post(route('admin.products.store'), $data);
 
         $response->assertRedirect();
-        Storage::disk('public')->assertExists('products/*');
+        $product = Product::where('sku', 'MMK-001')->first();
+        $this->assertNotNull($product);
+        $this->assertNotEmpty($product->images);
+        Storage::disk('public')->assertExists($product->images[0]);
     }
 
     /**
@@ -198,6 +201,7 @@ class ProductControllerTest extends TestCase
             'sku' => $product->sku,
             'category_id' => $this->category->id,
             'base_price' => 750000,
+            'estimated_production_days' => 7,
         ];
 
         $response = $this->actingAs($this->admin)
@@ -240,6 +244,7 @@ class ProductControllerTest extends TestCase
             'sku' => $product->sku,
             'category_id' => $product->category_id,
             'is_active' => false,
+            'estimated_production_days' => $product->estimated_production_days ?? 7,
         ];
 
         $response = $this->actingAs($this->admin)
@@ -259,7 +264,7 @@ class ProductControllerTest extends TestCase
         $response = $this->actingAs($customer)
             ->get(route('admin.products.index'));
 
-        $response->assertForbidden();
+        $response->assertRedirect(route('home'));
     }
 
     /**

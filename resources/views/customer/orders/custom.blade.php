@@ -110,6 +110,15 @@
                             </div>
                             <div class="card-body p-4">
                                 <div class="mb-3">
+                                    <x-form-input
+                                        name="phone"
+                                        type="tel"
+                                        label="Nomor Telepon"
+                                        placeholder="Contoh: 082123456789"
+                                        :value="old('phone', auth()->user()?->phone ?? '')"
+                                    />
+                                </div>
+                                <div class="mb-3">
                                     <label for="shipping_address"
                                         class="form-label fw-bold small text-muted text-uppercase mb-2">
                                         Alamat Lengkap Pengiriman <span class="text-danger" aria-hidden="true">*</span>

@@ -88,7 +88,11 @@ class OrderPolicy
      */
     public function updateStatus(User $user, Order $order): bool
     {
-        return $user->role?->name === 'admin';
+        if ($user->role?->name !== 'admin') {
+            return false;
+        }
+
+        return !in_array($order->status, [OrderStatus::COMPLETED, OrderStatus::CANCELLED], true);
     }
 
     /**

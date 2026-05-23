@@ -16,7 +16,10 @@ class ReportControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create();
+        // Pastikan role admin (id = 1) sudah ada
+        \App\Models\Role::firstOrCreate(['id' => 1], ['name' => 'Admin']);
+        // Buat user dengan role admin
+        $this->user = User::factory()->create(['role_id' => 1]);
     }
 
     /**
@@ -35,7 +38,7 @@ class ReportControllerTest extends TestCase
      */
     public function test_reports_list_loads()
     {
-        $response = $this->actingAs($this->user)->get(route('admin.reports.index'));
+        $response = $this->actingAs($this->user)->get(route('admin.reports.list'));
         
         $response->assertStatus(200);
         $response->assertViewIs('admin.reports.reports-list');
@@ -217,7 +220,7 @@ class ReportControllerTest extends TestCase
         Report::factory(3)->create(['report_type' => 'sales']);
         Report::factory(2)->create(['report_type' => 'production']);
         
-        $response = $this->actingAs($this->user)->get(route('admin.reports.index', ['type' => 'sales']));
+    $response = $this->actingAs($this->user)->get(route('admin.reports.list', ['type' => 'sales']));
         
         $response->assertStatus(200);
     }
@@ -230,7 +233,7 @@ class ReportControllerTest extends TestCase
         Report::factory(3)->create(['status' => 'completed']);
         Report::factory(1)->create(['status' => 'failed']);
         
-        $response = $this->actingAs($this->user)->get(route('admin.reports.index', ['status' => 'completed']));
+    $response = $this->actingAs($this->user)->get(route('admin.reports.list', ['status' => 'completed']));
         
         $response->assertStatus(200);
     }

@@ -36,7 +36,7 @@ class FormIntegrationTest extends TestCase
         
         $response->assertStatus(200);
         $response->assertSeeText('name');
-        $response->assertSeeText('category');
+        $response->assertSeeText('Kategori');
     }
 
     /**

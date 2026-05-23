@@ -26,7 +26,7 @@ class ShippingMonitoringController extends Controller
                 $q->latest()->limit(1)->with('recordedBy:id,name');
             }])
             ->orderByDesc('id')
-            ->get();
+            ->paginate(15);
 
         return view('production.shipping.index', compact('orders'));
     }
@@ -81,8 +81,11 @@ class ShippingMonitoringController extends Controller
         }
 
         DB::transaction(function () use ($order, $data, $documentationPaths, $request) {
+            // Lock order BEFORE making any changes
+            $o = Order::query()->lockForUpdate()->findOrFail($order->id);
+            
             OrderShippingLog::create([
-                'order_id' => $order->id,
+                'order_id' => $o->id,
                 'stage' => $data['stage'],
                 'status' => 'completed',
                 'notes' => $data['notes'] ?? null,
@@ -92,13 +95,12 @@ class ShippingMonitoringController extends Controller
                 'recorded_by' => $request->user()->id,
             ]);
 
-            $o = Order::query()->lockForUpdate()->findOrFail($order->id);
             $this->syncOrderShippingState($o, $data['stage']);
 
-            if (! empty($data['courier_note'])) {
+            if (!empty($data['courier_note'])) {
                 $o->courier = $data['courier_note'];
             }
-            if (! empty($data['tracking_note'])) {
+            if (!empty($data['tracking_note'])) {
                 $o->tracking_number = $data['tracking_note'];
             }
             if ($o->isDirty(['courier', 'tracking_number'])) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CancelOrderRequest;
 use App\Http\Requests\Admin\StoreOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderShippingRequest;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -98,7 +100,13 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Gagal: ' . $e->getMessage());
+            
+            Log::error('Order creation failed', [
+                'user_id' => auth()->id(),
+                'exception' => $e,
+            ]);
+            
+            return back()->withInput()->with('error', 'Gagal membuat pesanan. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -151,7 +159,7 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.show', $order)->with('success', 'Status diubah.');
     }
 
-    public function cancel(Request $request, Order $order): RedirectResponse
+    public function cancel(CancelOrderRequest $request, Order $order): RedirectResponse
     {
         $this->authorize('cancel', $order);
         
@@ -161,8 +169,9 @@ class OrderController extends Controller
 
         $order->status = OrderStatus::CANCELLED;
 
-        if ($request->filled('reason')) {
-            $order->admin_notes .= "\n[Cancelled] Reason: " . $request->reason;
+        $validated = $request->validated();
+        if (!empty($validated['reason'])) {
+            $order->admin_notes .= "\n[Cancelled] Reason: " . $validated['reason'];
         }
 
         $order->save();

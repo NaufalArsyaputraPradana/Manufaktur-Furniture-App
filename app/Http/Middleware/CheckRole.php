@@ -25,9 +25,33 @@ class CheckRole
                 ->with('error', 'Please login to access this page.');
         }
 
-        // Get user's role
+        // Get user and role - use role_id directly to avoid N+1 query
         $user = auth()->user();
-        $userRole = $user->role->name;
+        $userRole = null;
+        
+        // First attempt: use role_id directly (avoids N+1 query)
+        $userRole = match ($user->role_id) {
+            1 => 'admin',
+            2 => 'production_staff',
+            3 => 'customer',
+            default => null,
+        };
+        
+        // If role_id mapping failed and role is loaded, use relationship
+        if ($userRole === null && $user->relationLoaded('role') && $user->role) {
+            $userRole = $user->role->name;
+        }
+        
+        // Final fallback: load role relationship if needed
+        if ($userRole === null) {
+            $userRole = $user->role?->name;
+        }
+        
+        // If still null at this point, user has no valid role - deny access
+        if ($userRole === null) {
+            return redirect()->route('home')
+                ->with('error', 'Role tidak valid. Hubungi admin.');
+        }
 
         // Ensure roles are strings (convert any non-string values)
         $rolesArray = array_filter(array_map(function($role) {

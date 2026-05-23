@@ -10,7 +10,20 @@ class ProcessOrderPaymentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user();
+        $order = $this->route('order');
+        
+        if (!$order) {
+            return false;
+        }
+        
+        // Customer can only pay for their own orders
+        // Admin can pay for any order
+        $user = $this->user();
+        if ($user->role->name === 'customer') {
+            return $order->user_id === $user->id && in_array($order->status, ['pending', 'confirmed']);
+        }
+        
+        return $user->role->name === 'admin';
     }
 
     public function rules(): array

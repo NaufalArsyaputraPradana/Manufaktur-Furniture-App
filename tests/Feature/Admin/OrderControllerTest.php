@@ -74,7 +74,7 @@ class OrderControllerTest extends TestCase
     public function test_cannot_update_order_with_invalid_status(): void
     {
         $response = $this->actingAs($this->admin)
-            ->put(route('admin.orders.update-status', $this->order), [
+            ->patch(route('admin.orders.update-status', $this->order), [
                 'status' => 'invalid_status',
             ]);
 
@@ -91,7 +91,7 @@ class OrderControllerTest extends TestCase
             ->create(['status' => OrderStatus::COMPLETED]);
 
         $response = $this->actingAs($this->admin)
-            ->put(route('admin.orders.update-status', $completedOrder), [
+            ->patch(route('admin.orders.update-status', $completedOrder), [
                 'status' => OrderStatus::CANCELLED->value,
             ]);
 
@@ -106,7 +106,7 @@ class OrderControllerTest extends TestCase
         $response = $this->actingAs($this->customer)
             ->get(route('admin.orders.index'));
 
-        $response->assertForbidden();
+        $response->assertRedirect(route('home'));
     }
 
     /**
@@ -171,6 +171,6 @@ class OrderControllerTest extends TestCase
 
         // Should either return 404 or return empty list
         // Depends on implementation
-        $this->assertIn($response->status(), [200, 404]);
+    $this->assertTrue(in_array($response->status(), [200, 404], true));
     }
 }

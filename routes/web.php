@@ -292,22 +292,22 @@ Route::middleware(['auth', 'role:production_staff'])
             ->name('schedules.export-ics');
     });
 
-Route::get('/db-command', function () {
-    $token = request()->query('token');
+/*
+|--------------------------------------------------------------------------
+| Admin Maintenance Routes (Protected)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    // Database reset - PROTECTED with authentication
+    Route::post('/admin/maintenance/database-reset', function () {
+        abort(403, 'Fitur ini dinonaktifkan untuk keamanan. Hubungi administrator sistem.');
+    })->name('maintenance.database-reset');
 
-    // Hanya jalan jika aksesnya: domain.com/db-command?token=arsya123
-    if ($token !== 'arsya123') {
-        abort(403, 'Akses ditolak.');
-    }
-
-    Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
-    return "Migrasi dan Seeding Selesai!";
-});
-
-// Tambahkan di routes/web.php
-Route::get('/clean-all', function () {
-    Artisan::call('config:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('view:clear');
-    return "Semua cache berhasil dibersihkan!";
+    // Cache clear - PROTECTED with authentication
+    Route::post('/admin/maintenance/cache-clear', function () {
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('view:clear');
+        return redirect()->route('admin.dashboard')->with('success', 'Cache berhasil dibersihkan!');
+    })->name('maintenance.cache-clear');
 });

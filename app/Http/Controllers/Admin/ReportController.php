@@ -14,6 +14,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\CarbonPeriod;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -64,7 +65,7 @@ class ReportController extends Controller
     /**
      * Laporan Produksi
      */
-    public function production(Request $request): View
+    public function production(Request $request): View|RedirectResponse
     {
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
@@ -87,7 +88,7 @@ class ReportController extends Controller
     /**
      * Laporan Pelanggan
      */
-    public function customer(Request $request): View
+    public function customer(Request $request): View|RedirectResponse
     {
         $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
@@ -329,9 +330,14 @@ class ReportController extends Controller
         $pembayaranGagal = (clone $ordersQuery)->whereHas('payment', fn($q) => $q->where('payment_status', 'failed'))->count();
         $belumDibayar = $jumlahPesanan - $pembayaranSukses - $pembayaranGagal;
 
-        // Get monthly revenue data
+        // Get monthly revenue data (SQLite-compatible)
+        $driver = DB::getDriverName();
+        $monthExpression = $driver === 'sqlite'
+            ? "CAST(strftime('%m', created_at) as integer)"
+            : 'MONTH(created_at)';
+
         $monthlyRevenue = Order::select(
-            DB::raw('MONTH(created_at) as bulan'),
+            DB::raw($monthExpression . ' as bulan'),
             DB::raw('SUM(total) as total')
         )
             ->whereYear('created_at', $year)
@@ -381,8 +387,10 @@ class ReportController extends Controller
             'filters' => 'nullable|array',
         ]);
 
-        $validated['generated_by'] = auth()->id();
+    $validated['generated_by'] = Auth::id();
         $validated['status'] = 'completed';
+        $validated['filters'] = $validated['filters'] ?? [];
+        $validated['data'] = $validated['data'] ?? [];
 
         Report::create($validated);
 
@@ -438,7 +446,7 @@ class ReportController extends Controller
     /**
      * Export report with multiple formats
      */
-    public function exportReport(Request $request, Report $report): StreamedResponse|RedirectResponse
+    public function exportReport(Request $request, Report $report): StreamedResponse|RedirectResponse|\Illuminate\Http\Response
     {
         $format = $request->get('format', 'csv');
 
@@ -518,7 +526,7 @@ class ReportController extends Controller
             'start_date' => $start,
             'end_date' => $end,
             'data' => $data,
-            'generated_by' => auth()->id(),
+            'generated_by' => Auth::id(),
         ]);
     }
 }

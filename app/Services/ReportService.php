@@ -27,9 +27,14 @@ class ReportService
         $pembayaranGagal = (clone $ordersQuery)->whereHas('payment', fn($q) => $q->where('payment_status', 'failed'))->count();
         $belumDibayar = $jumlahPesanan - $pembayaranSukses - $pembayaranGagal;
 
-        // Get monthly revenue for chart
+        // Get monthly revenue for chart (SQLite-compatible)
+        $driver = DB::getDriverName();
+        $monthExpression = $driver === 'sqlite'
+            ? "CAST(strftime('%m', created_at) as integer)"
+            : 'MONTH(created_at)';
+
         $monthlyRevenue = Order::select(
-            DB::raw('MONTH(created_at) as bulan'),
+            DB::raw($monthExpression . ' as bulan'),
             DB::raw('SUM(total) as total')
         )
             ->whereYear('created_at', $year)

@@ -96,17 +96,3 @@
     });
 </script>
 @endpush
-                        }
-                    }
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                }
-            }
-        };
-
-        new Chart(ctx, config);
-    });
-</script>
-@endpush

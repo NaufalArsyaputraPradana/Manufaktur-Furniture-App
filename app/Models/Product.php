@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Category;
+use App\Models\OrderDetail;
 
 class Product extends Model
 {
@@ -42,7 +44,16 @@ class Product extends Model
     public function getThumbnailAttribute(): string
     {
         if (!empty($this->images) && is_array($this->images) && isset($this->images[0])) {
-            return asset('storage/' . $this->images[0]);
+            $first = $this->images[0];
+            $path = is_object($first)
+                ? ($first->image_path ?? null)
+                : (is_array($first)
+                    ? ($first['image_path'] ?? null)
+                    : (is_string($first) ? $first : null));
+
+            if ($path) {
+                return asset('storage/' . ltrim($path, '/'));
+            }
         }
 
         return 'https://via.placeholder.com/300x300/e9ecef/6c757d?text=No+Image';

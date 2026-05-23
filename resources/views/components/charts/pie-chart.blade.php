@@ -1,3 +1,11 @@
+@php
+    $chartColors = collect($colors ?? [
+        '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+        '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
+        '#06b6d4', '#84cc16', '#6366f1', '#d946ef'
+    ]);
+@endphp
+
 <div wire:ignore class="position-relative w-100" style="min-height: 250px;">
     <canvas id="{{ $id ?? 'pieChart' }}" class="w-100"></canvas>
 </div>
@@ -13,17 +21,11 @@
         // Detect mobile for responsive sizing
         const isMobile = window.innerWidth < 768;
         
-        const colors = [
-            '#3b82f6', '#ef4444', '#10b981', '#f59e0b', 
-            '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
-            '#06b6d4', '#84cc16', '#6366f1', '#d946ef'
-        ];
-
         const data = {
             labels: @json($labels ?? []),
             datasets: [{
                 data: @json($data ?? []),
-                backgroundColor: @json($colors->slice(0, count($labels ?? [])) ?? $colors),
+                backgroundColor: @json($chartColors->slice(0, count($labels ?? []))->values()),
                 borderColor: '#fff',
                 borderWidth: isMobile ? 1 : 2,
                 hoverOffset: isMobile ? 8 : 10

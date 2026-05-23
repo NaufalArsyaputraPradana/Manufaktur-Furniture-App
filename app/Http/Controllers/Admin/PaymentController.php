@@ -111,10 +111,12 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             Log::error('Payment verification failed', [
                 'payment_id' => $payment->id,
-                'error' => $e->getMessage()
+                'order_id' => $payment->order_id,
+                'admin_id' => auth()->id(),
+                'exception' => $e,
             ]);
 
-            return back()->with('error', 'Gagal memverifikasi pembayaran: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memverifikasi pembayaran. Silakan hubungi administrator sistem.');
         }
     }
 
