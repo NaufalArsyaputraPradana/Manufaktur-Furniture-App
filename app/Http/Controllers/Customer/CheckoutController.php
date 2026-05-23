@@ -67,11 +67,27 @@ class CheckoutController extends Controller
 
                 $subtotal = 0;
                 foreach ($cart as &$item) {
-                    $dbProduct = $dbProducts[$item['product_id']] ?? null;
-                    if ($dbProduct) {
-                        // Use database price for standard products; custom dimensions may keep calculated price
-                        $item['price'] = $dbProduct->base_price;
+                    if (empty($item['product_id']) || empty($item['name'])) {
+                        throw new \RuntimeException('Data produk di keranjang tidak lengkap. Silakan ulangi proses checkout.');
                     }
+
+                    $dbProduct = $dbProducts[$item['product_id']] ?? null;
+                    if (!$dbProduct) {
+                        throw new \RuntimeException('Produk di keranjang sudah tidak tersedia. Silakan perbarui keranjang.');
+                    }
+
+                    // Use database price only when it's available; keep cart price for custom or legacy items.
+                    if ($dbProduct->base_price !== null) {
+                        $item['price'] = (float) $dbProduct->base_price;
+                    } else {
+                        $item['price'] = (float) ($item['price'] ?? 0);
+                    }
+
+                    $item['quantity'] = (int) ($item['quantity'] ?? 0);
+                    if ($item['quantity'] < 1) {
+                        throw new \RuntimeException('Jumlah produk tidak valid. Silakan perbarui keranjang.');
+                    }
+
                     $subtotal += $item['price'] * $item['quantity'];
                 }
                 unset($item);
