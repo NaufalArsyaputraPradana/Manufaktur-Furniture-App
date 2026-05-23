@@ -167,11 +167,12 @@
                                     @foreach ($cart as $item)
                                         @php
                                             $imagePath = null;
-                                            if (!empty($item['image'])) {
-                                                if (str_starts_with($item['image'], 'http')) {
-                                                    $imagePath = $item['image'];
+                                            $rawImage = $item['image'] ?? null;
+                                            if (!empty($rawImage)) {
+                                                if (str_starts_with($rawImage, 'http')) {
+                                                    $imagePath = $rawImage;
                                                 } else {
-                                                    $imagePath = asset('storage/' . ltrim($item['image'], '/'));
+                                                    $imagePath = asset('storage/' . ltrim($rawImage, '/'));
                                                 }
                                             }
                                         @endphp
