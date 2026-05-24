@@ -27,6 +27,9 @@
             'finishing' => 'bi-brush',
             'quality_control' => 'bi-shield-check',
         ];
+        $normalizeStage = fn ($stage) => $stage instanceof \App\Enums\ProductionStage
+            ? $stage->value
+            : (is_string($stage) ? $stage : null);
 
         $hasProcesses = $order->productionProcesses && $order->productionProcesses->count() > 0;
         $avgProgress = $hasProcesses ? round($order->productionProcesses->avg('progress_percentage')) : 0;
@@ -1702,14 +1705,15 @@
                         @if ($hasProcesses)
                             {{-- Stage Stepper --}}
                             @php
-                                $processedStages = $order->productionProcesses->keyBy('stage');
-                                $activeStage =
-                                    $order->productionProcesses->where('status', 'in_progress')->first()?->stage ??
-                                    ($order->productionProcesses
+                                $processedStages = $order->productionProcesses->keyBy(fn($p) => $normalizeStage($p->stage));
+                                $activeStage = $normalizeStage(
+                                    $order->productionProcesses->where('status', 'in_progress')->first()?->stage
+                                ) ?? $normalizeStage(
+                                    $order->productionProcesses
                                         ->where('status', 'completed')
                                         ->sortByDesc('updated_at')
-                                        ->first()?->stage ??
-                                        null);
+                                        ->first()?->stage
+                                );
                             @endphp
 
                             <div class="stage-stepper mb-4">
@@ -1751,12 +1755,17 @@
                             </div>
 
                             {{-- Per-Process Cards --}}
-                            @foreach ($order->productionProcesses->sortBy(fn($p) => array_search($p->stage, $stageOrder)) as $process)
+                            @foreach ($order->productionProcesses->sortBy(function ($p) use ($normalizeStage, $stageOrder) {
+                                $stageKey = $normalizeStage($p->stage);
+                                $position = array_search($stageKey, $stageOrder, true);
+                                return $position === false ? PHP_INT_MAX : $position;
+                            }) as $process)
                                 @php
                                     $processLogs = $process->logs ?? collect();
                                     $hasLogs = $processLogs->isNotEmpty();
-                                    $thisStageLabel = $stageLabels[$process->stage] ?? ucfirst($process->stage);
-                                    $thisStageIcon = $stageIcons[$process->stage] ?? 'bi-gear';
+                                    $stageKey = $normalizeStage($process->stage);
+                                    $thisStageLabel = $stageLabels[$stageKey] ?? ucfirst($stageKey ?? '');
+                                    $thisStageIcon = $stageIcons[$stageKey] ?? 'bi-gear';
                                     $productName =
                                         $process->orderDetail?->product?->name ??
                                         ($process->orderDetail?->product_name ??
@@ -2119,6 +2128,9 @@
                 @if ($hasProcesses)
                     @foreach ($order->productionProcesses as $process)
                         @if ($process->documentation)
+                            @php
+                                $stageKey = $normalizeStage($process->stage);
+                            @endphp
                             <div class="modal fade" id="docProcessModal{{ $process->id }}" tabindex="-1"
                                 aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-xl">
@@ -2128,7 +2140,7 @@
                                             <h5 class="modal-title text-white">
                                                 <i class="bi bi-camera-fill me-2" aria-hidden="true"></i>
                                                 Dokumentasi
-                                                {{ $stageLabels[$process->stage] ?? ucfirst($process->stage) }}
+                                                {{ $stageLabels[$stageKey] ?? ucfirst($stageKey ?? '') }}
                                             </h5>
                                             <button type="button" class="btn-close btn-close-white"
                                                 data-bs-dismiss="modal" aria-label="Tutup"></button>
