@@ -61,13 +61,16 @@
                         @foreach ($orders as $i => $order)
                             @php
                             $latest = $order->shippingLogs->first();
-                            $shipBadge = match ($order->shipping_status) {
+                            $shippingStatusValue = $order->shipping_status instanceof \App\Enums\ShippingStatus
+                                ? $order->shipping_status->value
+                                : $order->shipping_status;
+                            $shipBadge = match ($shippingStatusValue) {
                             'shipped' => 'primary',
                             'delivered' => 'success',
                             'processing' => 'info',
                             default => 'secondary',
                             };
-                            $shipIcon = match ($order->shipping_status) {
+                            $shipIcon = match ($shippingStatusValue) {
                             'shipped' => 'bi-box-seam',
                             'delivered' => 'bi-check2-circle',
                             'processing' => 'bi-hourglass-split',

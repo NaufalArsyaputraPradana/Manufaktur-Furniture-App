@@ -146,7 +146,7 @@
                     <div class="summary-row">
                         <div class="summary-label">Status Pengiriman</div>
                         <div>
-                            <span class="badge bg-{{ match($order->shipping_status) {
+                            <span class="badge bg-{{ match($order->shipping_status instanceof \App\Enums\ShippingStatus ? $order->shipping_status->value : $order->shipping_status) {
                                 'shipped' => 'primary',
                                 'delivered' => 'success',
                                 'processing' => 'info',
@@ -289,7 +289,7 @@
                         @foreach ($logs as $log)
                             @php
                             $icon = $stageIcons[$log->stage] ?? 'bi-circle';
-                            $isCompleted = in_array($log->stage, ['loading_complete', 'shipped', 'delivered']);
+                            $isCompleted = $log->status === 'completed';
                             @endphp
                             <li class="ship-timeline-item {{ $isCompleted ? 'completed' : '' }}">
                                 <div class="ship-timeline-icon">
@@ -382,10 +382,9 @@
             </div>
         </div>
     </div>
-</div>
-</div>
+    </div>
 
-@push('scripts')
+    @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const docInput = document.getElementById('docInput');

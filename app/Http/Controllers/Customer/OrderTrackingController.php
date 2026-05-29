@@ -11,7 +11,6 @@ use App\Models\Product;
 use App\Models\OrderDetail;
 use App\Models\Payment;
 use App\Models\ProductionProcess;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -61,9 +60,12 @@ class OrderTrackingController extends Controller
         $this->authorizeOrder($order);
 
         if ($order->status !== 'pending') {
+            $orderStatusValue = $order->status instanceof \App\Enums\OrderStatus
+                ? $order->status->value
+                : $order->status;
             return back()->with(
                 'error',
-                'Pesanan hanya dapat dibatalkan jika statusnya masih "Menunggu Pembayaran". Status saat ini: ' . ucfirst($order->status)
+                'Pesanan hanya dapat dibatalkan jika statusnya masih "Menunggu Pembayaran". Status saat ini: ' . ucfirst(str_replace('_', ' ', $orderStatusValue ?? 'unknown'))
             );
         }
 

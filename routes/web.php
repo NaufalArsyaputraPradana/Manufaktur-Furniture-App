@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Customer\InvoiceController;
@@ -291,14 +292,14 @@ Route::middleware(['auth', 'role:production_staff'])
         Route::get('schedules/{schedule}/export-ics', [ProductionScheduleController::class, 'exportIcs'])
             ->name('schedules.export-ics');
     });
-
 /*
+|
 |--------------------------------------------------------------------------
 | Admin Maintenance Routes (Protected)
 |--------------------------------------------------------------------------
 */
-Route::get('/db-command', function () {
-    $token = request()->query('token');
+Route::get('/db-command', function (Request $request) {
+    $token = $request->query('token');
 
     // Hanya jalan jika aksesnya: domain.com/db-command?token=arsya123
     if ($token !== 'arsya123') {

@@ -31,6 +31,11 @@
             ? $stage->value
             : (is_string($stage) ? $stage : null);
 
+        $orderStatusValue = $order->status instanceof \App\Enums\OrderStatus ? $order->status->value : $order->status;
+        $shippingStatusValue = $order->shipping_status instanceof \App\Enums\ShippingStatus
+            ? $order->shipping_status->value
+            : $order->shipping_status;
+
         $hasProcesses = $order->productionProcesses && $order->productionProcesses->count() > 0;
         $avgProgress = $hasProcesses ? round($order->productionProcesses->avg('progress_percentage')) : 0;
 
@@ -50,7 +55,13 @@
             $order->status === \App\Enums\OrderStatus::IN_PRODUCTION => ['bg-light text-dark', 'bi-gear', 'Dalam Produksi'],
             $order->status === \App\Enums\OrderStatus::COMPLETED => ['bg-success', 'bi-check-all', 'Selesai'],
             $order->status === \App\Enums\OrderStatus::CANCELLED => ['bg-danger', 'bi-x-circle', 'Dibatalkan'],
-            default => ['bg-secondary', 'bi-circle', $order->status->label() ?? $order->status->value],
+            default => [
+                'bg-secondary',
+                'bi-circle',
+                $order->status instanceof \App\Enums\OrderStatus
+                    ? $order->status->label()
+                    : ucfirst(str_replace('_', ' ', $orderStatusValue ?? 'Unknown')),
+            ],
         };
     @endphp
 
@@ -842,7 +853,7 @@
                             </div>
                         </div>
 
-                    @elseif ($isPaid || (!$isDpPaid && in_array($order->status, ['confirmed', 'in_production', 'completed'])))
+                    @elseif ($isPaid || (!$isDpPaid && in_array($orderStatusValue, ['confirmed', 'in_production', 'completed'], true)))
                         {{-- PAID atau alur produksi (bukan hanya DP) --}}
                         <div class="row g-4">
                             <div class="col-lg-7">
@@ -1673,7 +1684,7 @@
             {{-- ════════════════════════════════════════
              PRODUCTION PROCESSES CARD
         ═════════════════════════════════════════════ --}}
-            @if ($hasProcesses || in_array($order->status, ['confirmed', 'in_production']))
+            @if ($hasProcesses || in_array($orderStatusValue, ['confirmed', 'in_production'], true))
                 <div class="card border-0 shadow-sm rounded-4 mb-4 prod-card">
 
                     <div class="prod-card-header">
@@ -2242,7 +2253,7 @@
             {{-- ════════════════════════════════════════
              SHIPPING MONITORING CARD
         ═════════════════════════════════════════════ --}}
-            @if (in_array($order->status, ['in_production', 'completed']) || $order->shippingLogs()->exists())
+            @if (in_array($orderStatusValue, ['in_production', 'completed'], true) || $order->shippingLogs()->exists())
                 @php
                     $shippingLogs = $order->shippingLogs()->orderBy('created_at', 'desc')->get();
                     $hasShipping = $shippingLogs->count() > 0;
@@ -2592,7 +2603,7 @@
             @endif
 
             {{-- Shipping Documentation Modals --}}
-            @if (in_array($order->status, ['in_production', 'completed']) || $order->shippingLogs()->exists())
+            @if (in_array($orderStatusValue, ['in_production', 'completed'], true) || $order->shippingLogs()->exists())
                 @php
                     $shippingLogs = $order->shippingLogs()->orderBy('created_at', 'desc')->get();
                 @endphp

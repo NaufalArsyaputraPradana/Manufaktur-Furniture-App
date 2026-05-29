@@ -24,8 +24,11 @@ class ProcessOrderPaymentRequest extends FormRequest
         }
 
         if ($user->role->name === 'customer') {
+            $orderStatusValue = $order->status instanceof \App\Enums\OrderStatus
+                ? $order->status->value
+                : $order->status;
             return $order->user_id === $user->id
-                && !in_array($order->status, ['completed', 'cancelled']);
+                && !in_array($orderStatusValue, ['completed', 'cancelled'], true);
         }
         
         return $user->role->name === 'admin';

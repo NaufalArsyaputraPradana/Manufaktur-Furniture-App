@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Production;
 
 use App\Http\Controllers\Controller;
+use App\Enums\OrderStatus;
 use App\Http\Requests\Production\StoreOrderShippingLogRequest;
 use App\Models\Order;
 use App\Models\OrderShippingLog;
@@ -33,7 +34,9 @@ class ShippingMonitoringController extends Controller
 
     public function show(Order $order): View
     {
-        if (! in_array($order->status, ['confirmed', 'in_production', 'completed'], true)) {
+        $orderStatus = $order->status instanceof OrderStatus ? $order->status->value : $order->status;
+
+        if (! in_array($orderStatus, ['confirmed', 'in_production', 'completed'], true)) {
             abort(404);
         }
 
@@ -57,7 +60,9 @@ class ShippingMonitoringController extends Controller
 
     public function storeLog(StoreOrderShippingLogRequest $request, Order $order): RedirectResponse
     {
-        if (! in_array($order->status, ['confirmed', 'in_production', 'completed'], true)) {
+        $orderStatus = $order->status instanceof OrderStatus ? $order->status->value : $order->status;
+
+        if (! in_array($orderStatus, ['confirmed', 'in_production', 'completed'], true)) {
             abort(404);
         }
 
@@ -115,7 +120,9 @@ class ShippingMonitoringController extends Controller
 
     public function updateCourier(Request $request, Order $order): RedirectResponse
     {
-        if (! in_array($order->status, ['confirmed', 'in_production', 'completed'], true)) {
+        $orderStatus = $order->status instanceof OrderStatus ? $order->status->value : $order->status;
+
+        if (! in_array($orderStatus, ['confirmed', 'in_production', 'completed'], true)) {
             abort(404);
         }
 

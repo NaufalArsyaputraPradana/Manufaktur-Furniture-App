@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Enums\OrderStatus;
 use App\Models\ProductionLog;
 use App\Models\ProductionProcess;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,11 @@ class ProductionService
      */
     public function startProduction(Order $order, ?int $assignedTo = null): ProductionProcess
     {
-        if ($order->status !== 'confirmed') {
+        $orderStatusValue = $order->status instanceof OrderStatus ? $order->status->value : $order->status;
+
+        if ($orderStatusValue !== 'confirmed') {
             throw new \Exception(
-                "Order harus dalam status 'confirmed' untuk memulai produksi. Status saat ini: {$order->status}"
+                "Order harus dalam status 'confirmed' untuk memulai produksi. Status saat ini: {$orderStatusValue}"
             );
         }
 
