@@ -737,40 +737,22 @@
                     // Validate Phone Number
                     if (!phone?.value.trim()) {
                         e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Nomor Telepon Kosong',
-                            text: 'Silakan isi nomor telepon terlebih dahulu',
-                            confirmButtonColor: '#667eea'
-                        });
-                        phone?.focus();
+                        showFieldError(phone, 'Silakan isi nomor telepon terlebih dahulu.');
                         return false;
                     }
 
-                    // Validate Phone Format (basic validation)
-                    const phoneRegex = /^(\+62|62|0)[0-9]{9,12}$/;
-                    if (!phoneRegex.test(phone.value.replace(/\s+/g, ''))) {
+                    // Validate Phone Format (allow international)
+                    const phoneDigits = phone.value.replace(/\D+/g, '');
+                    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
                         e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Format Nomor Telepon Tidak Valid',
-                            text: 'Format: 08xx-xxxx-xxxx atau +62',
-                            confirmButtonColor: '#667eea'
-                        });
-                        phone?.focus();
+                        showFieldError(phone, 'Nomor telepon harus 7-15 digit.');
                         return false;
                     }
 
                     // Validate Shipping Address
                     if (!shippingAddress?.value.trim()) {
                         e.preventDefault();
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Alamat Pengiriman Kosong',
-                            text: 'Silakan isi alamat pengiriman terlebih dahulu',
-                            confirmButtonColor: '#667eea'
-                        });
-                        shippingAddress?.focus();
+                        showFieldError(shippingAddress, 'Silakan isi alamat pengiriman terlebih dahulu.');
                         return false;
                     }
 
@@ -780,19 +762,45 @@
                         '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Memproses...';
                     
                     // Show loading dialog without blocking form submission
-                    Swal.fire({
-                        title: 'Memproses Pesanan',
-                        html: 'Mohon tunggu...',
-                        allowOutsideClick: false,
-                        allowEscapeKey: false,
-                        showConfirmButton: false,
-                        didOpen: () => Swal.showLoading()
-                    });
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: 'Memproses Pesanan',
+                            html: 'Mohon tunggu...',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                    }
 
                     // Form will submit naturally - don't prevent it
                     // Browser will show loading dialog while processing
                     return true;
                 });
+            }
+
+            function showFieldError(field, message) {
+                if (!field) return;
+                field.classList.add('is-invalid');
+
+                let feedback = field.parentElement?.querySelector('.invalid-feedback.js-inline');
+                if (!feedback) {
+                    feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback d-block js-inline';
+                    field.parentElement?.appendChild(feedback);
+                }
+                feedback.textContent = message;
+
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Periksa Form',
+                        text: message,
+                        confirmButtonColor: '#667eea'
+                    });
+                }
+
+                field.focus();
             }
 
             // ============================================

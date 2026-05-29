@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -47,13 +48,20 @@ class CheckoutController extends Controller
     {
         $validated = $request->validate([
             'shipping_address' => 'required|string|max:500',
-            'phone' => ['required', 'regex:/^(\+62|0)[0-9]{9,12}$/'],
+            'phone' => ['required', 'string', 'max:20', 'regex:/^\+?[0-9\s().-]{7,20}$/'],
             'customer_notes' => 'nullable|string|max:1000',
         ], [
-            'phone.regex' => 'Nomor telepon harus format Indonesia (cth: 0812345678 atau +6212345678).',
+            'phone.regex' => 'Nomor telepon harus berisi angka dan boleh diawali + (contoh: +62812345678).',
         ]);
 
-        $cart = session()->get('cart', []);
+        $digitsOnly = preg_replace('/\D+/', '', $validated['phone']);
+        if ($digitsOnly === null || strlen($digitsOnly) < 7 || strlen($digitsOnly) > 15) {
+            return back()
+                ->withErrors(['phone' => 'Nomor telepon harus 7-15 digit.'])
+                ->withInput();
+        }
+
+    $cart = Session::get('cart', []);
 
         if (empty($cart)) {
             return redirect()->route('customer.cart.index')
@@ -136,7 +144,7 @@ class CheckoutController extends Controller
             });
             
             // Clear session AFTER transaction commits
-            session()->forget('cart');
+            Session::forget('cart');
 
             return redirect()->route('customer.orders.payment', $order)
                 ->with('success', "🎉 Pesanan berhasil dibuat! Nomor order Anda: {$order->order_number}");
