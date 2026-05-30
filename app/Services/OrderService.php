@@ -170,7 +170,7 @@ class OrderService
         $query = Order::query()
             ->with([
                 'user:id,name,email,phone',
-                'orderDetails:id,order_id,product_id,product_name,quantity,unit_price,subtotal,is_custom',
+                'orderDetails:id,order_id,product_id,product_name,quantity,unit_price,subtotal,is_custom,custom_specifications',
                 'orderDetails.product:id,name,sku,images',
                 'payment:id,order_id,payment_status,amount_paid,amount,transaction_id',
             ])
