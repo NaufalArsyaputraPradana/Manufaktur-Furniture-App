@@ -212,23 +212,24 @@
                             <option value="custom">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
                             @foreach ($products as $product)
                                 @php
-                                    // Logic from product-card.blade.php to determine the correct image
-                                    $productImageForCustom = null;
-                                    if (!empty($product->thumbnail)) {
-                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($product->thumbnail)) {
-                                            $productImageForCustom = asset('storage/' . $product->thumbnail);
-                                        }
+                                    // Determine the correct product image URL
+                                    $productImageUrl = '';
+                                    if (!empty($product->thumbnail) && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->thumbnail)) {
+                                        $productImageUrl = asset('storage/' . $product->thumbnail);
+                                    } elseif (!empty($product->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image)) {
+                                        $productImageUrl = asset('storage/' . $product->image);
                                     } else {
+                                        // Try to get first image from images array if available
                                         $productImages = is_array($product->images ?? null) ? $product->images : (is_string($product->images ?? null) ? json_decode($product->images, true) : []);
                                         if (!empty($productImages) && is_array($productImages) && count($productImages) > 0 && is_string($productImages[0])) {
                                             if (\Illuminate\Support\Facades\Storage::disk('public')->exists($productImages[0])) {
-                                                $productImageForCustom = asset('storage/' . $productImages[0]);
+                                                $productImageUrl = asset('storage/' . $productImages[0]);
                                             }
                                         }
                                     }
                                 @endphp
                                 <option value="{{ $product->id }}" data-name="{{ $product->name }}"
-                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $productImageForCustom ?? '' }}">
+                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $productImageUrl }}">
                                     {{ $product->name }}{{ $product->base_price !== null ? ' – Rp ' . number_format($product->base_price, 0, ',', '.') : ' – Tanya Harga' }}
                                 </option>
                             @endforeach
@@ -714,7 +715,9 @@
                     customCheck.checked = false;
                     
                     // Display product image
-                    displayProductImage(item, opt.dataset.image);
+                    const imageUrl = opt.dataset.image;
+                    console.log('Product Selected:', opt.dataset.name, 'Image URL:', imageUrl);
+                    displayProductImage(item, imageUrl);
                 } else if (select.value === 'custom') {
                     nameInput.value = '';
                     priceInput.value = 0;
@@ -738,11 +741,17 @@
 
             function displayProductImage(item, imageUrl) {
                 const previewContainer = item.querySelector('[class*="product-image-preview-"]');
-                if (previewContainer && imageUrl) {
+                if (previewContainer) {
                     const img = previewContainer.querySelector('img');
-                    if (img) {
+                    if (img && imageUrl) {
                         img.src = imageUrl;
+                        img.onerror = function() {
+                            console.error('Gagal memuat gambar dari URL:', imageUrl);
+                            previewContainer.style.display = 'none';
+                        };
                         previewContainer.style.display = 'block';
+                    } else if (!imageUrl) {
+                        previewContainer.style.display = 'none';
                     }
                 }
             }
@@ -751,6 +760,10 @@
                 const previewContainer = item.querySelector('[class*="product-image-preview-"]');
                 if (previewContainer) {
                     previewContainer.style.display = 'none';
+                    const img = previewContainer.querySelector('img');
+                    if (img) {
+                        img.src = '';
+                    }
                 }
             }
 
