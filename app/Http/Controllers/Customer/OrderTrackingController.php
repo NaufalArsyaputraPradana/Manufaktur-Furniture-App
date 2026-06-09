@@ -89,7 +89,8 @@ class OrderTrackingController extends Controller
 
         $products = Product::where('is_active', true)
             ->with('category:id,name')
-            ->select('id', 'name', 'sku', 'base_price', 'category_id')
+            ->select('id', 'name', 'sku', 'base_price', 'category_id', 'images')
+            ->orderBy('name')
             ->get();
 
         return view('customer.orders.custom', compact('categories', 'products'));
