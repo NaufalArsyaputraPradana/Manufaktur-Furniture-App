@@ -211,8 +211,24 @@
                             <option value="">-- Pilih dari Katalog --</option>
                             <option value="custom">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
                             @foreach ($products as $product)
+                                @php
+                                    // Logic from product-card.blade.php to determine the correct image
+                                    $productImageForCustom = null;
+                                    if (!empty($product->thumbnail)) {
+                                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($product->thumbnail)) {
+                                            $productImageForCustom = asset('storage/' . $product->thumbnail);
+                                        }
+                                    } else {
+                                        $productImages = is_array($product->images ?? null) ? $product->images : (is_string($product->images ?? null) ? json_decode($product->images, true) : []);
+                                        if (!empty($productImages) && is_array($productImages) && count($productImages) > 0 && is_string($productImages[0])) {
+                                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($productImages[0])) {
+                                                $productImageForCustom = asset('storage/' . $productImages[0]);
+                                            }
+                                        }
+                                    }
+                                @endphp
                                 <option value="{{ $product->id }}" data-name="{{ $product->name }}"
-                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ basename($product->thumbnail) }}">
+                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $productImageForCustom ?? '' }}">
                                     {{ $product->name }}{{ $product->base_price !== null ? ' – Rp ' . number_format($product->base_price, 0, ',', '.') : ' – Tanya Harga' }}
                                 </option>
                             @endforeach
@@ -228,15 +244,15 @@
 
                     <!-- Product Image Preview -->
                     <div class="col-12">
-                        <div class="product-image-preview" style="display: none;">
+                        <div class="product-image-preview-INDEX" style="display: none;">
                             <div class="card border-info bg-info bg-opacity-10 rounded-4 border-2 shadow-sm overflow-hidden">
                                 <div class="card-body p-4">
                                     <label class="form-label small fw-bold text-muted text-uppercase mb-3 d-block">
                                         <i class="bi bi-image me-2" aria-hidden="true"></i>Preview Produk Katalog
                                     </label>
                                     <div class="d-flex justify-content-center">
-                                        <img src="" alt="Produk Preview"
-                                            class="img-fluid rounded-3 product-image-tag"
+                                        <img id="product_image_INDEX" src="" alt="Produk Preview"
+                                            class="img-fluid rounded-3"
                                             style="max-width: 100%; max-height: 300px; object-fit: contain; border: 2px solid #0d6efd; box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);">
                                     </div>
                                 </div>
@@ -721,26 +737,20 @@
             };
 
             function displayProductImage(item, imageUrl) {
-                const previewContainer = item.querySelector('.product-image-preview');
+                const previewContainer = item.querySelector('[class*="product-image-preview-"]');
                 if (previewContainer && imageUrl) {
-                    const img = previewContainer.querySelector('.product-image-tag');
+                    const img = previewContainer.querySelector('img');
                     if (img) {
-                        // The imageUrl from data-image is already 'products/filename.jpg'
-                        // We just need to prepend the storage path.
-                        img.src = `{{ asset('storage') }}/${imageUrl}`;
+                        img.src = imageUrl;
                         previewContainer.style.display = 'block';
                     }
                 }
             }
 
             function hideProductImage(item) {
-                const previewContainer = item.querySelector('.product-image-preview');
+                const previewContainer = item.querySelector('[class*="product-image-preview-"]');
                 if (previewContainer) {
                     previewContainer.style.display = 'none';
-                    const img = previewContainer.querySelector('.product-image-tag');
-                    if (img) {
-                        img.src = '';
-                    }
                 }
             }
 
