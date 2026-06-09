@@ -725,8 +725,9 @@
                 if (previewContainer && imageUrl) {
                     const img = previewContainer.querySelector('.product-image-tag');
                     if (img) {
-                        // Construct the correct asset URL
-                        img.src = `{{ asset('storage/products') }}/${imageUrl}`;
+                        // The imageUrl from data-image is already 'products/filename.jpg'
+                        // We just need to prepend the storage path.
+                        img.src = `{{ asset('storage') }}/${imageUrl}`;
                         previewContainer.style.display = 'block';
                     }
                 }
