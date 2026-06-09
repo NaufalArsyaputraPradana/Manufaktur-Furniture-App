@@ -211,8 +211,12 @@
                             <option value="">-- Pilih dari Katalog --</option>
                             <option value="custom">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
                             @foreach ($products as $product)
-                                <option value="{{ $product->id }}" data-name="{{ $product->name }}"
-                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $product->thumbnail }}">
+                                <option 
+                                    value="{{ $product->id }}" 
+                                    data-name="{{ $product->name }}"
+                                    data-price="{{ $product->base_price ?? '' }}"
+                                    data-image="{{ $product->thumbnail }}"
+                                >
                                     {{ $product->name }}{{ $product->base_price !== null ? ' – Rp ' . number_format($product->base_price, 0, ',', '.') : ' – Tanya Harga' }}
                                 </option>
                             @endforeach
@@ -697,10 +701,16 @@
                     priceInput.value = opt.dataset.price || 0;
                     customCheck.checked = false;
                     
-                    // Display product image
-                    const imageUrl = opt.dataset.image;
-                    console.log('Product Selected:', opt.dataset.name, 'Image URL:', imageUrl);
-                    displayProductImage(item, imageUrl);
+                    // Display product image - get from data attribute set by Product->thumbnail accessor
+                    const imageUrl = opt.getAttribute('data-image');
+                    if (imageUrl && imageUrl.trim()) {
+                        console.log('✓ Product Selected:', opt.dataset.name);
+                        console.log('✓ Image URL:', imageUrl);
+                        displayProductImage(item, imageUrl);
+                    } else {
+                        console.warn('⚠ No image URL available for:', opt.dataset.name);
+                        hideProductImage(item);
+                    }
                 } else if (select.value === 'custom') {
                     nameInput.value = '';
                     priceInput.value = 0;
@@ -724,29 +734,41 @@
 
             function displayProductImage(item, imageUrl) {
                 const previewContainer = item.querySelector('[class*="product-image-preview-"]');
-                if (previewContainer) {
-                    const img = previewContainer.querySelector('img');
-                    if (img && imageUrl) {
-                        img.src = imageUrl;
-                        img.onerror = function() {
-                            console.error('Gagal memuat gambar dari URL:', imageUrl);
-                            previewContainer.style.display = 'none';
-                        };
-                        previewContainer.style.display = 'block';
-                    } else if (!imageUrl) {
-                        previewContainer.style.display = 'none';
-                    }
+                if (!previewContainer) return;
+
+                const img = previewContainer.querySelector('img');
+                if (!img || !imageUrl || !imageUrl.trim()) {
+                    previewContainer.style.display = 'none';
+                    return;
                 }
+
+                // Set image src
+                img.src = imageUrl;
+                img.onerror = function() {
+                    console.error('✗ Failed to load image from URL:', imageUrl);
+                    previewContainer.style.display = 'none';
+                };
+                img.onload = function() {
+                    console.log('✓ Image loaded successfully');
+                    previewContainer.style.display = 'block';
+                };
+
+                // Make container visible with delay to ensure onload fires
+                setTimeout(() => {
+                    previewContainer.style.display = 'block';
+                }, 100);
             }
 
             function hideProductImage(item) {
                 const previewContainer = item.querySelector('[class*="product-image-preview-"]');
-                if (previewContainer) {
-                    previewContainer.style.display = 'none';
-                    const img = previewContainer.querySelector('img');
-                    if (img) {
-                        img.src = '';
-                    }
+                if (!previewContainer) return;
+
+                previewContainer.style.display = 'none';
+                const img = previewContainer.querySelector('img');
+                if (img) {
+                    img.src = '';
+                    img.onerror = null;
+                    img.onload = null;
                 }
             }
 
