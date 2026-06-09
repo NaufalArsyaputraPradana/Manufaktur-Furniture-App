@@ -211,25 +211,8 @@
                             <option value="">-- Pilih dari Katalog --</option>
                             <option value="custom">🎨 Produk Custom (Spesifikasi Baru Penuh)</option>
                             @foreach ($products as $product)
-                                @php
-                                    // Determine the correct product image URL
-                                    $productImageUrl = '';
-                                    if (!empty($product->thumbnail) && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->thumbnail)) {
-                                        $productImageUrl = asset('storage/' . $product->thumbnail);
-                                    } elseif (!empty($product->image) && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image)) {
-                                        $productImageUrl = asset('storage/' . $product->image);
-                                    } else {
-                                        // Try to get first image from images array if available
-                                        $productImages = is_array($product->images ?? null) ? $product->images : (is_string($product->images ?? null) ? json_decode($product->images, true) : []);
-                                        if (!empty($productImages) && is_array($productImages) && count($productImages) > 0 && is_string($productImages[0])) {
-                                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($productImages[0])) {
-                                                $productImageUrl = asset('storage/' . $productImages[0]);
-                                            }
-                                        }
-                                    }
-                                @endphp
                                 <option value="{{ $product->id }}" data-name="{{ $product->name }}"
-                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $productImageUrl }}">
+                                    data-price="{{ $product->base_price ?? '' }}" data-image="{{ $product->thumbnail }}">
                                     {{ $product->name }}{{ $product->base_price !== null ? ' – Rp ' . number_format($product->base_price, 0, ',', '.') : ' – Tanya Harga' }}
                                 </option>
                             @endforeach
